@@ -22,6 +22,7 @@
 - 모든 사용자 데이터 테이블은 RLS를 활성화하고 `auth.uid()` 기반으로 격리한다. (§0.6, §16.2)
 - 1차 메뉴는 `대시보드 / 월간관리 / 자산·금융 / 설정` 4개만 사용한다. 별도 1차 메뉴를 만들지 않는다. (§0.13, §19.1)
 - MVP라도 모바일/PC 반응형을 동시에 지원한다. (§0.11)
+- TypeScript strict 모드를 유지한다(`tsconfig.json`의 `strict: true`). (§17 Frontend 스택)
 - 계산 검증용 테스트를 반드시 작성한다. (§0.12)
 - SMS 기반 인증은 사용하지 않는다. Email + Password + TOTP MFA를 사용한다. (§16.1)
 - GitHub repo는 Private 권장, `.gitignore`에 `.env*`, Excel, export 파일 포함. (§16.3, §29)
@@ -55,8 +56,8 @@ personal-finance/
       supabase/
         client.ts
         server.ts
-        middleware.ts
-    middleware.ts
+        proxy.ts
+    proxy.ts
     actions/
       household.ts
     components/
@@ -760,7 +761,7 @@ git commit -m "feat: email/password signup and login pages"
 ### Task 6: TOTP MFA enrollment + verification, AAL2 enforcement middleware
 
 **Files:**
-- Create: `src/app/mfa/enroll/page.tsx`, `src/app/mfa/verify/page.tsx`, `src/lib/supabase/middleware.ts`, `src/middleware.ts`
+- Create: `src/app/mfa/enroll/page.tsx`, `src/app/mfa/verify/page.tsx`, `src/lib/supabase/proxy.ts`, `src/proxy.ts`
 
 **Interfaces:**
 - Consumes: `createClient()` (browser, Task 3).
@@ -963,9 +964,11 @@ export default function MfaVerifyPage() {
 }
 ```
 
-- [ ] **Step 3: Session-refresh + AAL2 enforcement middleware helper**
+- [ ] **Step 3: Session-refresh + AAL2 enforcement proxy helper**
 
-Create `src/lib/supabase/middleware.ts`:
+> **Next.js 16 note:** the special root file is `proxy.ts` with a `proxy` export — `middleware.ts`/`export function middleware` is deprecated in Next.js 16 (renamed to clarify network-boundary/routing focus; functionality is identical). Do not use the old `middleware` naming. See `node_modules/next/dist/docs/01-app/01-getting-started/16-proxy.md` if anything here is unclear.
+
+Create `src/lib/supabase/proxy.ts`:
 
 ```ts
 import { createServerClient } from '@supabase/ssr';
@@ -1019,15 +1022,15 @@ export async function updateSession(request: NextRequest) {
 }
 ```
 
-- [ ] **Step 4: Root middleware**
+- [ ] **Step 4: Root proxy**
 
-Create `src/middleware.ts`:
+Create `src/proxy.ts`:
 
 ```ts
 import { type NextRequest } from 'next/server';
-import { updateSession } from '@/lib/supabase/middleware';
+import { updateSession } from '@/lib/supabase/proxy';
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   return updateSession(request);
 }
 
