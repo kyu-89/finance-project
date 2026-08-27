@@ -43,6 +43,7 @@ next-env.d.ts
 # Supabase / secrets (PRD §16.3, §29)
 .env*.local
 .env.test.local
+!.env*.example
 supabase/.temp
 
 # Legacy Excel source + exports (PRD §29 checklist)
