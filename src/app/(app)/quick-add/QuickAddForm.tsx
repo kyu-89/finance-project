@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { createQuickTransactionAction } from '@/actions/transaction-actions';
 import { CategoryPicker } from '@/components/CategoryPicker';
+import { FormMessage } from '@/components/FormMessage';
+import { INITIAL_ACTION_STATE } from '@/lib/action-result';
 import type { CategoryWithSubcategories } from '@/lib/categories';
 import type { PaymentMethod } from '@/lib/payment-methods';
 
@@ -21,6 +23,7 @@ export function QuickAddForm({
   const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string | null>(null);
   const [showMore, setShowMore] = useState(false);
   const [showSavedBanner, setShowSavedBanner] = useState(false);
+  const [state, formAction, pending] = useActionState(createQuickTransactionAction, INITIAL_ACTION_STATE);
 
   // The quick-add form is a same-segment navigation target (`/quick-add?saved=...`), so React
   // state above survives the redirect — without this the user taps 저장 and sees no visible
@@ -66,7 +69,7 @@ export function QuickAddForm({
     // "저장되었습니다" while the previous entry's text is still sitting in the 내용 box.
     <form
       key={saved ?? 'initial'}
-      action={createQuickTransactionAction}
+      action={formAction}
       className="flex flex-col gap-4"
     >
       {showSavedBanner && (
@@ -74,6 +77,7 @@ export function QuickAddForm({
           저장되었습니다
         </div>
       )}
+      <FormMessage result={state} />
       <input type="hidden" name="transactionType" value="expense" />
       <input type="hidden" name="categoryId" value={selectedCategory?.id ?? ''} />
       <input
@@ -143,8 +147,12 @@ export function QuickAddForm({
         </label>
       )}
 
-      <button type="submit" className="rounded bg-black px-4 py-3 text-lg text-white">
-        저장
+      <button
+        type="submit"
+        disabled={pending}
+        className="rounded bg-black px-4 py-3 text-lg text-white disabled:opacity-50"
+      >
+        {pending ? '저장 중...' : '저장'}
       </button>
     </form>
   );

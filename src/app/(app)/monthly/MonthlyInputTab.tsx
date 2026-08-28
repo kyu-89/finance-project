@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useActionState, useState } from 'react';
 import { createColumnHelper, tableFeatures, useTable } from '@tanstack/react-table';
 import { createMonthlyRowAction } from '@/actions/transaction-actions';
+import { FormMessage } from '@/components/FormMessage';
+import { INITIAL_ACTION_STATE } from '@/lib/action-result';
 import type { Transaction } from '@/lib/transactions';
 import type { CategoryWithSubcategories } from '@/lib/categories';
 import type { PaymentMethod } from '@/lib/payment-methods';
@@ -42,13 +44,17 @@ export function MonthlyInputTab({
 
   const [categoryId, setCategoryId] = useState('');
   const selectedCategory = categories.find((c) => c.id === categoryId);
+  const [state, formAction, pending] = useActionState(createMonthlyRowAction, INITIAL_ACTION_STATE);
 
   return (
     <div className="flex flex-col gap-4">
       <form
-        action={createMonthlyRowAction}
+        action={formAction}
         className="grid grid-cols-2 gap-2 rounded border p-3 md:grid-cols-6"
       >
+        <div className="col-span-2 md:col-span-6">
+          <FormMessage result={state} />
+        </div>
         <input type="hidden" name="transactionType" value="expense" />
         <input
           type="hidden"
@@ -96,8 +102,12 @@ export function MonthlyInputTab({
           required
           className="rounded border px-2 py-1 text-sm"
         />
-        <button type="submit" className="col-span-2 rounded bg-black px-3 py-1 text-sm text-white md:col-span-1">
-          행 추가
+        <button
+          type="submit"
+          disabled={pending}
+          className="col-span-2 rounded bg-black px-3 py-1 text-sm text-white disabled:opacity-50 md:col-span-1"
+        >
+          {pending ? '추가 중...' : '행 추가'}
         </button>
       </form>
 
