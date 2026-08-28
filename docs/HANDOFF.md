@@ -1,7 +1,7 @@
 # 인수인계 문서 (HANDOFF)
 
-> 최종 갱신: 2026-08-28 · 현재 기능 HEAD `f85f8ea` · 직전 운영 배포 `df1f031` Ready
-> 소분류 이름 변경 UI와 이 문서 갱신을 push하면 Vercel 자동 배포가 시작된다.
+> 최종 갱신: 2026-08-28 · 현재 기능 HEAD `81951d8` · 운영 배포 Ready
+> `main` / `origin/main`, Supabase migration 10개가 모두 동기화됨. 이 문서 갱신 커밋만 추가된다.
 > 다음 작업자(다른 AI 세션 또는 사람)가 이 문서만 읽고 이어서 작업할 수 있도록 작성됨
 
 ## 0. 최신 연속 작업 상태 (2026-08-28 Codex)
@@ -45,18 +45,19 @@
 - 브라우저 확인: Pretendard stack, grey-50 배경, input radius 12px, primary CTA 56px, 해요체 타이틀 정상 렌더링
 - 최신 확장분은 브라우저 제어 세션 타임아웃으로 시각 재검증하지 못했지만 lint/build/unit test는 모두 통과했다.
 
-### 운영 배포 (`df1f031`)
+### 운영 배포 (`81951d8`)
 
 - Vercel Production: **Ready**
-- 배포 URL: `https://personal-finance-4vc5krt7u-kyu17.vercel.app`
+- 배포 URL: `https://personal-finance-6ek69txu9-kyu17.vercel.app`
 - 운영 alias: `https://personal-finance-one-virid.vercel.app`
 - 검증: `npm run lint` ✅ / `npm run build` ✅ / unit 9 files, 28 tests ✅
 
 ### 다음 작업
 
 1. 실기기에서 quick-add 저장 → 5초 Undo → 월간내역 제거 확인 (운영 데이터 변경이므로 자동화하지 않음)
-2. Sprint 2 반복항목 CRUD·월간 materialize 서비스 구현
-3. planned 거래 수정·확정·skip UI와 중복 후보 연결 구현
+2. Sprint 2 반복 주기/납부일의 이후 전체 변경과 pause 기간 모델링
+3. 반복항목 전용 RLS·동시성 통합 테스트 추가
+4. Sprint 3 예산·결산 기능 계획 수립
 
 ### Sprint 2 시작 상태
 
@@ -77,10 +78,11 @@
 - 직접 입력 posted 거래 중 동일 금액·예정일 ±3일 후보를 분류/결제수단 일치도로 정렬하고, 선택한 기존 거래와 원자적으로 연결하는 흐름 구현 완료.
 - 연결 시 occurrence가 posted 거래를 가리키고 생성 planned 행은 `cancelled`가 되어 실적에 중복 합산되지 않는다.
 - `20260831030000_link_recurring_occurrence.sql` 운영 Supabase 적용 완료.
-- 최신 기능 커밋 `348ea45`, Vercel Production **Ready**: `https://personal-finance-ncl137xah-kyu17.vercel.app`
+- 최신 기능 커밋 `81951d8`, Vercel Production **Ready**: `https://personal-finance-6ek69txu9-kyu17.vercel.app`
 - 최신 검증: lint/build ✅, unit 11 files / 34 tests ✅, 전체 Supabase 통합 포함 **13 files / 57 tests** ✅.
 - 반복 금액 변경: 월간 예정행 편집은 이번 달만, 설정의 금액 변경은 이번 달부터 미래 planned와 규칙 기본금액을 함께 갱신하도록 구현.
-- `20260831040000_update_recurring_amount.sql`은 원격 적용 후 앱을 배포할 것.
+- `20260831040000_update_recurring_amount.sql` 운영 Supabase 적용 완료. 로컬/원격 migration 10개 일치 확인 완료.
+- 전체 PRD 기준 추정 완성도 약 **35%**, Phase 1/MVP 기준 약 **50%**. Sprint 0·1·1.5 완료, Sprint 2 핵심 vertical slice 완료 상태.
 
 ---
 
