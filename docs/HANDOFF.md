@@ -55,8 +55,22 @@
 ### 다음 작업
 
 1. 실기기에서 quick-add 저장 → 5초 Undo → 월간내역 제거 확인 (운영 데이터 변경이므로 자동화하지 않음)
-2. Sprint 1.5 최종 전체 리뷰
-3. Sprint 2 반복항목 자동생성 엔진 계획 작성 → PRD §5.5, §12, §34
+2. Sprint 2 반복항목 CRUD·월간 materialize 서비스 구현
+3. planned 거래 수정·확정·skip UI와 중복 후보 연결 구현
+
+### Sprint 2 시작 상태
+
+- 계획: `docs/superpowers/plans/2026-08-28-sprint2-recurring-engine.md`
+- migration: `20260831010000_recurring_engine.sql`
+  - `recurring_rules` / `recurring_occurrences`
+  - owner RLS, hard-delete 차단, 교차 household trigger
+  - `(rule, occurrence_date)` 및 회차당 활성 transaction 유일성
+  - 기존 transactions의 recurring FK 연결
+- 일정 계산: `src/lib/recurrence.ts`
+  - monthly / weekly / yearly / custom 일 간격
+  - 월말 clamp, 윤년, 종료일/조회범위 처리
+- 검증: lint/build ✅, unit **10 files / 32 tests** ✅, Supabase `db push --dry-run` ✅
+- 아직 원격 DB에는 migration을 적용하지 않았다. 커밋 후 `npx supabase db push`로 적용할 것.
 
 ---
 
