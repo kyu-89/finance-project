@@ -1,4 +1,5 @@
 import 'server-only';
+import { cache } from 'react';
 
 import { createClient } from '@/lib/supabase/server';
 import { ensureDefaultCategoriesSeeded } from '@/lib/categories';
@@ -14,7 +15,16 @@ type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
 const UNIQUE_VIOLATION = '23505';
 
-export async function ensureHouseholdForCurrentUser(): Promise<Household> {
+// Wrapped in React's cache() so every Server Component in a single request tree (the (app)
+// layout AND whichever page it renders both call this) shares one in-flight execution instead
+// of racing each other through the multi-step bootstrap/seeding sequence below — that same-
+// request race was reproduced as a real transient 500 during Task 4's testing (two concurrent
+// calls both seeing "no household yet" and racing on the seed inserts). Cross-request races
+// (e.g. two literally simultaneous first-ever page loads in different tabs) remain handled by
+// the unique-violation catch and the per-row resumable seeding below — cache() only dedupes
+// within one request, it cannot and does not need to solve that separate, already-accepted
+// residual risk.
+export const ensureHouseholdForCurrentUser = cache(async (): Promise<Household> => {
   const supabase = await createClient();
 
   const {
@@ -58,7 +68,7 @@ export async function ensureHouseholdForCurrentUser(): Promise<Household> {
   await ensureDefaultPaymentMethodsSeeded(household.id);
 
   return household;
-}
+});
 
 async function selectHousehold(
   supabase: SupabaseServerClient,
