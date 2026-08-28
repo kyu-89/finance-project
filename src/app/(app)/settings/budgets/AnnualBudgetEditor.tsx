@@ -10,13 +10,11 @@ import type { CategoryWithSubcategories } from '@/lib/categories';
 export function AnnualBudgetEditor({ year, categories, budgets }: { year: number; categories: CategoryWithSubcategories[]; budgets: Budget[] }) {
   const [state, action, pending] = useActionState(budgetEditorAction, INITIAL_ACTION_STATE);
   const amountByKey = new Map(budgets.map((budget) => [`${budget.transactionType}:${budget.categoryId}:${budget.month}`, budget.amount]));
-  const incomeCategories = categories.filter((category) => category.transactionType === 'income');
   const expenseCategories = categories.filter((category) => category.transactionType === 'expense');
-  const savingCategory = expenseCategories.find((category) => category.name === '저축성지출');
   const rows = [
-    ...incomeCategories.map((category) => ({ category, transactionType: 'income' as const, label: `${category.name} 계획` })),
-    ...(savingCategory ? [{ category: savingCategory, transactionType: 'saving' as const, label: '저축 목표' }] : []),
-    ...expenseCategories.map((category) => ({ category, transactionType: 'expense' as const, label: category.name })),
+    { categoryId: null, transactionType: 'income' as const, label: '총수입 계획' },
+    { categoryId: null, transactionType: 'saving' as const, label: '저축 목표' },
+    ...expenseCategories.map((category) => ({ categoryId: category.id, transactionType: 'expense' as const, label: category.name })),
   ];
   return <form action={action} className="flex flex-col gap-4">
     <input type="hidden" name="year" value={year} />
@@ -29,11 +27,12 @@ export function AnnualBudgetEditor({ year, categories, budgets }: { year: number
       <table className="min-w-[1500px] text-sm"><thead><tr><th className="sticky left-0 z-10 min-w-36 bg-white px-3 py-3 text-left">카테고리</th>
         {Array.from({ length: 12 }, (_, index) => <th key={index} className="min-w-24 px-2 py-3 text-right">{index + 1}월</th>)}
         <th className="min-w-28 px-3 py-3 text-right">연 합계</th></tr></thead>
-        <tbody>{rows.map(({ category, transactionType, label }) => {
-          const values = Array.from({ length: 12 }, (_, index) => amountByKey.get(`${transactionType}:${category.id}:${index + 1}`) ?? 0);
-          return <tr key={`${transactionType}:${category.id}`} className="border-t border-[var(--tds-grey-200)]">
+        <tbody>{rows.map(({ categoryId, transactionType, label }) => {
+          const categoryToken = categoryId ?? '_total';
+          const values = Array.from({ length: 12 }, (_, index) => amountByKey.get(`${transactionType}:${categoryId}:${index + 1}`) ?? 0);
+          return <tr key={`${transactionType}:${categoryToken}`} className="border-t border-[var(--tds-grey-200)]">
             <th className="sticky left-0 z-10 bg-white px-3 py-2 text-left font-semibold">{label}</th>
-            {values.map((amount, index) => <td key={index} className="px-1 py-2"><input name={`budget:${transactionType}:${category.id}:${index + 1}`} type="number" min="0" step="1" defaultValue={amount || ''} aria-label={`${label} ${index + 1}월 예산`} className="w-24 px-2 py-2 text-right text-xs tabular-nums" /></td>)}
+            {values.map((amount, index) => <td key={index} className="px-1 py-2"><input name={`budget:${transactionType}:${categoryToken}:${index + 1}`} type="number" min="0" step="1" defaultValue={amount || ''} aria-label={`${label} ${index + 1}월 예산`} className="w-24 px-2 py-2 text-right text-xs tabular-nums" /></td>)}
             <td className="px-3 py-2 text-right font-semibold tabular-nums">{values.reduce((sum, amount) => sum + amount, 0).toLocaleString('ko-KR')}원</td>
           </tr>;
         })}</tbody></table>

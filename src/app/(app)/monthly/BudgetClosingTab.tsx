@@ -17,7 +17,7 @@ const percent = (value: number | null) => value === null ? '-' : `${(value * 100
 
 export function BudgetClosingTab({ transactions, categories, budgets }: { transactions: Transaction[]; categories: CategoryWithSubcategories[]; budgets: Budget[] }) {
   const closing = calculateMonthlyClosing(transactions, budgets.map((budget) => ({ transactionType: budget.transactionType, categoryId: budget.categoryId, amount: budget.amount })));
-  const budgetByCategory = new Map(budgets.filter((budget) => budget.transactionType === 'expense').map((budget) => [budget.categoryId, budget.amount]));
+  const budgetByCategory = new Map(budgets.filter((budget) => budget.transactionType === 'expense' && budget.categoryId).map((budget) => [budget.categoryId!, budget.amount]));
   const metrics = [
     ['총수입', won(closing.income)], ['소비성지출', won(closing.consumption)], ['저축', won(closing.saving)],
     ['월 차액', won(closing.balance)], ['수입 예산차', won(closing.incomeVariance)], ['저축 예산차', won(closing.savingVariance)],

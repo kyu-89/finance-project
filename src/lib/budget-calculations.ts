@@ -18,7 +18,7 @@ export type ClosingTransaction = {
   categoryId: string | null;
 };
 
-export type MonthlyBudget = { transactionType: 'income' | 'expense' | 'saving'; categoryId: string; amount: number };
+export type MonthlyBudget = { transactionType: 'income' | 'expense' | 'saving'; categoryId: string | null; amount: number };
 
 export function calculateMonthlyClosing(transactions: ClosingTransaction[], budgets: MonthlyBudget[]) {
   let income = 0;

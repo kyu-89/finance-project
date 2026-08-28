@@ -6,7 +6,7 @@ export type Budget = {
   year: number;
   month: number;
   transactionType: 'income' | 'expense' | 'saving';
-  categoryId: string;
+  categoryId: string | null;
   subcategoryId: string | null;
   amount: number;
 };
@@ -50,7 +50,7 @@ async function upsertBudgets(rows: BudgetInput[]): Promise<void> {
 export async function saveAnnualBudgets(input: {
   householdId: string;
   year: number;
-  values: { transactionType: Budget['transactionType']; categoryId: string; month: number; amount: number }[];
+  values: { transactionType: Budget['transactionType']; categoryId: string | null; month: number; amount: number }[];
 }): Promise<void> {
   await upsertBudgets(input.values.map((value) => ({
     householdId: input.householdId,
