@@ -38,9 +38,26 @@ describe('households/household_members RLS', () => {
 
   afterAll(async () => {
     // Deleting the auth users cascades to households (FK on delete cascade),
-    // which cascades to household_members.
-    await admin.auth.admin.deleteUser(userAId);
-    await admin.auth.admin.deleteUser(userBId);
+    // which cascades to household_members. Isolate each delete so one failure
+    // doesn't block cleanup of the other user, and skip ids that were never
+    // assigned (e.g. user A's createUser succeeded but user B's threw in beforeAll).
+    const results = await Promise.allSettled(
+      [userAId, userBId]
+        .filter((id): id is string => Boolean(id))
+        .map((id) => admin.auth.admin.deleteUser(id)),
+    );
+
+    const failures = results.filter(
+      (result): result is PromiseRejectedResult => result.status === 'rejected',
+    );
+    if (failures.length > 0) {
+      // Surface cleanup failures loudly rather than swallowing them — leftover
+      // test users in a real Supabase project need a human to notice and clean up.
+      console.error(
+        'RLS test cleanup failed for one or more users:',
+        failures.map((f) => f.reason),
+      );
+    }
   });
 
   it('lets a user create and read their own household', async () => {
@@ -73,7 +90,15 @@ describe('households/household_members RLS', () => {
 
   it("hides user A's household from user B", async () => {
     const asUserB = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
-    await asUserB.auth.signInWithPassword({ email: userBEmail, password });
+    const { error: signInError } = await asUserB.auth.signInWithPassword({
+      email: userBEmail,
+      password,
+    });
+    // Every households RLS policy is scoped `to authenticated` with no anon grants —
+    // if this sign-in silently failed, the assertions below would pass vacuously as
+    // an anon-role denial instead of proving owner-scoped RLS actually blocks a real
+    // second authenticated user. Must confirm the precondition before trusting the result.
+    expect(signInError).toBeNull();
 
     const { data: selected, error: selectError } = await asUserB
       .from('households')
@@ -86,7 +111,11 @@ describe('households/household_members RLS', () => {
 
   it('blocks user B from spoofing an insert with owner_user_id = user A', async () => {
     const asUserB = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
-    await asUserB.auth.signInWithPassword({ email: userBEmail, password });
+    const { error: signInError } = await asUserB.auth.signInWithPassword({
+      email: userBEmail,
+      password,
+    });
+    expect(signInError).toBeNull();
 
     const { error: insertError } = await asUserB
       .from('households')
@@ -97,7 +126,11 @@ describe('households/household_members RLS', () => {
 
   it("blocks user B from updating user A's household", async () => {
     const asUserB = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
-    await asUserB.auth.signInWithPassword({ email: userBEmail, password });
+    const { error: signInError } = await asUserB.auth.signInWithPassword({
+      email: userBEmail,
+      password,
+    });
+    expect(signInError).toBeNull();
 
     const { data: updated, error: updateError } = await asUserB
       .from('households')
