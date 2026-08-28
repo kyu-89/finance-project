@@ -2138,7 +2138,51 @@ git commit -m "test: RLS coverage for categories/payment_methods/transactions"
 
 ## Self-Review Notes
 
-- **Spec coverage:** §26 Sprint 1 bullets — categories/payment methods ✓ Tasks 1/3/4, mobile quick entry ✓ Task 6, transaction list ✓ Task 7, PC 월간입력 ✓ Task 8, planned/posted/skipped status ✓ schema (Task 2) + displayed in both tabs (Tasks 7/8), though nothing yet transitions a row to `planned` (that's Sprint 2's recurring engine — this sprint only ever inserts `posted`). §4's field list ✓ Task 2. §4.1 cost-behavior resolution ✓ Task 5. §5.1 mobile input order/progressive disclosure ✓ Task 6. §23.2 (카테고리 삭제 금지, inactive만) ✓ Task 1 (no delete policy) + Task 3 (`deactivateCategory`, never a delete call). §5.4 soft delete ✓ Task 2's note + Task 5's `softDeleteTransaction`.
+- **Spec coverage:** §26 Sprint 1 bullets — categories/payment methods ✓ Tasks 1/3/4, mobile quick entry ✓ Task 6, transaction list ✓ Task 7, PC 월간입력 ✓ Task 8, planned/posted/skipped status ✓ schema (Task 2) + displayed in both tabs (Tasks 7/8), though nothing yet transitions a row to `planned` (that's Sprint 2's recurring engine — this sprint only ever inserts `posted`). §4's field list ✓ Task 2. §4.1 cost-behavior *resolution* ✓ Task 5. §23.2 (카테고리 삭제 금지, inactive만) ✓ Task 1 (no delete policy) + Task 3 (`deactivateCategory`, never a delete call). §5.4 soft delete ✓ Task 2's note + Task 5's `softDeleteTransaction`.
+
+  > **Corrected after the final whole-branch review.** Two coverage claims above originally
+  > overstated what this plan actually delivers. Recording the correction rather than quietly
+  > editing the ✓s, so Sprint 2 doesn't inherit a false baseline:
+  >
+  > - **§4.3 is NOT fully covered.** There is no subcategory CRUD anywhere (subcategories can only
+  >   be created by the seed, so a user-added 대분류 can never have a 소분류), no category *edit*
+  >   (only 추가/비활성화 — so PRD §4.2's "카테고리 관리에서 기본 비용성격을 변경할 수 있다" is
+  >   unimplemented), and the seed omits §4.3's 15th expense category `용돈지출`.
+  > - **§5.1 is only partly covered.** Input order and 더보기 progressive disclosure ✓, but the
+  >   entire 속도 정책 block is not: no recent-first 대분류/소분류/결제수단 ordering, no 연속 입력,
+  >   and no 5초 Undo (a save confirmation + form reset was added in the final fix wave; the Undo
+  >   itself is deferred). This plan's own File Structure line describes `CategoryPicker.tsx` as a
+  >   "recent-first" picker, but no task step ever asked anyone to build the recent-first part.
+  > - **§4.1 cost-behavior *defaults* were wrong in this plan's own Task 3 code** (every expense
+  >   category except 저축성지출 hardcoded to `variable`, contradicting §4.1's own worked examples
+  >   for 월세/관리비/보험료/통신 기본요금). Fixed in the final fix wave, but only for newly-seeded
+  >   households — see the migration note below.
+  > - **Per-transaction 고정비/변동비 override (§4.2) is unimplemented.** `createTransaction`
+  >   accepts `costBehaviorOverride`; no UI supplies it.
 - **Deferred with rationale:** full Excel-like PC grid UX (keyboard nav, paste, previous-row-copy) — Task 8's scope note explicitly defers this rather than silently shipping a lesser version and calling it done. Recurring/planned generation, budget aggregation, and dashboard KPIs are out of this plan entirely (Sprint 2/3), consistent with §26's own phase boundary.
 - **Placeholder scan:** every step has runnable code; no "TBD"/"add appropriate handling" language.
 - **Type consistency:** `Transaction`/`Category`/`CategoryWithSubcategories`/`PaymentMethod` types defined once each (Tasks 3/5) and imported, never redefined, across Tasks 4/6/7/8/9. `TransactionType` defined once in `cost-behavior.ts` and re-exported/imported everywhere else that needs it.
+
+## Carried into Sprint 2 (from this sprint's final review)
+
+Must be scheduled explicitly in Sprint 2's plan, not left as ambient follow-ups:
+
+1. **Data migration for already-seeded households** — the §4.1 `default_cost_behavior` fix only
+   applies to households seeded after it landed. Existing ones keep 주거비/보험비/통신비 as
+   `variable`. Because `cost_behavior` is snapshotted per transaction at insert, any transactions
+   already recorded under those categories are also wrong and need repairing, not just the
+   category rows.
+2. **Category + subcategory CRUD** (edit, and subcategory create/rename/deactivate) — closes the
+   §4.3/§4.2 gaps above and gives users the mechanism to correct item 1 themselves.
+3. **Per-transaction 고정비/변동비 override UI** (§4.2 상세옵션).
+4. **PRD §5.1 5초 Undo** (`softDeleteTransaction` already exists to back it) and the rest of the
+   속도 정책: recent-first picker ordering, 연속 입력.
+5. **`useActionState` migration for the 7 Server Actions** — production redacts thrown Server
+   Action messages, so the Korean validation strings never reach users today; the fix wave added
+   only a generic `error.tsx` boundary.
+6. **Tenant-consistency constraint on `transactions`' cross-table FKs** — do this *before* the
+   recurring engine starts writing those FKs programmatically at volume.
+7. **Tests for `FLOW_CLASS_BY_TRANSACTION_TYPE` and the soft-delete/`deleted_at` invariant** —
+   the two most 정합성-critical pieces of Sprint 1 shipped with no coverage; Sprint 2's recurring
+   engine will write `flow_class` programmatically, so guard it first.
+8. **`updated_at` trigger** for all tables (column exists everywhere, nothing ever updates it).
