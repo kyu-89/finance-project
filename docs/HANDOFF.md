@@ -1,6 +1,6 @@
 # 인수인계 문서 (HANDOFF)
 
-> 최종 갱신: 2026-08-29 · 현재 기능 HEAD `acbe98c` · 운영 배포 Ready
+> 최종 갱신: 2026-08-29 · 현재 기능 HEAD `7c2df2f` · 운영 자동 배포 진행
 > `main` / `origin/main` 동기화, Supabase migration **12개** 동기화. 이 문서 커밋만 추가된다.
 > 다음 작업자(다른 AI 세션 또는 사람)가 이 문서만 읽고 이어서 작업할 수 있도록 작성됨
 
@@ -8,7 +8,7 @@
 
 - **운영 URL:** `https://personal-finance-one-virid.vercel.app`
 - **최신 배포:** `https://personal-finance-g4f7mpcj3-kyu17.vercel.app` — Production Ready
-- **기능 HEAD:** `acbe98c feat: enforce recurring status lifecycle`
+- **기능 HEAD:** `7c2df2f feat: update future recurring schedules safely`
 - **Git:** `main == origin/main`, 기능 작업 트리 clean (이 문서 갱신만 커밋 예정)
 - **Supabase:** `20260828010000` ~ `20260831060000`, 로컬/원격 12개 일치
 - **검증:** lint ✅, Next.js 16.3.3 production build ✅, unit 11 files / 35 tests ✅
@@ -26,13 +26,13 @@
 - 기간 일시중지: 중지 구간 생성 제외 + 이미 생성된 planned 자동 skip
 - 월 납부일 변경: 다음 생성 회차부터 반영, 과거 거래 보존
 - 전체 pause/end 시 오늘 이후 planned 자동 skip; end date 고정
+- frequency/interval/monthly day 변경 UI; 이미 회차가 생성된 월은 날짜 집합을 고정해 중복 생성을 차단하고 다음 미생성 월부터 반영
 
 ### 다음 AI가 바로 시작할 작업
 
-1. 반복 규칙의 `frequency`/`interval_count` 자체 변경 UI와 효력일 정책 마무리
-2. 운영 브라우저에서 테스트용 반복 규칙 생성 → 월간 planned → 확정/skip/중복연결 E2E 검증
+1. 운영 브라우저에서 테스트용 반복 규칙 생성 → 월간 planned → 확정/skip/중복연결 E2E 검증
    - 운영 데이터를 변경하므로 기존 세션에서는 자동 수행하지 않았음
-3. Sprint 2 최종 리뷰 후 Sprint 3 예산·결산 계획 작성
+2. Sprint 2 최종 리뷰 후 Sprint 3 예산·결산 계획 작성
 
 ### 현재 완성도 추정
 
