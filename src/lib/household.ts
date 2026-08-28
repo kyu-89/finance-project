@@ -11,6 +11,21 @@ export type Household = {
   name: string;
 };
 
+export type HouseholdMember = {
+  id: string;
+  displayName: string;
+};
+
+export async function listHouseholdMembers(householdId: string): Promise<HouseholdMember[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from('household_members')
+    .select('id, display_name')
+    .eq('household_id', householdId)
+    .order('created_at');
+  if (error) throw new Error(`구성원 조회 실패: ${error.message}`);
+  return (data ?? []).map((row) => ({ id: row.id, displayName: row.display_name }));
+}
+
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
 const UNIQUE_VIOLATION = '23505';
