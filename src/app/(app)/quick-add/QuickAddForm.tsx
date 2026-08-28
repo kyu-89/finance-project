@@ -85,10 +85,10 @@ export function QuickAddForm({
     <form
       key={saved ?? 'initial'}
       action={formAction}
-      className="flex flex-col gap-4"
+      className="tds-card flex flex-col gap-6 p-5 md:p-6"
     >
       {showSavedBanner && (
-        <div className="flex items-center justify-between rounded border border-green-500 bg-green-50 px-3 py-2 text-sm text-green-700">
+        <div className="flex items-center justify-between rounded-[14px] bg-[var(--tds-grey-900)] px-4 py-3 text-sm text-white shadow-[0_8px_24px_oklch(0.155_0.06_261/0.16)]">
           <span>저장되었습니다</span>
           {undoId && (
             <button
@@ -98,7 +98,7 @@ export function QuickAddForm({
               formAction={undoAction}
               formNoValidate
               disabled={undoPending}
-              className="underline disabled:opacity-50"
+              className="min-h-11 px-2 font-semibold text-white underline underline-offset-4"
             >
               {undoPending ? '취소 중...' : '실행취소'}
             </button>
@@ -106,8 +106,8 @@ export function QuickAddForm({
         </div>
       )}
       {undone && (
-        <p className="rounded border border-blue-300 bg-blue-50 px-3 py-2 text-sm text-blue-700">
-          방금 저장한 거래를 취소했습니다.
+        <p className="rounded-xl bg-[var(--tds-blue-50)] px-4 py-3 text-sm text-[var(--tds-blue-600)]">
+          방금 저장한 거래를 취소했어요.
         </p>
       )}
       <FormMessage result={state} />
@@ -123,13 +123,13 @@ export function QuickAddForm({
       <input type="hidden" name="paymentMethodId" value={selectedPaymentMethodId ?? ''} />
 
       <label className="flex flex-col gap-1">
-        <span className="text-sm text-gray-600">금액</span>
+        <span className="text-[15px] font-semibold text-[var(--tds-grey-700)]">금액</span>
         <input
           inputMode="numeric"
           autoFocus
           value={amountDisplay}
           onChange={(e) => handleAmountChange(e.target.value)}
-          className="rounded border px-3 py-3 text-2xl"
+          className="px-4 py-3 text-[28px] font-bold tabular-nums tracking-[-0.02em]"
           placeholder="0"
         />
         {/* real amount, digits only, submitted alongside the display value */}
@@ -137,7 +137,7 @@ export function QuickAddForm({
       </label>
 
       <div>
-        <span className="mb-1 block text-sm text-gray-600">대분류 / 소분류</span>
+        <span className="mb-2 block text-[15px] font-semibold text-[var(--tds-grey-700)]">대분류 / 소분류</span>
         <CategoryPicker
           key={saved ?? 'initial'}
           categories={categories}
@@ -151,16 +151,15 @@ export function QuickAddForm({
       </div>
 
       <div>
-        <span className="mb-1 block text-sm text-gray-600">결제수단</span>
+        <span className="mb-2 block text-[15px] font-semibold text-[var(--tds-grey-700)]">결제수단</span>
         <div className="flex flex-wrap gap-2">
           {paymentMethods.map((method) => (
             <button
               key={method.id}
               type="button"
               onClick={() => setSelectedPaymentMethodId(method.id)}
-              className={`rounded border px-3 py-1 text-sm ${
-                selectedPaymentMethodId === method.id ? 'bg-black text-white' : ''
-              }`}
+              data-selected={selectedPaymentMethodId === method.id}
+              className="tds-chip px-4"
             >
               {method.name}
             </button>
@@ -169,26 +168,26 @@ export function QuickAddForm({
       </div>
 
       <label className="flex flex-col gap-1">
-        <span className="text-sm text-gray-600">내용</span>
-        <input name="description" required className="rounded border px-3 py-2" />
+        <span className="text-[15px] font-semibold text-[var(--tds-grey-700)]">내용</span>
+        <input name="description" required className="px-4 py-3" placeholder="예: 저녁 식사" />
       </label>
 
-      <button type="button" onClick={() => setShowMore((v) => !v)} className="text-left text-sm text-gray-500">
+      <button type="button" onClick={() => setShowMore((v) => !v)} className="min-h-11 text-left text-sm font-semibold text-[var(--tds-blue-500)]">
         {showMore ? '접기' : '더보기 (명의자/비고/태그)'}
       </button>
       {showMore && (
         <div className="flex flex-col gap-3">
           <label className="flex flex-col gap-1">
-            <span className="text-sm text-gray-600">비용성격</span>
-            <select name="costBehaviorOverride" className="rounded border px-3 py-2">
+            <span className="text-sm font-semibold text-[var(--tds-grey-700)]">비용성격</span>
+            <select name="costBehaviorOverride" className="px-4 py-2">
               <option value="">카테고리 기본값 사용</option>
               <option value="fixed">고정비</option>
               <option value="variable">변동비</option>
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm text-gray-600">비고</span>
-            <input name="memo" className="rounded border px-3 py-2" />
+            <span className="text-sm font-semibold text-[var(--tds-grey-700)]">비고</span>
+            <input name="memo" className="px-4 py-2" />
           </label>
         </div>
       )}
@@ -196,7 +195,7 @@ export function QuickAddForm({
       <button
         type="submit"
         disabled={pending}
-        className="rounded bg-black px-4 py-3 text-lg text-white disabled:opacity-50"
+        className="tds-primary-button px-5"
       >
         {pending ? '저장 중...' : '저장'}
       </button>

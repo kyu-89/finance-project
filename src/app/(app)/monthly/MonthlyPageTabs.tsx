@@ -24,14 +24,14 @@ export function MonthlyPageTabs({
         <button
           type="button"
           onClick={() => setTab('input')}
-          className={`px-3 py-2 text-sm ${tab === 'input' ? 'border-b-2 border-black font-medium' : 'text-gray-500'}`}
+          className={`min-h-12 px-4 text-[15px] font-semibold ${tab === 'input' ? 'border-b-2 border-[var(--tds-blue-500)] text-[var(--tds-grey-900)]' : 'text-[var(--tds-grey-500)]'}`}
         >
           월간입력
         </button>
         <button
           type="button"
           onClick={() => setTab('all')}
-          className={`px-3 py-2 text-sm ${tab === 'all' ? 'border-b-2 border-black font-medium' : 'text-gray-500'}`}
+          className={`min-h-12 px-4 text-[15px] font-semibold ${tab === 'all' ? 'border-b-2 border-[var(--tds-blue-500)] text-[var(--tds-grey-900)]' : 'text-[var(--tds-grey-500)]'}`}
         >
           전체내역
         </button>

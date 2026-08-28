@@ -1,7 +1,53 @@
 # 인수인계 문서 (HANDOFF)
 
-> 작성 시점: 2026-08-28 · 커밋 `ea2d4f9` 기준 · main 브랜치, origin에 push 완료
+> 최종 갱신: 2026-08-28 · Sprint 1.5 기능 커밋 `317e7cb` · `use-design-md` 설치 커밋 `47325db`
+> **현재 main은 origin/main보다 앞서 있으며 아직 push하지 않았다.** Vercel 운영 배포는 이전 `64e4d80` 상태다.
 > 다음 작업자(다른 AI 세션 또는 사람)가 이 문서만 읽고 이어서 작업할 수 있도록 작성됨
+
+## 0. 최신 연속 작업 상태 (2026-08-28 Codex)
+
+> ⚠️ 아래의 기존 §3·§9에 남은 "Task 6+7 미완" 안내는 이제 역사 기록이다. 현재 상태는 이 섹션을 우선한다.
+
+### 구현 완료 (`317e7cb`)
+
+- `listRecentUsage` 실제 UI 연결: 최근 대분류 5개, 소분류, 결제수단 우선 정렬
+- quick-add 연속 입력 + 생성 ID를 이용한 5초 Undo (소프트 삭제)
+- quick-add/월간 행 추가의 `costBehaviorOverride` 저장
+- 월간입력에 비용성격 컬럼·행별 수정 UI 추가
+- 전체내역 합계를 `posted + consumption`만 확정 소비로 계산; `planned`는 실적 미포함으로 별도 표시
+- 합계 정합성 순수 함수 + 회귀 테스트 2개 추가
+- transaction/category/payment-method 생성 액션의 household 조회를 `try/catch` 안으로 이동
+
+### 검증
+
+- `npm run lint` ✅
+- `npm run build` ✅ (Next.js 16.3.3)
+- `npx vitest run tests/unit` ✅ — 9 files, 28 tests
+- 로컬 브라우저 읽기 검증 ✅: 최근 정렬, 소분류 선택 표시, 비용성격 입력·행별 수정 UI, 확정 소비 합계 라벨
+- **미수행:** 실제 거래 생성 → 5초 안에 Undo 클릭. 운영 Supabase 데이터를 변경하므로 자동 실행하지 않음.
+- 전체 통합 테스트는 Supabase Auth 429 주의 때문에 재실행하지 않음.
+
+### 추가 설치 (`47325db`)
+
+- `npx.cmd skills add CaesiumY/ko-design-md`로 `.agents/skills/use-design-md` 설치
+- `skills-lock.json` 추가. 다음 턴부터 한국 서비스 `design.md` 스타일 적용 요청에 사용 가능
+
+### Toss 디자인 시스템 적용
+
+- 기준 파일: 루트 `design_system_toss.txt` (사용자 지정)
+- 전역 OKLCH 시맨틱 컬러, Pretendard 대체 서체, 4px spacing, 12~24px radius, 44px touch target, 120ms motion 토큰 적용
+- 전역 input/select focus, disabled, table 숫자 표시, page/card/title/primary-button/chip primitive 추가
+- 데스크톱 사이드바와 모바일 하단 내비게이션을 Toss 톤으로 변경
+- `/quick-add`와 `/monthly` 헤더·탭·핵심 입력·칩·CTA 적용
+- 브라우저 확인: Pretendard stack, grey-50 배경, input radius 12px, primary CTA 56px, 해요체 타이틀 정상 렌더링
+- **남은 디자인 적용:** 인증/MFA, 설정 세부 폼, 월간 테이블·행 입력의 세부 밀도, 대시보드/자산 빈 상태. 글로벌 토큰은 이미 상속되지만 컴포넌트별 완성도는 추가 작업 필요.
+
+### 다음 작업
+
+1. `317e7cb`, `47325db`, Toss 디자인/HANDOFF 커밋을 검토한 뒤 `git push origin main` → Vercel 자동 배포
+2. 배포 후 실기기에서 quick-add 저장 → 5초 Undo → 월간내역 제거 확인
+3. Sprint 1.5 최종 전체 리뷰. Task 5의 미연결 `updateSubcategoryAction`(이름 변경 UI를 만들지 삭제할지) 결정
+4. Sprint 2 반복항목 자동생성 엔진 계획 작성 → PRD §5.5, §12, §34
 
 ---
 

@@ -52,9 +52,8 @@ export function CategoryPicker({
               setSelectedSubcategoryId(null);
               onSelect(category, null);
             }}
-            className={`rounded border px-3 py-1 text-sm ${
-              selectedCategoryId === category.id ? 'bg-black text-white' : ''
-            }`}
+            data-selected={selectedCategoryId === category.id}
+            className="tds-chip px-4"
           >
             {category.name}
           </button>
@@ -72,9 +71,8 @@ export function CategoryPicker({
               }}
               // Without a selected state these buttons registered the click but showed no
               // change at all, so the pick read as "not working" to the user.
-              className={`rounded border px-2 py-1 text-xs ${
-                selectedSubcategoryId === sub.id ? 'bg-black text-white' : 'text-gray-600'
-              }`}
+              data-selected={selectedSubcategoryId === sub.id}
+              className="tds-chip px-4"
             >
               {sub.name}
             </button>

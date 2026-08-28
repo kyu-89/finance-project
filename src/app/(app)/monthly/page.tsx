@@ -19,9 +19,9 @@ export default async function MonthlyPage() {
   const activePaymentMethods = paymentMethods.filter((m) => m.isActive);
 
   return (
-    <div className="p-4">
-      <h1 className="mb-1 text-xl font-semibold">월간관리</h1>
-      <p className="mb-4 text-sm text-gray-500">
+    <div className="tds-page">
+      <h1 className="tds-title mb-2">이번 달 내역을 관리해요</h1>
+      <p className="mb-6 text-sm text-[var(--tds-grey-700)]">
         {fromDate} ~ {toDate} · 예산·결산/반복항목/월말점검 탭은 Sprint 2-3에서 추가됩니다.
       </p>
       <MonthlyPageTabs

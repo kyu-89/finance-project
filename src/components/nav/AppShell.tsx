@@ -4,9 +4,9 @@ import { MobileBottomNav } from './MobileBottomNav';
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-[var(--tds-grey-50)]">
       <DesktopSidebar />
-      <main className="flex-1 pb-16 md:pb-0">{children}</main>
+      <main className="min-w-0 flex-1 pb-20 md:pb-0">{children}</main>
       <MobileBottomNav />
     </div>
   );
