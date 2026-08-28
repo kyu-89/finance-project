@@ -1,12 +1,12 @@
 # 인수인계 문서 (HANDOFF)
 
-> 최종 갱신: 2026-08-28 · Sprint 1.5 기능 커밋 `317e7cb` · `use-design-md` 설치 커밋 `47325db`
-> **현재 main은 origin/main보다 앞서 있으며 아직 push하지 않았다.** Vercel 운영 배포는 이전 `64e4d80` 상태다.
+> 최종 갱신: 2026-08-28 · 현재 기능 HEAD `df1f031` · 운영 배포 Ready
+> `main`과 `origin/main`은 기능 코드 기준 동기화됨. 이 문서 갱신 커밋만 추가로 push하면 된다.
 > 다음 작업자(다른 AI 세션 또는 사람)가 이 문서만 읽고 이어서 작업할 수 있도록 작성됨
 
 ## 0. 최신 연속 작업 상태 (2026-08-28 Codex)
 
-> ⚠️ 아래의 기존 §3·§9에 남은 "Task 6+7 미완" 안내는 이제 역사 기록이다. 현재 상태는 이 섹션을 우선한다.
+> ⚠️ 아래 §3의 Task 6·7 상세는 구현 전 기록이다. 현재 상태는 이 섹션과 §2 표를 우선한다.
 
 ### 구현 완료 (`317e7cb`)
 
@@ -32,22 +32,31 @@
 - `npx.cmd skills add CaesiumY/ko-design-md`로 `.agents/skills/use-design-md` 설치
 - `skills-lock.json` 추가. 다음 턴부터 한국 서비스 `design.md` 스타일 적용 요청에 사용 가능
 
-### Toss 디자인 시스템 적용
+### Toss 디자인 시스템 적용 완료 (`929fa2e`, `df1f031`)
 
 - 기준 파일: 루트 `design_system_toss.txt` (사용자 지정)
 - 전역 OKLCH 시맨틱 컬러, Pretendard 대체 서체, 4px spacing, 12~24px radius, 44px touch target, 120ms motion 토큰 적용
 - 전역 input/select focus, disabled, table 숫자 표시, page/card/title/primary-button/chip primitive 추가
 - 데스크톱 사이드바와 모바일 하단 내비게이션을 Toss 톤으로 변경
-- `/quick-add`와 `/monthly` 헤더·탭·핵심 입력·칩·CTA 적용
+- `/quick-add`와 `/monthly` 헤더·탭·핵심 입력·칩·CTA·테이블 밀도 적용
+- 로그인·회원가입·MFA 등록/검증을 공통 인증 카드 패턴과 해요체로 통일
+- 설정 홈·카테고리·결제수단 폼/목록, 비활성화 44px 터치 영역 적용
+- 대시보드·자산 빈 상태, 앱 오류 화면, 메시지/로그아웃 버튼 적용
 - 브라우저 확인: Pretendard stack, grey-50 배경, input radius 12px, primary CTA 56px, 해요체 타이틀 정상 렌더링
-- **남은 디자인 적용:** 인증/MFA, 설정 세부 폼, 월간 테이블·행 입력의 세부 밀도, 대시보드/자산 빈 상태. 글로벌 토큰은 이미 상속되지만 컴포넌트별 완성도는 추가 작업 필요.
+- 최신 확장분은 브라우저 제어 세션 타임아웃으로 시각 재검증하지 못했지만 lint/build/unit test는 모두 통과했다.
+
+### 운영 배포 (`df1f031`)
+
+- Vercel Production: **Ready**
+- 배포 URL: `https://personal-finance-4vc5krt7u-kyu17.vercel.app`
+- 운영 alias: `https://personal-finance-one-virid.vercel.app`
+- 검증: `npm run lint` ✅ / `npm run build` ✅ / unit 9 files, 28 tests ✅
 
 ### 다음 작업
 
-1. `317e7cb`, `47325db`, Toss 디자인/HANDOFF 커밋을 검토한 뒤 `git push origin main` → Vercel 자동 배포
-2. 배포 후 실기기에서 quick-add 저장 → 5초 Undo → 월간내역 제거 확인
-3. Sprint 1.5 최종 전체 리뷰. Task 5의 미연결 `updateSubcategoryAction`(이름 변경 UI를 만들지 삭제할지) 결정
-4. Sprint 2 반복항목 자동생성 엔진 계획 작성 → PRD §5.5, §12, §34
+1. 실기기에서 quick-add 저장 → 5초 Undo → 월간내역 제거 확인 (운영 데이터 변경이므로 자동화하지 않음)
+2. Sprint 1.5 최종 전체 리뷰. Task 5의 미연결 `updateSubcategoryAction`(이름 변경 UI를 만들지 삭제할지) 결정
+3. Sprint 2 반복항목 자동생성 엔진 계획 작성 → PRD §5.5, §12, §34
 
 ---
 
@@ -102,7 +111,7 @@
 - PC 월간관리 (`/monthly`) — 월간입력 / 전체내역 탭
 - RLS 통합 테스트 12개
 
-### Sprint 1.5 — 이월 항목 정리 🔶 **진행 중 (Task 1~5 완료, 6~7 미완)**
+### Sprint 1.5 — 이월 항목 정리 ✅ **Task 1~7 구현 완료**
 
 계획서: `docs/superpowers/plans/2026-08-28-sprint1_5-carryover.md`
 
@@ -113,12 +122,12 @@
 | 3 | flow_class 매핑 + 소프트삭제 불변조건 테스트 | ✅ 완료 (46 테스트) |
 | 4 | `ActionResult` — 검증 메시지가 사용자에게 보이도록 | ✅ 완료·리뷰됨 |
 | 5 | 카테고리 편집 + 소분류 CRUD | ✅ 완료 (리뷰 미실시) |
-| **6** | **PRD §5.1 속도 정책 (최근사용 우선/연속입력/5초 Undo)** | ❌ **미완 — 아래 참조** |
-| **7** | **거래별 고정/변동 수정 + 월간관리 합계 필터링** | ❌ **미완 — 아래 참조** |
+| **6** | **PRD §5.1 속도 정책 (최근사용 우선/연속입력/5초 Undo)** | ✅ 완료 (`317e7cb`) |
+| **7** | **거래별 고정/변동 수정 + 월간관리 합계 필터링** | ✅ 완료 (`317e7cb`) |
 
 ---
 
-## 3. 🔴 바로 이어서 할 일 (Task 6 + 7)
+## 3. Task 6 + 7 구현 전 기록 (현재 완료됨)
 
 **데이터 접근 함수는 이미 작성되어 커밋됨** (`ea2d4f9`). `src/lib/transactions.ts`에 있고, **아직 아무도 호출하지 않는 상태**:
 
@@ -255,14 +264,12 @@ Sprint 1.5가 끝나면 **Sprint 2 — 반복항목 자동생성 엔진**으로 
 ## 9. 요약: 지금 당장 할 일
 
 ```
-1. Sprint 1.5 Task 6 + 7 마무리
-   → docs/superpowers/plans/2026-08-28-sprint1_5-carryover.md 의 Task 6, 7 섹션에 코드 그대로 있음
-   → src/lib/transactions.ts 의 세 함수는 이미 있음. UI 연결만 하면 됨
-   → 특히 AllTransactionsTab 합계 필터링은 Sprint 2 전에 꼭
+1. 실제 브라우저로 /quick-add 저장 → 5초 Undo 검증
+   → 운영 Supabase 데이터를 변경하므로 사용자 동의/직접 확인이 필요한 유일한 검증
 
-2. 모든 액션의 household 조회를 try/catch로 감싸기
+2. Sprint 1.5 최종 리뷰
+   → 미연결 updateSubcategoryAction 처리 결정
 
-3. 실제 브라우저로 /quick-add 저장 테스트 (사용자에게 요청)
-
-4. Sprint 2 (반복항목 엔진) 계획 수립 → PRD §5.5, §12, §34
+3. Sprint 2 (반복항목 엔진) 계획 수립 → PRD §5.5, §12, §34
+   → recurring_rules / recurring_occurrences / planned 확정 흐름 / 중복 방지
 ```
