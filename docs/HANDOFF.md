@@ -1,355 +1,206 @@
 # 인수인계 문서 (HANDOFF)
 
-> 최종 갱신: 2026-08-29 · 현재 기능 HEAD `5466fab` · 운영 배포 Ready
-> `main` / `origin/main` 기능 동기화, Supabase migration **15개** 동기화. 이 문서 커밋만 추가된다.
-> 다음 작업자(다른 AI 세션 또는 사람)가 이 문서만 읽고 이어서 작업할 수 있도록 작성됨
-
-## 최종 체크포인트 (2026-08-29 02:45 KST)
-
-- **운영 URL:** `https://personal-finance-one-virid.vercel.app`
-- **최신 배포:** `https://personal-finance-7cvfhryev-kyu17.vercel.app` — Production Ready
-- **기능 HEAD:** `5466fab feat: show budget averages and savings target gap`
-- **Git:** `main == origin/main`, 기능 작업 트리 clean (이 문서 갱신만 커밋 예정)
-- **Supabase:** `20260828010000` ~ `20260901020000`, 로컬/원격 15개 일치
-- **검증:** lint ✅, Next.js 16.3.3 production build ✅, unit 12 files / 39 tests ✅
-- **통합 검증:** budgets 포함 RLS 대상 파일 **21 tests** ✅
-
-### 이번 연속 작업에서 완료한 Sprint 2 범위
-
-- 반복 규칙/회차 스키마, owner RLS, 교차 household trigger, hard-delete 차단
-- monthly/weekly/yearly/custom 일정 계산, 월말 clamp·윤년 테스트
-- 설정 > 반복항목 생성/목록/일시중지/재개/종료
-- 월 진입 시 `planned` 거래 idempotent materialize
-- 예정건 날짜·금액·결제수단 수정 후 `posted` 확정 또는 `skipped`
-- 직접 입력 posted 거래 중복 후보 탐지 및 원자적 연결; generated planned는 `cancelled`
-- 이번 달만 금액 변경 / 이번 달부터 이후 규칙 금액 변경
-- 기간 일시중지: 중지 구간 생성 제외 + 이미 생성된 planned 자동 skip
-- 월 납부일 변경: 다음 생성 회차부터 반영, 과거 거래 보존
-- 전체 pause/end 시 오늘 이후 planned 자동 skip; end date 고정
-- frequency/interval/monthly day 변경 UI; 이미 회차가 생성된 월은 날짜 집합을 고정해 중복 생성을 차단하고 다음 미생성 월부터 반영
-- `ended` 규칙은 DB RPC에서도 재활성화할 수 없는 최종 상태로 고정, 통합 테스트 통과
-
-### Sprint 3 예산·결산 완료 범위
-
-- 계획서: `docs/superpowers/plans/2026-08-29-sprint3-budgets-closing.md`
-- `budgets` 테이블, owner RLS, category/subcategory tenant trigger, history 보존(DELETE 정책 없음)
-- 소비 카테고리별 1~12월 연간 예산 편집기, 연 합계·월평균
-- 총수입 계획·저축 목표는 카테고리 이름과 무관한 월 총액 목표로 저장
-- 전년도 예산 복사, 전년도 posted 소비 실적 기반 자동초안
-- 월간관리 `예산·결산` 탭: 수입/소비/저축/차액, 수입·저축 예산차, 저축률·소비율, 목표 저축률 차이
-- 카테고리 예산/실적/잔액 및 70% 주의·90% 임박·100% 초과 텍스트 경고
-- `include_in_budget=false`, planned/skipped/cancelled 거래는 예산 소진에서 제외
-- migration: `20260901010000_budgets.sql`, `20260901020000_budget_total_targets.sql` 운영 적용 완료
-
-### 다음 AI가 바로 시작할 작업
-
-1. 운영 브라우저에서 예산 저장/전년도 복사/실적 초안 및 월간 결산 E2E 검증
-2. 반복 규칙 생성 → 월간 planned → 확정/skip/중복연결 E2E 검증
-   - 운영 데이터를 변경하므로 기존 세션에서는 자동 수행하지 않았음
-3. Sprint 3 최종 리뷰 후 Sprint 4 자산·금융 상품 계획 작성
-
-### 현재 완성도 추정
-
-- 전체 PRD: 약 **45%**
-- Phase 1/MVP: 약 **70%**
-- Sprint 0·1·1.5·2·3 핵심 구현 완료, 운영 E2E와 Sprint 3 최종 리뷰가 남음
-
-## 0. 최신 연속 작업 상태 (2026-08-28 Codex)
-
-> ⚠️ 아래 §3의 Task 6·7 상세는 구현 전 기록이다. 현재 상태는 이 섹션과 §2 표를 우선한다.
-
-### 구현 완료 (`317e7cb`)
-
-- `listRecentUsage` 실제 UI 연결: 최근 대분류 5개, 소분류, 결제수단 우선 정렬
-- quick-add 연속 입력 + 생성 ID를 이용한 5초 Undo (소프트 삭제)
-- quick-add/월간 행 추가의 `costBehaviorOverride` 저장
-- 월간입력에 비용성격 컬럼·행별 수정 UI 추가
-- 전체내역 합계를 `posted + consumption`만 확정 소비로 계산; `planned`는 실적 미포함으로 별도 표시
-- 합계 정합성 순수 함수 + 회귀 테스트 2개 추가
-- transaction/category/payment-method 생성 액션의 household 조회를 `try/catch` 안으로 이동
-
-### 검증
-
-- `npm run lint` ✅
-- `npm run build` ✅ (Next.js 16.3.3)
-- `npx vitest run tests/unit` ✅ — 9 files, 28 tests
-- 로컬 브라우저 읽기 검증 ✅: 최근 정렬, 소분류 선택 표시, 비용성격 입력·행별 수정 UI, 확정 소비 합계 라벨
-- **미수행:** 실제 거래 생성 → 5초 안에 Undo 클릭. 운영 Supabase 데이터를 변경하므로 자동 실행하지 않음.
-- 전체 통합 테스트는 Supabase Auth 429 주의 때문에 재실행하지 않음.
-
-### 추가 설치 (`47325db`)
-
-- `npx.cmd skills add CaesiumY/ko-design-md`로 `.agents/skills/use-design-md` 설치
-- `skills-lock.json` 추가. 다음 턴부터 한국 서비스 `design.md` 스타일 적용 요청에 사용 가능
-
-### Toss 디자인 시스템 적용 완료 (`929fa2e`, `df1f031`)
-
-- 기준 파일: 루트 `design_system_toss.txt` (사용자 지정)
-- 전역 OKLCH 시맨틱 컬러, Pretendard 대체 서체, 4px spacing, 12~24px radius, 44px touch target, 120ms motion 토큰 적용
-- 전역 input/select focus, disabled, table 숫자 표시, page/card/title/primary-button/chip primitive 추가
-- 데스크톱 사이드바와 모바일 하단 내비게이션을 Toss 톤으로 변경
-- `/quick-add`와 `/monthly` 헤더·탭·핵심 입력·칩·CTA·테이블 밀도 적용
-- 로그인·회원가입·MFA 등록/검증을 공통 인증 카드 패턴과 해요체로 통일
-- 설정 홈·카테고리·결제수단 폼/목록, 비활성화 44px 터치 영역 적용
-- 대시보드·자산 빈 상태, 앱 오류 화면, 메시지/로그아웃 버튼 적용
-- 브라우저 확인: Pretendard stack, grey-50 배경, input radius 12px, primary CTA 56px, 해요체 타이틀 정상 렌더링
-- 최신 확장분은 브라우저 제어 세션 타임아웃으로 시각 재검증하지 못했지만 lint/build/unit test는 모두 통과했다.
-
-### 운영 배포 (`81951d8`)
-
-- Vercel Production: **Ready**
-- 배포 URL: `https://personal-finance-6ek69txu9-kyu17.vercel.app`
-- 운영 alias: `https://personal-finance-one-virid.vercel.app`
-- 검증: `npm run lint` ✅ / `npm run build` ✅ / unit 9 files, 28 tests ✅
-
-### 다음 작업
-
-1. 실기기에서 quick-add 저장 → 5초 Undo → 월간내역 제거 확인 (운영 데이터 변경이므로 자동화하지 않음)
-2. Sprint 2 반복 주기/납부일의 이후 전체 변경과 pause 기간 모델링
-3. 반복항목 전용 RLS·동시성 통합 테스트 추가
-4. Sprint 3 예산·결산 기능 계획 수립
-
-### Sprint 2 시작 상태
-
-- 계획: `docs/superpowers/plans/2026-08-28-sprint2-recurring-engine.md`
-- migration: `20260831010000_recurring_engine.sql`
-  - `recurring_rules` / `recurring_occurrences`
-  - owner RLS, hard-delete 차단, 교차 household trigger
-  - `(rule, occurrence_date)` 및 회차당 활성 transaction 유일성
-  - 기존 transactions의 recurring FK 연결
-- 일정 계산: `src/lib/recurrence.ts`
-  - monthly / weekly / yearly / custom 일 간격
-  - 월말 clamp, 윤년, 종료일/조회범위 처리
-- 검증: lint/build ✅, unit **10 files / 32 tests** ✅, Supabase `db push --dry-run` ✅
-- `20260831010000`은 운영 Supabase 적용 완료, 로컬/원격 migration 이력 일치 확인 완료.
-- 이어서 구현됨(다음 커밋): 설정 > 반복항목 생성·목록·일시중지·재개·종료, 월 진입 시 planned idempotent 생성.
-- `20260831020000`은 soft-delete 뒤 동일 회차가 재생성되지 않도록 회차당 transaction을 절대 유일하게 만든다. 운영 Supabase 적용 완료.
-- 월간입력의 planned 행에서 날짜·금액·결제수단을 조정해 `posted` 확정하거나 해당 회차를 `skipped` 처리하는 UI 구현 완료(다음 커밋).
-- 직접 입력 posted 거래 중 동일 금액·예정일 ±3일 후보를 분류/결제수단 일치도로 정렬하고, 선택한 기존 거래와 원자적으로 연결하는 흐름 구현 완료.
-- 연결 시 occurrence가 posted 거래를 가리키고 생성 planned 행은 `cancelled`가 되어 실적에 중복 합산되지 않는다.
-- `20260831030000_link_recurring_occurrence.sql` 운영 Supabase 적용 완료.
-- 최신 기능 커밋 `81951d8`, Vercel Production **Ready**: `https://personal-finance-6ek69txu9-kyu17.vercel.app`
-- 최신 검증: lint/build ✅, unit 11 files / 34 tests ✅. 직전 전체 suite 57 tests 통과 후 신규 통합 3개를 추가했다.
-- 반복항목 전용 통합 검증 추가: owner 생성, 회차/거래 유일성, user B 격리·RPC 차단, 원자적 연결 후 planned 취소 — 해당 파일 **18 tests 통과**.
-- 반복 금액 변경: 월간 예정행 편집은 이번 달만, 설정의 금액 변경은 이번 달부터 미래 planned와 규칙 기본금액을 함께 갱신하도록 구현.
-- `20260831040000_update_recurring_amount.sql` 운영 Supabase 적용 완료. 로컬/원격 migration 10개 일치 확인 완료.
-- 전체 PRD 기준 추정 완성도 약 **35%**, Phase 1/MVP 기준 약 **50%**. Sprint 0·1·1.5 완료, Sprint 2 핵심 vertical slice 완료 상태.
-- 기간 일시중지 구현: `recurring_rule_pauses`, owner RLS/tenant trigger, 중지 구간 planned 자동 skip, materialize 제외, 설정 UI.
-- `20260831050000_recurring_pause_periods.sql` 운영 Supabase 적용 완료. unit 11 files / 35 tests 통과.
-- 월 반복항목의 납부일을 다음 생성 회차부터 변경하는 설정 UI 구현 완료. 과거/현재 생성 거래는 보존한다.
+> 최종 갱신: 2026-08-29 · HEAD `8260e11` · main == origin/main, 워킹트리 clean
+> migration 17개 로컬↔원격 동기화 · 테스트 **96개 전부 통과**(통합 테스트 실 DB 포함)
+> lint ✅ / build ✅ / tsc ✅
 
 ---
 
 ## 1. 프로젝트 개요
 
-**개인 가계부/자산관리 웹 서비스.** 기존 Excel 가계부(`2026년 (1).xlsm`)를 웹으로 이관하는 프로젝트.
+**개인 가계부/자산관리 웹 서비스.** 기존 Excel 가계부(`2026년 (1).xlsm`)를 웹으로 이관.
 
-- **기준 문서(가장 중요):** `docs/HOUSEHOLD_FINANCE_WEB_PRD_v0.8.md` — 2,271줄. 단순 참고자료가 아니라 **구현 기준서**다. 모든 결정은 이 문서를 근거로 해야 한다.
-- **우선순위(PRD 명시):** 정확성 > 보안 > 입력 편의성 > 조회 편의성 > 시각화
-- **1차 메뉴는 4개로 고정:** 대시보드 / 월간관리 / 자산·금융 / 설정. **새 1차 메뉴를 만들지 말 것.**
-
-### 스택 / 인프라
+- **기준 문서:** `docs/HOUSEHOLD_FINANCE_WEB_PRD_v0.8.md` (2,271줄). 참고자료가 아니라 **구현 기준서**다.
+- **우선순위:** 정확성 > 보안 > 입력 편의성 > 조회 편의성 > 시각화
+- **1차 메뉴 4개 고정:** 대시보드 / 월간관리 / 자산·금융 / 설정
 
 | 항목 | 값 |
 |---|---|
-| 프레임워크 | Next.js **16.3.3** (App Router, TypeScript strict) |
-| DB/인증 | Supabase (project ref `lshqugxbddcpwugadjxe`, 리전 ap-northeast-1) |
-| 배포 | Vercel — **main에 push하면 자동 배포** (GitHub 연동) |
-| 프로덕션 URL | https://personal-finance-one-virid.vercel.app |
+| 프레임워크 | Next.js **16.3.3** (App Router, TS strict) |
+| DB/인증 | Supabase (`lshqugxbddcpwugadjxe`, ap-northeast-1) |
+| 배포 | Vercel — **main push 시 자동 배포** |
+| 운영 URL | https://personal-finance-one-virid.vercel.app |
 | 저장소 | https://github.com/kyu-89/finance-project (Private) |
-| 테스트 | Vitest — 유닛 + 실제 Supabase에 붙는 통합 테스트 |
 
-### ⚠️ Next.js 16 주의사항 (중요)
+### ⚠️ Next.js 16 주의 (실제로 여러 번 문제됨)
 
-이 버전은 학습 데이터의 Next.js와 **다르다.** 프로젝트 루트 `AGENTS.md`가 이를 명시하고 있고, 실제로 이 프로젝트에서 여러 번 문제가 됐다:
-
-- **`middleware.ts`가 아니라 `proxy.ts`** (`export function proxy`). middleware는 deprecated.
-- `cookies()`, `searchParams` 등은 **Promise** — 반드시 `await`.
-- 확실하지 않으면 **`node_modules/next/dist/docs/`의 실제 문서를 읽을 것.** 기억에 의존하지 말 것.
-- `@tanstack/react-table`은 **v9** (v8 아님). API가 다르다: `tableFeatures({})`, `columnHelper.columns([...])`, `useTable({...})`, `table.FlexRender`, `row.getAllCells()`. 패키지 자체가 `node_modules/@tanstack/react-table/skills/`에 문서를 포함하고 있다.
+- `middleware.ts` 아니고 **`proxy.ts`** (`export function proxy`)
+- `cookies()`, `searchParams`는 **Promise** — `await` 필수
+- `@tanstack/react-table`은 **v9** — `tableFeatures({})`, `columnHelper.columns([...])`, `useTable({...})`, `table.FlexRender`, `row.getAllCells()`
+- 확실치 않으면 **`node_modules/next/dist/docs/`의 실제 문서를 읽을 것.** 기억 금지.
 
 ---
 
-## 2. 현재까지 완료된 것
+## 2. PRD 기준 전체 진척률
 
-### Sprint 0 — 뼈대/보안 ✅ 완료·배포됨
+### 총평: **전체 PRD 약 52% / Phase 1(MVP) 약 72%**
 
-- Next.js 스캐폴딩 (TypeScript strict)
-- Supabase 클라이언트 (`src/lib/supabase/{client,server,proxy}.ts`)
-- `households` / `household_members` 스키마 + RLS
-- 이메일 인증 + **TOTP MFA 강제 (AAL2)** — `src/proxy.ts`가 보호 경로를 게이팅
-- 가구 자동 생성 (`src/lib/household.ts`)
-- 4메뉴 반응형 앱 셸 + 로그아웃
-- RLS 교차사용자 격리 통합 테스트
+Excel 대체까지 남은 핵심은 **자산·금융 상품(Sprint 4)** 과 **대시보드(Sprint 3 후반)** 다.
 
-### Sprint 1 — 거래 원장 + 월간관리 뼈대 ✅ 완료·배포됨
+### 스프린트별 (PRD §26 기준)
 
-- `categories` / `subcategories` / `payment_methods` / `transactions` 스키마 + RLS
-- PRD §4.3 기본 분류 자동 시딩 (가구 최초 로그인 시)
-- 설정 > 카테고리·결제수단 관리
-- 모바일 빠른입력 (`/quick-add`)
-- PC 월간관리 (`/monthly`) — 월간입력 / 전체내역 탭
-- RLS 통합 테스트 12개
+| 스프린트 | 범위 | 상태 |
+|---|---|---|
+| Sprint 0 | 뼈대/보안 (인증·TOTP MFA·RLS·4메뉴 IA) | ✅ 완료·리뷰됨 |
+| Sprint 1 | 거래 원장 + 월간관리 뼈대 | ✅ 완료·리뷰됨 |
+| Sprint 1.5 | 이월 정리 (스키마 강화·데이터 복구·ActionResult·카테고리 CRUD·속도정책) | ✅ 완료 |
+| Sprint 2 | 반복항목 자동생성 엔진 | ✅ 완료 (사후 리뷰 통과) |
+| Sprint 3 | 예산·결산 | ✅ 완료 (사후 리뷰에서 Critical 2건 발견·수정) |
+| **Sprint 4** | **자산·금융** | 🔶 **9개 중 2개 완료 (T1·T3)** |
+| Sprint 5 | Excel 완전 대체 + 확장정보 | ❌ 미착수 |
 
-### Sprint 1.5 — 이월 항목 정리 ✅ **Task 1~7 구현 완료**
+### PRD 기능 영역별
 
-계획서: `docs/superpowers/plans/2026-08-28-sprint1_5-carryover.md`
+| 영역 | PRD | 상태 |
+|---|---|---|
+| 인증·보안 (Email+TOTP MFA, RLS, AAL2) | §16 | ✅ 완료 |
+| 가구·구성원 모델 | §3.1 | 🔶 스키마·자동생성 완료, **구성원 관리 UI 없음** |
+| 거래 원장 (9종 타입, flow_class, 고정/변동) | §4 | ✅ 완료 |
+| 모바일 빠른입력 (10초 목표) | §5.1 | 🔶 입력순서·최근사용·연속입력·5초Undo 완료 / **명의자·태그 미구현** |
+| PC 월간관리 (월간입력·전체내역) | §5.3 | 🔶 기본 완료 / **엑셀형 그리드 UX(키보드·붙여넣기·이전행복사) 미구현** |
+| 반복항목 엔진 | §5.5 | ✅ 완료 (일시중지·납부일변경·중복연결·종료 잠금까지) |
+| 예산·결산 | §6.6, §7 | ✅ 완료 (연간편집기·전년복사·자동초안·경고·KPI) |
+| 카테고리·결제수단 CRUD | §4.3 | ✅ 완료 |
+| **계좌·카드** | §9.1~9.2 | ❌ **미착수** |
+| **예금·적금** | §9.3~9.4, §6.7~6.8 | 🔶 **계산식만 완료(테스트 포함), 스키마·UI 없음** |
+| **대출** | §10, §6.9 | ❌ **미착수** |
+| **보험** | §11 | ❌ **미착수** |
+| **기타자산·순자산·월별스냅샷** | §9.5~9.6, §6.10~6.11 | ❌ **미착수** |
+| **대시보드 (KPI·추이·드릴다운)** | §8, §20.1 | ❌ **플레이스홀더만** |
+| 투자 | §14 | ❌ 미착수 (PRD상 Phase 1.5) |
+| 정부지원금·경조사 확장정보 | §12, §13 | ❌ 미착수 (Phase 1.5) |
+| 목표·일정 | §15 | ❌ 미착수 (Phase 1.5) |
+| Excel Import | §22 | ❌ 미착수 |
+
+### MVP 완료 정의(§31) 15개 항목 대비
+
+✅ 달성 8개 · 🔶 부분 3개 · ❌ 미달성 4개
+
+- ✅ 1(10초 입력) 2(월간관리 통합) 3(계산 의미 일치) 4(반복 자동생성/중단) 5(이중집계 방지) 6(예산·결산 연결) 11(비인증 차단) 12(RLS 격리) 13(TOTP MFA) 14(비밀키 미노출)
+- 🔶 15(자동 테스트) — 계산·반복·RLS는 있으나 대출/순자산 미작성
+- ❌ 7(드릴다운) 8(전월·전년 비교) 9(자산/부채/순자산 추이) 10(예적금·대출 Excel 검증값 일치 — 예적금만 완료)
+
+---
+
+## 3. 🔴 바로 이어서 할 일: Sprint 4
+
+계획서에 **9개 태스크가 실행 가능한 코드 수준으로** 작성돼 있음:
+`docs/superpowers/plans/2026-08-29-sprint4-assets-finance.md`
 
 | Task | 내용 | 상태 |
 |---|---|---|
-| 1 | 스키마 강화 (updated_at 트리거, self 멤버 유니크, 테넌트 일관성 FK 트리거) | ✅ 완료·리뷰됨 |
-| 2 | cost_behavior 잘못된 데이터 1회성 복구 | ✅ 완료·리뷰됨·**실제 DB 검증됨** |
-| 3 | flow_class 매핑 + 소프트삭제 불변조건 테스트 | ✅ 완료 (46 테스트) |
-| 4 | `ActionResult` — 검증 메시지가 사용자에게 보이도록 | ✅ 완료·리뷰됨 |
-| 5 | 카테고리 편집 + 소분류 CRUD | ✅ 완료 (리뷰 미실시) |
-| **6** | **PRD §5.1 속도 정책 (최근사용 우선/연속입력/5초 Undo)** | ✅ 완료 (`317e7cb`) |
-| **7** | **거래별 고정/변동 수정 + 월간관리 합계 필터링** | ✅ 완료 (`317e7cb`) |
+| 1 | 이전 리뷰 지적 3건 정리 | ✅ 완료 (`8260e11`) |
+| 2 | 계좌·카드 스키마+데이터접근+UI | ❌ **다음 작업** |
+| 3 | 예금·적금 계산 (순수함수 TDD) | ✅ 완료 (`926bbe9`) |
+| 4 | 예금·적금 스키마+UI | ❌ (T3 완료했으니 바로 가능) |
+| 5 | 대출 상환표 계산 (순수함수 TDD) | ❌ |
+| 6 | 대출·보험 스키마+UI | ❌ |
+| 7 | 상품 ↔ 반복거래 연계 (§5.6) | ❌ |
+| 8 | 기타자산·월별스냅샷·순자산 | ❌ |
+| 9 | 신규 테이블 RLS 통합 테스트 | ❌ |
+
+**순서 제약:** T3→T4, T5→T6, T7은 T4+T6 이후, T9는 마지막.
+
+`src/lib/deposit-calculations.ts` / `savings-calculations.ts`는 이미 있고 테스트도 통과하니, **T4는 스키마와 화면만 붙이면 됨.**
 
 ---
 
-## 3. Task 6 + 7 구현 전 기록 (현재 완료됨)
+## 4. ⚠️ 열려있는 이슈 (사후 리뷰에서 나왔으나 미해결)
 
-**데이터 접근 함수는 이미 작성되어 커밋됨** (`ea2d4f9`). `src/lib/transactions.ts`에 있고, **아직 아무도 호출하지 않는 상태**:
+Sprint 2·3는 리뷰 없이 배포됐던 것을 나중에 리뷰했다. Critical 2건은 수정 완료(`d40a26a`), 아래는 **미해결**:
 
-- `listRecentUsage(householdId, limit)` → `RecentUsage` (최근 사용 카테고리/소분류/결제수단)
-- `undoTransaction(id)` (소프트 삭제로 위임)
-- `updateTransactionCostBehavior(id, costBehavior)`
+**중복 집계 위험 (§5.5.6 관련) — 우선순위 높음**
+- **I3** 중복 후보 탐지가 **금액 완전일치**만 인정. PRD는 "동일/**유사** 금액". 월세가 1만원 오르면 후보가 안 잡혀 사용자가 예정건을 확정 → **이중 집계**
+- **I4** 중복 후보가 있는데도 `확정` 버튼에 경고가 없음. 두 번 클릭이면 이중 집계
+- **I5** 연결 RPC가 거래 종류를 검증 안 함. planned 적금 50만을 posted 소비 50만에 연결 가능 → 저축 50만이 흔적 없이 사라짐
+- **I6** ±3일 중복 탐지 창이 월 경계를 못 넘음 (8/31 지불 vs 9/1 예정건)
 
-**남은 작업은 전부 이 함수들을 UI에 연결하는 것.** 상세 코드는 계획서의 Task 6·7 섹션에 그대로 있음:
-`docs/superpowers/plans/2026-08-28-sprint1_5-carryover.md`
+**기타**
+- **I1** "이번 달부터 변경"이 납부일 지난 달은 제외 (5일 납부, 28일 수정 → 이번 달 반영 안 됨)
+- **I2** §5.5.4의 "이번 달만 변경" 옵션 자체가 없음
+- **I8** `전년도 실적 자동초안`이 실적 없는 달의 기존 예산을 0으로 덮어씀 (확인창 없음, 복구 불가)
+- **I9** 전년도 실적 조회가 `max_rows=1000`에서 조용히 잘림 (하루 3건이면 초과)
+- **I10** 지나간 달의 planned가 백필 안 됨 (월 선택 UI 생기면 문제됨)
+- **I11** `refund`가 무동작 (§23.4 미구현)
+- 신규 액션들이 Postgres 원본 에러 메시지를 그대로 노출 (테이블·제약조건 이름 유출)
+- `budget_tenant_check`가 `transaction_type` 일치를 검증 안 함
+- `monthly/page.tsx`가 GET 렌더 중 쓰기 수행
 
-### Task 6 남은 것
-1. `createQuickTransactionAction`의 redirect에 `&undo=<생성된 id>` 추가 → 클라이언트가 취소할 수 있게
-2. `undoTransactionAction` 서버 액션 추가 (`ActionResult` 형태로)
-3. `CategoryPicker.tsx`에 **최근 사용 우선 정렬** 추가
-   - ⚠️ **소분류 선택 하이라이트는 이미 되어 있음** (사용자 제보로 먼저 수정함). 정렬만 추가하면 됨.
-4. `quick-add/page.tsx`에서 `listRecentUsage` 호출해서 내려주기
-5. `QuickAddForm.tsx` 저장 배너에 **실행취소 버튼** + 자동 숨김 **3000ms → 5000ms**
-
-### Task 7 남은 것
-1. 두 액션에서 `costBehaviorOverride` 폼 값 읽어서 `createTransaction`에 전달 (함수는 이미 이 인자를 받는데 **아무도 안 넘기고 있음**)
-2. `updateCostBehaviorAction` 추가
-3. `QuickAddForm.tsx`의 `더보기` 안에 비용성격 select 추가
-4. `MonthlyInputTab.tsx`에 비용성격 컬럼 추가 (**TanStack v9 API 주의**)
-5. **`AllTransactionsTab.tsx`의 합계 필터링** ← 이게 제일 중요
-   - 지금은 모든 행을 무조건 `reduce`로 더함
-   - Sprint 2가 `planned`/`saving`/`transfer` 행을 만들기 시작하면 **소비 합계에 저축·이체가 섞여 조용히 틀린 숫자가 나옴**
-   - `flowClass === 'consumption' && status === 'posted'`로 필터링하고, 예정분은 "실적 미포함"이라고 명시해서 따로 표시 (PRD §23.9)
-
-### 추가로 같이 해야 할 것 (Task 4 리뷰에서 나온 지적)
-모든 액션에서 `getCurrentHouseholdId()` / `ensureHouseholdForCurrentUser()` 호출이 **try/catch 밖**에 있음. 여기서 throw되면 Task 4가 해결하려던 "빈 에러 화면" 문제가 그대로 재현됨. **3개 액션 파일 전부**에서 감싸줘야 함.
+**미검증**
+- 운영 브라우저 E2E: 예산 저장/전년도 복사/월간 결산, 반복규칙 생성→planned→확정/skip/중복연결
+- 이 둘은 운영 데이터를 변경하므로 자동 수행하지 않았음
 
 ---
 
-## 4. ⚠️ 알려진 미해결 이슈 / 주의사항
-
-### 미검증
-- **`/quick-add` 실제 브라우저 저장 검증이 불완전함.** 사용자가 두 번 테스트했고 두 번 다 실제 버그가 나왔다(아래 참조). 코드가 컴파일된다는 것과 실제로 동작한다는 것은 다르다 — **UI 변경 후엔 반드시 실기기 테스트를 요청할 것.**
-
-### 사용자 제보로 이미 고친 것 (참고용 — 같은 실수 반복 방지)
-1. **소분류 선택이 안 먹힘** → 실제로는 클릭이 되고 있었고, **선택 하이라이트가 없어서** 안 먹히는 것처럼 보였음. 데이터·로직 문제가 아니라 UI 피드백 문제였음.
-2. **저장이 느림** → 저장 1회에 Supabase 왕복 **약 19회**. 가구 초기설정 검사 6회가 매 요청마다 순차 실행되고 있었음. 병렬화 + 액션에서는 초기설정 건너뛰기로 **약 11회로 감소.** 아직 더 줄일 여지 있음 (미들웨어 2회, 리다이렉트 후 재렌더링 등).
-
-### 미구현 (PRD 요구사항인데 아직 없음)
-- 거래 **수정/삭제 UI** 없음 (soft delete 함수는 있는데 호출하는 UI가 없음)
-- 명의자/태그 입력 (`더보기`가 "명의자/비고/태그"라고 써있는데 실제로는 비고만 있음)
-- PRD §5.3의 엑셀형 그리드 UX (셀 키보드 이동, 붙여넣기, 이전 행 복사)
-- PRD §4.3의 15번째 지출 대분류 `용돈지출` (PRD에 소분류 목록이 없어서 의도적으로 제외 — 이제 사용자가 직접 추가 가능)
-- 소분류 이름 변경 UI는 `f85f8ea`에서 연결 완료. 활성 소분류는 인라인 수정, 비활성 소분류는 읽기 전용으로 표시한다.
-
-### 데이터 관련 주의
-- **`supabase/migrations/20260830020000_repair_cost_behavior.sql`을 절대 수동으로 재실행하지 말 것.** 카테고리 편집 UI가 생긴 지금은, 사용자가 의도적으로 설정한 값을 덮어쓸 수 있다. 파일 내부에 경고 주석 있음.
-- `cost_behavior`는 거래 생성 시점에 **스냅샷**된다. 카테고리 기본값을 바꿔도 과거 거래는 안 바뀐다 (PRD §35). 이건 의도된 동작이다.
-
----
-
-## 5. 절대 어기면 안 되는 제약 (PRD 기반)
+## 5. 절대 어기면 안 되는 제약
 
 | 제약 | 근거 |
 |---|---|
-| 금액은 `bigint` (원 단위). float 금지, 정수만 | §3.2, §27 |
-| 모든 사용자 데이터 테이블 RLS 활성화 + `auth.uid()` 격리 | §0.6, §16.2 |
-| `service_role` 키는 **`tests/integration/`에서만.** `src/` 절대 금지 | §0.7, §27 |
-| `transactions` **하드 삭제 금지** — DELETE 정책이 아예 없음. `deleted_at` UPDATE만 | §5.4 |
-| 카테고리/소분류/결제수단 **삭제 금지** — `is_active = false`만 | §4.3, §23.2 |
-| 저축/투자/대출원금/이체를 **소비(consumption)와 섞지 말 것** — `flow_class`로 구분 | §23.5, §23.6, §35 |
-| `planned` 거래는 **실적/예산소진에 포함 금지** | §23.9 |
-| TypeScript `strict: true` 유지. 타입 shim `.d.ts` 추가 금지 | §17 + 이 프로젝트에서 2번 회귀함 |
-| 카테고리/결제수단 하드코딩 금지 — DB에서 CRUD | §4.3, §27 |
+| 금액 `bigint` 원 단위, 정수만. float 금지 | §3.2 |
+| 모든 사용자 테이블 RLS + `auth.uid()` 격리, INSERT/UPDATE에 `with check` 필수 | §0.6, §16.2 |
+| `service_role`은 `tests/integration/`에서만. `src/` 절대 금지 | §0.7 |
+| `transactions` 하드 삭제 금지 — DELETE 정책 없음, `deleted_at` UPDATE만 | §5.4 |
+| 카테고리/소분류/결제수단/상품 삭제 금지 — 비활성화·상태전이만 | §4.3, §23.2 |
+| 저축/투자/대출원금/이체를 소비와 섞지 말 것 — `flow_class` 구분 | §23.5~7, §35 |
+| `planned`는 실적/예산소진에 미포함 | §23.9 |
+| **`security definer` 함수 금지** (현재 0개) — 필요하면 invoker로 만들고 호출자 RLS로 읽은 행에서 household 유도 | §26 QA |
+| tenant-check 트리거의 안전성은 **명시적 `= new.household_id` 술어**에서 나옴. RLS 가시성에 의존한다고 착각해 단순화하지 말 것 | `20260830010000` 주석 |
+| 날짜는 `src/lib/date.ts` (`todayInSeoul` 등). `new Date().toISOString().slice(0,10)` 신규 사용 금지 | Sprint 1 회귀 이력 |
+| TS `strict: true` 유지, `.d.ts` shim 추가 금지 | 2회 회귀 이력 |
 
 ---
 
-## 6. 개발 환경 / 명령어
+## 6. 명령어 / 환경
 
 ```bash
-npm run dev      # 개발 서버 (localhost:3000)
-npm run build    # 빌드 (타입체크 포함)
-npm run lint     # ESLint
-npx vitest run tests/unit   # 유닛 테스트만 (빠름)
-npm test         # 전체 (통합 테스트 포함 — 실제 Supabase에 붙음)
+npm run dev
+npm run build            # 타입체크 포함
+npm run lint
+npx vitest run tests/unit   # 유닛만 (빠름, 개발 중엔 이것만)
+npm test                    # 전체 — 실 Supabase에 로그인함
+npx supabase db push
+npx supabase migration list
 ```
 
-### ⚠️ 테스트 주의
-`npm test`는 **실제 Supabase 프로젝트에 임시 사용자를 만들어 로그인**한다. 연속으로 두 번 돌리면 **인증 rate limit(429)에 걸린다.** 개발 중에는 `npx vitest run tests/unit`만 쓰고, 전체 테스트는 간격을 두고 실행할 것.
+**⚠️ `npm test` 연속 실행 금지** — 실제 Supabase에 임시 사용자를 만들어 로그인하므로 **연속 두 번이면 인증 rate limit(429)**. 최소 60초 간격.
 
-### 환경변수
-- `.env.local` — `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (gitignored, 이미 존재)
-- `.env.test.local` — `SUPABASE_SERVICE_ROLE_KEY` (gitignored, 이미 존재, 통합 테스트 전용)
-- 둘 다 `.env*.example` 템플릿이 커밋되어 있음
+**⚠️ `supabase config push` 위험** — 로컬 `config.toml` **전체**를 원격에 밀어넣는다. 과거 이걸로 **TOTP MFA가 꺼질 뻔했다.** 실행하면 출력 diff를 반드시 읽고 의도한 항목만 바뀌는지 확인할 것.
 
-### Supabase CLI
-```bash
-npx supabase db push        # 마이그레이션 적용
-npx supabase config push    # ⚠️ 아래 경고 참조
-```
+환경변수: `.env.local`(공개키), `.env.test.local`(service_role, 통합테스트 전용) — 둘 다 gitignored, 이미 존재. `.example` 템플릿 커밋돼 있음.
 
-**⚠️ `supabase config push` 위험:** 로컬 `config.toml` **전체**를 원격에 밀어넣는다. 이 프로젝트에서 실제로 **TOTP MFA가 꺼질 뻔했다** (config.toml의 템플릿 기본값이 false였고 원격은 true였음). 실행하면 **출력되는 diff를 반드시 읽고**, 의도한 항목만 바뀌는지 확인할 것.
-
-**인증 만료 시:** Supabase 대시보드 → Account → Access Tokens에서 새 토큰 발급 → `npx supabase login --token sbp_...`. **작업 끝나면 토큰 폐기 권장.**
+Supabase CLI 인증 만료 시: 대시보드 → Account → Access Tokens → `npx supabase login --token sbp_...` (작업 후 폐기 권장).
 
 ---
 
-## 7. 다음 스프린트 (Sprint 2) 예정 내용
+## 7. 작업 방식 (권장)
 
-Sprint 1.5가 끝나면 **Sprint 2 — 반복항목 자동생성 엔진**으로 진행 예정이었다. PRD §5.5가 핵심 명세:
+계획서를 `docs/superpowers/plans/`에 먼저 쓰고, 태스크 단위 구현 → 리뷰 → 수정 루프.
 
-- `recurring_rules` / `recurring_occurrences` 테이블
-- 보험료·적금·대출·구독·급여가 매월 `planned` 거래를 **idempotent하게 1건만** 자동 생성
-- 사용자가 확인해서 `posted`로 확정하는 흐름
-- 정부지원금도 같은 엔진 재사용 (§12, §34)
-- skip / pause / end / 이번달만 변경 / 이후 모두 변경
-- **직접 입력한 실거래와 자동 생성 예정건의 중복 방지** (§5.5.6)
+**리뷰는 실제로 값을 했다.** 지금까지 잡은 것:
+- 환경변수가 브라우저 번들에 안 들어가 클라이언트 앱 전체가 죽던 버그
+- 날짜가 UTC 기준이라 한국시간 새벽 9시간 동안 하루씩 밀리던 버그
+- 고정비/변동비 기본값이 PRD와 어긋나 데이터가 오염되던 버그
+- 월 결산이 대출·투자·금융비용을 빠뜨려 **쓸 수 있는 돈을 120만원 많게** 표시하던 버그
+- 적금 월복리가 **납입 시점 가정이 단리와 달라** 한 달치 이자를 적게 계산하던 버그
 
-### Sprint 2 시작 전 반드시 먼저 할 것
-1. **Task 7의 합계 필터링** — 반복 엔진이 `planned`/`saving` 행을 만들기 시작하면 지금의 무필터 합계가 조용히 틀린 숫자를 낸다.
-2. Sprint 1 최종 리뷰가 남긴 이월 항목 확인 — `docs/superpowers/plans/2026-08-28-sprint1-transactions.md` 하단의 "Carried into Sprint 2" 목록.
+**단, 리뷰 강도는 위험도에 맞출 것.** 스키마·돈 계산은 반드시 보고, UI/스타일은 가볍게. 300KB 디프에 최상위 모델 둘을 붙이는 식은 비용 대비 효율이 나빴다.
 
----
-
-## 8. 이 프로젝트에서 쓰던 작업 방식 (참고)
-
-계획서를 먼저 `docs/superpowers/plans/`에 쓰고, 태스크 단위로 구현 → **독립 리뷰** → 수정 루프를 돌렸다. 리뷰가 실제로 값을 했다 — 발견된 것들:
-
-- RLS 정책이 fail-open이던 것 (AAL 조회 실패 시 통과)
-- 거래 삭제가 30일 복구 보장을 우회할 수 있던 것
-- 시딩이 부분 실패 시 영구히 미완성 상태로 갇히던 것
-- 환경변수가 브라우저 번들에 안 들어가 앱 전체가 죽던 것
-- 날짜가 UTC 기준이라 한국시간 새벽에 하루씩 밀리던 것
-- 고정비/변동비 기본값이 PRD와 어긋나 데이터가 오염되던 것
-
-**계획서에 적힌 코드라고 해서 맞는 게 아니다.** 위 항목 중 여러 개가 계획서 자체의 결함이었다. 의심스러우면 PRD 원문을 확인할 것.
+**계획서에 적힌 코드라고 맞는 게 아니다.** 위 버그 중 여럿이 계획서 자체의 결함이었다. **테스트가 통과해도, 결과가 이상하면 손으로 다시 계산해볼 것** — 적금 버그가 정확히 그렇게 잡혔다(구현자가 "12개월에선 단리가 더 크다"고 주석에 써두고 우회했는데, 그게 버그 신호였다).
 
 ---
 
-## 9. 요약: 지금 당장 할 일
+## 8. 요약: 지금 당장
 
 ```
-1. 실제 브라우저로 /quick-add 저장 → 5초 Undo 검증
-   → 운영 Supabase 데이터를 변경하므로 사용자 동의/직접 확인이 필요한 유일한 검증
+1. Sprint 4 Task 2 (계좌·카드) 부터 순서대로
+   → docs/superpowers/plans/2026-08-29-sprint4-assets-finance.md 에 코드 수준으로 있음
+   → T4는 계산식(T3)이 이미 끝났으니 스키마+UI만 붙이면 됨
 
-2. Sprint 1.5 최종 리뷰
-   → Task 1~7과 소분류 이름 변경까지 구현 완료 상태에서 회귀/보안 검토
+2. §4의 중복집계 위험(I3~I6) — Sprint 4 중이나 직후에 처리 권장
+   반복항목을 실사용하기 시작하면 바로 체감되는 문제
 
-3. Sprint 2 (반복항목 엔진) 계획 수립 → PRD §5.5, §12, §34
-   → recurring_rules / recurring_occurrences / planned 확정 흐름 / 중복 방지
+3. 운영 브라우저 E2E 검증 (사용자에게 요청)
+
+4. Sprint 4 이후: 대시보드(§8) → Excel Import(§22)
+   MVP 완료 정의 §31의 미달성 4개 중 3개가 대시보드 관련
 ```
