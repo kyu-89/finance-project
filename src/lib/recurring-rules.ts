@@ -293,3 +293,15 @@ export async function addRecurringPausePeriod(input: {
   });
   if (error) throw new Error(`일시중지 기간 추가 실패: ${error.message}`);
 }
+
+export async function updateRecurringRuleDay(ruleId: string, dayOfMonth: number): Promise<void> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from('recurring_rules')
+    .update({ day_of_month: dayOfMonth })
+    .eq('id', ruleId)
+    .eq('frequency', 'monthly')
+    .neq('status', 'ended')
+    .select('id');
+  if (error) throw new Error(`월 납부일 변경 실패: ${error.message}`);
+  if (data.length !== 1) throw new Error('변경할 월 반복항목을 찾지 못했어요.');
+}

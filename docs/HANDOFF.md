@@ -85,7 +85,8 @@
 - `20260831040000_update_recurring_amount.sql` 운영 Supabase 적용 완료. 로컬/원격 migration 10개 일치 확인 완료.
 - 전체 PRD 기준 추정 완성도 약 **35%**, Phase 1/MVP 기준 약 **50%**. Sprint 0·1·1.5 완료, Sprint 2 핵심 vertical slice 완료 상태.
 - 기간 일시중지 구현: `recurring_rule_pauses`, owner RLS/tenant trigger, 중지 구간 planned 자동 skip, materialize 제외, 설정 UI.
-- `20260831050000_recurring_pause_periods.sql`은 원격 적용 후 앱을 배포할 것. unit 11 files / 35 tests 통과.
+- `20260831050000_recurring_pause_periods.sql` 운영 Supabase 적용 완료. unit 11 files / 35 tests 통과.
+- 월 반복항목의 납부일을 다음 생성 회차부터 변경하는 설정 UI 구현 완료. 과거/현재 생성 거래는 보존한다.
 
 ---
 

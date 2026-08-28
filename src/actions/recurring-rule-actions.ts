@@ -8,6 +8,7 @@ import {
   updateRecurringRuleStatus,
   updateRecurringRuleAmount,
   addRecurringPausePeriod,
+  updateRecurringRuleDay,
   type RecurringRuleStatus,
   type RecurringSourceType,
 } from '@/lib/recurring-rules';
@@ -145,5 +146,24 @@ export async function addRecurringPausePeriodAction(
   }
   revalidatePath('/settings/recurring');
   revalidatePath('/monthly');
+  return ok();
+}
+
+export async function updateRecurringRuleDayAction(
+  _previous: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const ruleId = String(formData.get('id') ?? '');
+  const dayOfMonth = Number(formData.get('dayOfMonth'));
+  if (!ruleId || !Number.isInteger(dayOfMonth) || dayOfMonth < 1 || dayOfMonth > 31) {
+    return fail('월 납부일은 1~31일 중에서 선택해 주세요.');
+  }
+  try {
+    await ensureHouseholdForCurrentUser();
+    await updateRecurringRuleDay(ruleId, dayOfMonth);
+  } catch (error) {
+    return fail(error instanceof Error ? error.message : '월 납부일 변경에 실패했어요.');
+  }
+  revalidatePath('/settings/recurring');
   return ok();
 }
