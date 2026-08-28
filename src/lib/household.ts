@@ -1,6 +1,8 @@
 import 'server-only';
 
 import { createClient } from '@/lib/supabase/server';
+import { ensureDefaultCategoriesSeeded } from '@/lib/categories';
+import { ensureDefaultPaymentMethodsSeeded } from '@/lib/payment-methods';
 
 export type Household = {
   id: string;
@@ -52,6 +54,8 @@ export async function ensureHouseholdForCurrentUser(): Promise<Household> {
   }
 
   await ensureSelfMember(supabase, household.id);
+  await ensureDefaultCategoriesSeeded(household.id);
+  await ensureDefaultPaymentMethodsSeeded(household.id);
 
   return household;
 }
