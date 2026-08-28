@@ -141,4 +141,73 @@ describe('households/household_members RLS', () => {
     expect(updateError).toBeNull();
     expect(updated).toEqual([]);
   });
+
+  it('lets a user insert a member into their own household', async () => {
+    const asUserA = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
+    const { error: signInError } = await asUserA.auth.signInWithPassword({
+      email: userAEmail,
+      password,
+    });
+    expect(signInError).toBeNull();
+
+    const { error: insertError } = await asUserA.from('household_members').insert({
+      household_id: userAHouseholdId,
+      member_type: 'other',
+      display_name: 'Test Member',
+    });
+
+    expect(insertError).toBeNull();
+  });
+
+  it("hides user A's household members from user B", async () => {
+    const asUserB = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
+    const { error: signInError } = await asUserB.auth.signInWithPassword({
+      email: userBEmail,
+      password,
+    });
+    expect(signInError).toBeNull();
+
+    const { data: selected, error: selectError } = await asUserB
+      .from('household_members')
+      .select('id')
+      .eq('household_id', userAHouseholdId);
+
+    expect(selectError).toBeNull();
+    expect(selected).toEqual([]);
+  });
+
+  it("blocks user B from inserting a member into user A's household", async () => {
+    const asUserB = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
+    const { error: signInError } = await asUserB.auth.signInWithPassword({
+      email: userBEmail,
+      password,
+    });
+    expect(signInError).toBeNull();
+
+    const { error: insertError } = await asUserB.from('household_members').insert({
+      household_id: userAHouseholdId,
+      member_type: 'other',
+      display_name: 'Spoofed Member',
+    });
+
+    expect(insertError).not.toBeNull();
+  });
+
+  it("blocks user B from updating a member row belonging to user A's household", async () => {
+    const asUserB = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
+    const { error: signInError } = await asUserB.auth.signInWithPassword({
+      email: userBEmail,
+      password,
+    });
+    expect(signInError).toBeNull();
+
+    const { data: updated, error: updateError } = await asUserB
+      .from('household_members')
+      .update({ display_name: 'Hacked' })
+      .eq('household_id', userAHouseholdId)
+      .select('id');
+
+    expect(updateError).toBeNull();
+    expect(updated).toEqual([]);
+  });
 });
