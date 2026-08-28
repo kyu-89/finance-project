@@ -21,21 +21,31 @@ export type CategoryWithSubcategories = Category & { subcategories: Subcategory[
 
 // PRD §4.3 — 지출 대분류 + 대표 소분류. Never hardcoded into UI components; this is the one
 // seed-time source, used only by ensureDefaultCategoriesSeeded below.
-export const DEFAULT_EXPENSE_CATEGORIES: { name: string; subcategoryNames: string[] }[] = [
-  { name: '저축성지출', subcategoryNames: ['예/적금', '주택청약', '퇴직연금', '연금저축', '변액연금', '비상금', '투자', '상조', '기타 저축성'] },
-  { name: '식비', subcategoryNames: ['시장/마트', '외식', '간식', '술/회식', '카페', '기타 식비'] },
-  { name: '주거비', subcategoryNames: ['재산세', '주담대 이자', '주담대 원금', '관리비', '가스비', '정수기렌탈료', '기타 주거비'] },
-  { name: '협찬', subcategoryNames: ['협찬/페이백'] },
-  { name: '생활용품비', subcategoryNames: ['가구/가전', '주방/욕실', '오피스/문구', '멤버십', '기타 생활용품', '기타 잡지출'] },
-  { name: '보험비', subcategoryNames: ['보장성', '연금보험', '건강보험', '연금크레딧'] },
-  { name: '의류비', subcategoryNames: ['의류', '패션잡화', '세탁비', '기타 의류'] },
-  { name: '미용비', subcategoryNames: ['화장품구입', '헤어샵', '기타 미용'] },
-  { name: '교육계발비', subcategoryNames: ['학원', '도서', '강의', '기타 교육', '기타 자기계발'] },
-  { name: '문화생활비', subcategoryNames: ['영화/관람', '여가', '여행', 'OTT', '남편 용돈', '종소세세금', '지방세세금', '기타 문화생활'] },
-  { name: '의료비', subcategoryNames: ['병원', '의약품', '영양제', '기타 의료비'] },
-  { name: '유류교통비', subcategoryNames: ['자동차보험', '자동차세', '유류비', '기타 유지비', '버스/지하철', '택시', '기차', '항공', '기타 교통'] },
-  { name: '통신비', subcategoryNames: ['핸드폰', '인터넷/IPTV', '우편/택배', '기타 통신'] },
-  { name: '이벤트지출', subcategoryNames: ['축의금', '부조금', '기부금', '모임회비', '선물', '기타 경조사'] },
+//
+// defaultCostBehavior — PRD §4.1's worked examples (월세/정액 관리비/보험료/통신 기본요금/
+// 정기 구독 → fixed) map onto 주거비/보험비/통신비. 저축성지출 is excluded from fixed/variable
+// analysis entirely (PRD §35), hence null. Everything else defaults to 'variable'. This is
+// snapshotted onto every transaction at insert time (see resolveCostBehavior), so it must be
+// right per-category up front — there is no UI yet to correct a wrong stamp after the fact.
+export const DEFAULT_EXPENSE_CATEGORIES: {
+  name: string;
+  subcategoryNames: string[];
+  defaultCostBehavior: 'fixed' | 'variable' | null;
+}[] = [
+  { name: '저축성지출', subcategoryNames: ['예/적금', '주택청약', '퇴직연금', '연금저축', '변액연금', '비상금', '투자', '상조', '기타 저축성'], defaultCostBehavior: null },
+  { name: '식비', subcategoryNames: ['시장/마트', '외식', '간식', '술/회식', '카페', '기타 식비'], defaultCostBehavior: 'variable' },
+  { name: '주거비', subcategoryNames: ['재산세', '주담대 이자', '주담대 원금', '관리비', '가스비', '정수기렌탈료', '기타 주거비'], defaultCostBehavior: 'fixed' },
+  { name: '협찬', subcategoryNames: ['협찬/페이백'], defaultCostBehavior: 'variable' },
+  { name: '생활용품비', subcategoryNames: ['가구/가전', '주방/욕실', '오피스/문구', '멤버십', '기타 생활용품', '기타 잡지출'], defaultCostBehavior: 'variable' },
+  { name: '보험비', subcategoryNames: ['보장성', '연금보험', '건강보험', '연금크레딧'], defaultCostBehavior: 'fixed' },
+  { name: '의류비', subcategoryNames: ['의류', '패션잡화', '세탁비', '기타 의류'], defaultCostBehavior: 'variable' },
+  { name: '미용비', subcategoryNames: ['화장품구입', '헤어샵', '기타 미용'], defaultCostBehavior: 'variable' },
+  { name: '교육계발비', subcategoryNames: ['학원', '도서', '강의', '기타 교육', '기타 자기계발'], defaultCostBehavior: 'variable' },
+  { name: '문화생활비', subcategoryNames: ['영화/관람', '여가', '여행', 'OTT', '남편 용돈', '종소세세금', '지방세세금', '기타 문화생활'], defaultCostBehavior: 'variable' },
+  { name: '의료비', subcategoryNames: ['병원', '의약품', '영양제', '기타 의료비'], defaultCostBehavior: 'variable' },
+  { name: '유류교통비', subcategoryNames: ['자동차보험', '자동차세', '유류비', '기타 유지비', '버스/지하철', '택시', '기차', '항공', '기타 교통'], defaultCostBehavior: 'variable' },
+  { name: '통신비', subcategoryNames: ['핸드폰', '인터넷/IPTV', '우편/택배', '기타 통신'], defaultCostBehavior: 'fixed' },
+  { name: '이벤트지출', subcategoryNames: ['축의금', '부조금', '기부금', '모임회비', '선물', '기타 경조사'], defaultCostBehavior: 'variable' },
 ];
 
 // PRD §4.3 — 수입 소분류 초기값. Income has a single implicit 대분류 ("수입") per §4.2's
@@ -43,8 +53,6 @@ export const DEFAULT_EXPENSE_CATEGORIES: { name: string; subcategoryNames: strin
 export const DEFAULT_INCOME_SUBCATEGORY_NAMES = [
   '이월', '급여', '수당', '상여', '투자수익', '이자', '부수익', '처분소득', '기타 수입',
 ];
-
-const SAVING_CATEGORY_DEFAULT_COST_BEHAVIOR = null; // saving/investment excluded from fixed/variable (PRD §35)
 
 export async function ensureDefaultCategoriesSeeded(householdId: string): Promise<void> {
   const supabase = await createClient();
@@ -82,11 +90,13 @@ export async function ensureDefaultCategoriesSeeded(householdId: string): Promis
     incomeCategoryId = incomeCategory.id as string;
   }
 
-  await ensureSubcategoriesSeeded(supabase, incomeCategoryId, DEFAULT_INCOME_SUBCATEGORY_NAMES);
+  // Resolve (inserting where missing) every expense category id first, so the subcategory pass
+  // below can be done in one batched round-trip instead of one SELECT + one INSERT per category.
+  const categoryIdAndSubcategoryNames: { categoryId: string; subcategoryNames: string[] }[] = [
+    { categoryId: incomeCategoryId, subcategoryNames: DEFAULT_INCOME_SUBCATEGORY_NAMES },
+  ];
 
   for (const [categoryIndex, category] of DEFAULT_EXPENSE_CATEGORIES.entries()) {
-    const isSavingCategory = category.name === '저축성지출';
-
     let categoryId = existingCategoryIdByKey.get(`expense:${category.name}`);
     if (!categoryId) {
       const { data: expenseCategory, error: expenseError } = await supabase
@@ -95,7 +105,7 @@ export async function ensureDefaultCategoriesSeeded(householdId: string): Promis
           household_id: householdId,
           transaction_type: 'expense',
           name: category.name,
-          default_cost_behavior: isSavingCategory ? SAVING_CATEGORY_DEFAULT_COST_BEHAVIOR : 'variable',
+          default_cost_behavior: category.defaultCostBehavior,
           display_order: categoryIndex,
         })
         .select('id')
@@ -107,35 +117,50 @@ export async function ensureDefaultCategoriesSeeded(householdId: string): Promis
       categoryId = expenseCategory.id as string;
     }
 
-    await ensureSubcategoriesSeeded(supabase, categoryId, category.subcategoryNames);
+    categoryIdAndSubcategoryNames.push({ categoryId, subcategoryNames: category.subcategoryNames });
   }
+
+  await ensureSubcategoriesSeededBatch(supabase, categoryIdAndSubcategoryNames);
 }
 
-async function ensureSubcategoriesSeeded(
+// Batched replacement for the old per-category "SELECT then maybe INSERT" loop (~15 sequential
+// round-trips against `subcategories` even when nothing was missing). Does exactly one SELECT
+// across all category ids, then at most one bulk INSERT for whatever's missing across all of
+// them. Still fully resumable: since it re-derives "missing" from a fresh SELECT on every call,
+// a partial failure (this call's own bulk insert erroring out) just leaves gaps that the next
+// call's SELECT will see and retry — same self-healing property as the old per-row loop.
+async function ensureSubcategoriesSeededBatch(
   supabase: Awaited<ReturnType<typeof createClient>>,
-  categoryId: string,
-  names: string[],
+  categoryIdAndSubcategoryNames: { categoryId: string; subcategoryNames: string[] }[],
 ): Promise<void> {
+  const allCategoryIds = categoryIdAndSubcategoryNames.map((c) => c.categoryId);
+
   const { data: existingSubcategories, error: existingError } = await supabase
     .from('subcategories')
-    .select('name')
-    .eq('category_id', categoryId);
+    .select('category_id, name')
+    .in('category_id', allCategoryIds);
 
   if (existingError) {
     throw new Error(`소분류 시드 확인 실패: ${existingError.message}`);
   }
 
-  const existingNames = new Set((existingSubcategories ?? []).map((s) => s.name));
-  const missingNames = names.filter((name) => !existingNames.has(name));
-  if (missingNames.length === 0) {
+  const existingKeys = new Set(
+    (existingSubcategories ?? []).map((s) => `${s.category_id}:${s.name}`),
+  );
+
+  const rows = categoryIdAndSubcategoryNames.flatMap(({ categoryId, subcategoryNames }) =>
+    subcategoryNames
+      .filter((name) => !existingKeys.has(`${categoryId}:${name}`))
+      .map((name) => ({
+        category_id: categoryId,
+        name,
+        display_order: subcategoryNames.indexOf(name),
+      })),
+  );
+
+  if (rows.length === 0) {
     return;
   }
-
-  const rows = missingNames.map((name) => ({
-    category_id: categoryId,
-    name,
-    display_order: names.indexOf(name),
-  }));
 
   const { error } = await supabase.from('subcategories').insert(rows);
   if (error) {
