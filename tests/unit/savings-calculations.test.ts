@@ -34,12 +34,11 @@ describe('calculateSavings - 단리 (simple)', () => {
 });
 
 describe('calculateSavings - 월복리 (monthly compound)', () => {
-  it('computes a concrete rounded 세전이자 from the annuity FV formula', () => {
+  it('computes a concrete rounded 세전이자 from the annuity-due FV formula', () => {
     // 월 500,000 · 60개월 · 연 3.0% · 과세율 0%
-    // i = 0.03/12 = 0.0025, n = 60
-    // FV = 500,000 × ((1.0025)^60 − 1) / 0.0025 ≈ 32,323,356.3110540956...
-    // 세전이자 = FV − 납입원금(30,000,000) ≈ 2,323,356.3110540956 → rounds to 2,323,356
-    // (fractional part ≈ .311, nowhere near the .5 boundary)
+    // i = 0.03/12 = 0.0025, n = 60, deposits at the START of each month (Excel FV type=1)
+    // FV = 500,000 × ((1.0025)^60 − 1)/0.0025 × 1.0025 ≈ 32,404,164.6...
+    // 세전이자 = FV − 납입원금(30,000,000) ≈ 2,404,164.6 → rounds to 2,404,165
     const result = calculateSavings({
       monthlyAmount: 500_000,
       annualRate: 0.03,
@@ -48,20 +47,34 @@ describe('calculateSavings - 월복리 (monthly compound)', () => {
       method: 'monthly_compound',
     });
     expect(result.maturityPrincipal).toBe(30_000_000);
-    expect(result.pretaxInterest).toBe(2_323_356);
-    expect(result.maturityAmount).toBe(32_323_356);
+    expect(result.pretaxInterest).toBe(2_404_165);
+    expect(result.maturityAmount).toBe(32_404_165);
   });
 
-  it('yields strictly more pretax interest than 단리 for identical inputs (long enough term)', () => {
-    // NOTE: this only holds once the term is long enough for compounding to outweigh
-    // simple interest's front-loaded holding-period assumption — at 12 months (the §6.8
-    // worked case above) 단리 (97,500) is actually LARGER than 월복리 (83,191) under these
-    // exact formulas, so the inequality is asserted here with a longer, distinct term
-    // instead of silently reusing the worked case.
-    const shared = { monthlyAmount: 500_000, annualRate: 0.03, termMonths: 60, taxRate: 0 } as const;
-    const simple = calculateSavings({ ...shared, method: 'simple' });
-    const compound = calculateSavings({ ...shared, method: 'monthly_compound' });
-    expect(compound.pretaxInterest).toBeGreaterThan(simple.pretaxInterest);
+  it('yields strictly more pretax interest than 단리 at BOTH a short and a long term', () => {
+    // Regression guard for a real bug found in review: the compound branch originally used an
+    // ORDINARY annuity (Excel FV type=0, deposits at month END) while 단리's n(n+1)/2 factor
+    // assumes deposits at month START. The mismatched timing understated 월복리 by one period,
+    // making it LOSE to 단리 at 12 months (83,191 vs 97,500) — an impossible result for the same
+    // deposit schedule. Asserting the inequality at a short term as well as a long one is what
+    // catches that class of error; a long-term-only assertion passed straight through it.
+    for (const termMonths of [12, 60] as const) {
+      const shared = { monthlyAmount: 500_000, annualRate: 0.03, termMonths, taxRate: 0 } as const;
+      const simple = calculateSavings({ ...shared, method: 'simple' });
+      const compound = calculateSavings({ ...shared, method: 'monthly_compound' });
+      expect(compound.pretaxInterest).toBeGreaterThan(simple.pretaxInterest);
+    }
+  });
+
+  it('matches the 단리 worked case timing: 12개월 3% gives 98,399원 (not the ordinary-annuity 83,191원)', () => {
+    const result = calculateSavings({
+      monthlyAmount: 500_000,
+      annualRate: 0.03,
+      termMonths: 12,
+      taxRate: 0,
+      method: 'monthly_compound',
+    });
+    expect(result.pretaxInterest).toBe(98_399);
   });
 
   it('does not divide by zero when annualRate is 0 (0% interest → 0 이자, not NaN)', () => {

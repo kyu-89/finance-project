@@ -23,7 +23,18 @@ function simplePretaxInterest(monthlyAmount: number, termMonths: number, annualR
   return monthlyAmount * (termMonths * (termMonths + 1) / 2) * monthlyRate;
 }
 
-// 월복리 (PRD §6.8): FV of an ordinary annuity, PMT × ((1+i)^n − 1) / i, minus 납입원금.
+// 월복리 (PRD §6.8): FV minus 납입원금, using an **annuity DUE** — deposits at the START of each
+// month — i.e. Excel's FV(rate, nper, pmt, pv, type=1). The trailing × (1+i) is what makes it a
+// due rather than an ordinary annuity.
+//
+// This must match 단리's deposit timing or the two methods are not comparable. 단리's
+// n(n+1)/2 factor sums 12+11+…+1 months of holding, meaning the first deposit earns a full n
+// months — a start-of-month schedule, which is how Korean 적금 actually works. Using an ordinary
+// annuity (type=0) here would give the first deposit only n−1 months, understating 월복리 by one
+// period: at 12 months / 3% that produced 83,191원 against 단리's 97,500원, i.e. compounding
+// appearing to LOSE to simple interest on the same schedule. With the correct due convention it
+// is 98,399원, and 월복리 > 단리 at every term, as it must be.
+//
 // i = annualRate/12 is 0 whenever annualRate is 0, which would divide by zero — a 0% rate
 // must yield 0 interest, so that case is handled explicitly rather than falling through.
 function compoundPretaxInterest(monthlyAmount: number, termMonths: number, annualRate: number): number {
@@ -31,7 +42,8 @@ function compoundPretaxInterest(monthlyAmount: number, termMonths: number, annua
   if (monthlyRate === 0) {
     return 0;
   }
-  const futureValue = monthlyAmount * ((Math.pow(1 + monthlyRate, termMonths) - 1) / monthlyRate);
+  const futureValue =
+    monthlyAmount * ((Math.pow(1 + monthlyRate, termMonths) - 1) / monthlyRate) * (1 + monthlyRate);
   return futureValue - monthlyAmount * termMonths;
 }
 
