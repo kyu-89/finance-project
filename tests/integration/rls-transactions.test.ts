@@ -14,6 +14,7 @@ describe('categories/payment_methods/transactions RLS', () => {
   let userAId: string;
   let userBId: string;
   let userAHouseholdId: string;
+  let userBHouseholdId: string;
   let userACategoryId: string;
   let userAPaymentMethodId: string;
   let userATransactionId: string;
@@ -48,6 +49,17 @@ describe('categories/payment_methods/transactions RLS', () => {
       .single();
     if (householdError || !household) throw householdError ?? new Error('failed to create household');
     userAHouseholdId = household.id;
+
+    // households carries a unique index on owner_user_id (one household per user), so user B's
+    // household is created once here and shared. Several cross-household tests need it, and
+    // creating it per-test made them fail with 23505 depending on execution order.
+    const { data: householdB, error: householdBError } = await admin
+      .from('households')
+      .insert({ owner_user_id: userBId, name: 'B네 집' })
+      .select('id')
+      .single();
+    if (householdBError || !householdB) throw householdBError ?? new Error('failed to create household B');
+    userBHouseholdId = householdB.id;
   });
 
   afterAll(async () => {
@@ -340,16 +352,10 @@ describe('categories/payment_methods/transactions RLS', () => {
 
   it("rejects a transaction referencing another household's category", async () => {
     // Build a second household owned by user B, with its own category.
-    const { data: householdB, error: householdBError } = await admin
-      .from('households')
-      .insert({ owner_user_id: userBId, name: 'B네 집' })
-      .select('id')
-      .single();
-    expect(householdBError).toBeNull();
 
     const { data: categoryB, error: categoryBError } = await admin
       .from('categories')
-      .insert({ household_id: householdB!.id, transaction_type: 'expense', name: 'B의 카테고리' })
+      .insert({ household_id: userBHouseholdId, transaction_type: 'expense', name: 'B의 카테고리' })
       .select('id')
       .single();
     expect(categoryBError).toBeNull();
@@ -455,7 +461,8 @@ describe('categories/payment_methods/transactions RLS', () => {
 
   it('allows only one transaction per occurrence and hides recurring data from user B', async () => {
     const asUserA = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
-    await asUserA.auth.signInWithPassword({ email: userAEmail, password });
+    const { error: signInError } = await asUserA.auth.signInWithPassword({ email: userAEmail, password });
+    expect(signInError).toBeNull();
     const plannedRow = {
       household_id: userAHouseholdId,
       transaction_date: '2026-09-01',
@@ -474,8 +481,8 @@ describe('categories/payment_methods/transactions RLS', () => {
     expect(duplicateTransactionError).not.toBeNull();
 
     const asUserB = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
-    const { error: signInError } = await asUserB.auth.signInWithPassword({ email: userBEmail, password });
-    expect(signInError).toBeNull();
+    const { error: signInErrorB } = await asUserB.auth.signInWithPassword({ email: userBEmail, password });
+    expect(signInErrorB).toBeNull();
     const { data: hiddenRules } = await asUserB.from('recurring_rules').select('id').eq('id', userARecurringRuleId);
     expect(hiddenRules).toEqual([]);
     const { error: linkError } = await asUserB.rpc('link_recurring_occurrence', {
@@ -488,7 +495,8 @@ describe('categories/payment_methods/transactions RLS', () => {
 
   it('atomically links an existing posted transaction and cancels the planned duplicate', async () => {
     const asUserA = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
-    await asUserA.auth.signInWithPassword({ email: userAEmail, password });
+    const { error: signInError } = await asUserA.auth.signInWithPassword({ email: userAEmail, password });
+    expect(signInError).toBeNull();
     const { error: linkError } = await asUserA.rpc('link_recurring_occurrence', {
       p_occurrence_id: userAOccurrenceId,
       p_planned_transaction_id: userAPlannedTransactionId,
@@ -506,7 +514,8 @@ describe('categories/payment_methods/transactions RLS', () => {
 
   it('adds an owner-only pause period and skips an already materialized planned row', async () => {
     const asUserA = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
-    await asUserA.auth.signInWithPassword({ email: userAEmail, password });
+    const { error: signInError } = await asUserA.auth.signInWithPassword({ email: userAEmail, password });
+    expect(signInError).toBeNull();
     const { data: occurrence, error: occurrenceError } = await asUserA.from('recurring_occurrences').insert({
       household_id: userAHouseholdId,
       recurring_rule_id: userARecurringRuleId,
@@ -537,7 +546,8 @@ describe('categories/payment_methods/transactions RLS', () => {
     expect(skipped?.status).toBe('skipped');
 
     const asUserB = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
-    await asUserB.auth.signInWithPassword({ email: userBEmail, password });
+    const { error: signInErrorB } = await asUserB.auth.signInWithPassword({ email: userBEmail, password });
+    expect(signInErrorB).toBeNull();
     const { error: foreignPauseError } = await asUserB.rpc('add_recurring_pause_period', {
       p_rule_id: userARecurringRuleId,
       p_start_date: '2026-11-01',
@@ -549,7 +559,8 @@ describe('categories/payment_methods/transactions RLS', () => {
 
   it('pausing or ending a rule skips future planned rows while preserving prior posted rows', async () => {
     const asUserA = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
-    await asUserA.auth.signInWithPassword({ email: userAEmail, password });
+    const { error: signInError } = await asUserA.auth.signInWithPassword({ email: userAEmail, password });
+    expect(signInError).toBeNull();
     const { data: occurrence } = await asUserA.from('recurring_occurrences').insert({
       household_id: userAHouseholdId,
       recurring_rule_id: userARecurringRuleId,
@@ -592,7 +603,8 @@ describe('categories/payment_methods/transactions RLS', () => {
 
   it('isolates budgets, supports idempotent upsert, and rejects cross-household categories', async () => {
     const asUserA = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
-    await asUserA.auth.signInWithPassword({ email: userAEmail, password });
+    const { error: signInError } = await asUserA.auth.signInWithPassword({ email: userAEmail, password });
+    expect(signInError).toBeNull();
     const budgetRow = {
       household_id: userAHouseholdId,
       year: 2027,
@@ -634,19 +646,160 @@ describe('categories/payment_methods/transactions RLS', () => {
     expect(categorylessExpenseError).not.toBeNull();
 
     const asUserB = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
-    await asUserB.auth.signInWithPassword({ email: userBEmail, password });
+    const { error: signInErrorB } = await asUserB.auth.signInWithPassword({ email: userBEmail, password });
+    expect(signInErrorB).toBeNull();
     const { data: hidden } = await asUserB.from('budgets').select('id').eq('household_id', userAHouseholdId);
     expect(hidden).toEqual([]);
     const { error: spoofError } = await asUserB.from('budgets').insert({ ...budgetRow, month: 2 });
     expect(spoofError).not.toBeNull();
 
-    const { data: householdB } = await admin.from('households').select('id').eq('owner_user_id', userBId).single();
-    const { data: categoryB } = await admin.from('categories').select('id').eq('household_id', householdB!.id).limit(1).single();
+    const { data: categoryB } = await admin.from('categories').select('id').eq('household_id', userBHouseholdId).limit(1).single();
     const { error: tenantError } = await admin.from('budgets').insert({
       ...budgetRow,
       month: 3,
       category_id: categoryB!.id,
     });
     expect(tenantError).not.toBeNull();
+  });
+
+  it('denies even the owner a hard delete on recurring_rules and budgets, since neither has a delete policy', async () => {
+    const asUserA = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
+    const { error: signInError } = await asUserA.auth.signInWithPassword({ email: userAEmail, password });
+    expect(signInError).toBeNull();
+
+    const { data: rule, error: ruleError } = await asUserA.from('recurring_rules').insert({
+      household_id: userAHouseholdId,
+      source_type: 'subscription',
+      start_date: '2027-02-01',
+      frequency: 'monthly',
+      interval_count: 1,
+      day_of_month: 1,
+      default_amount: 10000,
+      transaction_type: 'expense',
+      flow_class: 'consumption',
+      cost_behavior: 'fixed',
+      description: 'DELETE 거부 테스트용 반복규칙',
+    }).select('id').single();
+    expect(ruleError).toBeNull();
+
+    const { data: ruleDeleted, error: ruleDeleteError } = await asUserA
+      .from('recurring_rules')
+      .delete()
+      .eq('id', rule!.id)
+      .select('id');
+    // Neither recurring_rules nor budgets has ever been granted a DELETE policy, so RLS denies
+    // DELETE by default even for the owner: no error, zero rows affected, row still present.
+    expect(ruleDeleteError).toBeNull();
+    expect(ruleDeleted).toEqual([]);
+    const { data: ruleStillThere } = await admin.from('recurring_rules').select('id').eq('id', rule!.id).single();
+    expect(ruleStillThere?.id).toBe(rule!.id);
+
+    const { error: budgetInsertError } = await asUserA.from('budgets').insert({
+      household_id: userAHouseholdId,
+      year: 2027,
+      month: 5,
+      transaction_type: 'expense',
+      category_id: userACategoryId,
+      subcategory_id: null,
+      amount: 12345,
+    });
+    expect(budgetInsertError).toBeNull();
+
+    const { data: budgetDeleted, error: budgetDeleteError } = await asUserA
+      .from('budgets')
+      .delete()
+      .match({ household_id: userAHouseholdId, year: 2027, month: 5, category_id: userACategoryId })
+      .select('id');
+    expect(budgetDeleteError).toBeNull();
+    expect(budgetDeleted).toEqual([]);
+    const { data: budgetStillThere } = await admin
+      .from('budgets')
+      .select('id')
+      .match({ household_id: userAHouseholdId, year: 2027, month: 5, category_id: userACategoryId })
+      .single();
+    expect(budgetStillThere?.id).toBeTruthy();
+  });
+
+  it("rejects a recurring_occurrences row whose recurring_rule_id belongs to a different household", async () => {
+
+    const { data: ruleB, error: ruleBError } = await admin.from('recurring_rules').insert({
+      household_id: userBHouseholdId,
+      source_type: 'subscription',
+      start_date: '2027-03-01',
+      frequency: 'monthly',
+      interval_count: 1,
+      day_of_month: 1,
+      default_amount: 20000,
+      transaction_type: 'expense',
+      flow_class: 'consumption',
+      cost_behavior: 'fixed',
+      description: 'B 소유 반복규칙',
+    }).select('id').single();
+    expect(ruleBError).toBeNull();
+
+    const asUserA = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
+    const { error: signInError } = await asUserA.auth.signInWithPassword({ email: userAEmail, password });
+    expect(signInError).toBeNull();
+
+    // household_id is A's own household (satisfies the owner-scoped INSERT policy), but
+    // recurring_rule_id points at B's rule -- the tenant-check trigger, not RLS on this table's
+    // own household_id column, must be what rejects the attach.
+    const { error: crossHouseholdError } = await asUserA.from('recurring_occurrences').insert({
+      household_id: userAHouseholdId,
+      recurring_rule_id: ruleB!.id,
+      occurrence_date: '2027-03-01',
+    });
+    expect(crossHouseholdError).not.toBeNull();
+  });
+
+  it('link_recurring_occurrence rejects a posted transaction belonging to a different household', async () => {
+    const asUserA = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
+    const { error: signInError } = await asUserA.auth.signInWithPassword({ email: userAEmail, password });
+    expect(signInError).toBeNull();
+
+    const { data: occurrence, error: occurrenceError } = await asUserA.from('recurring_occurrences').insert({
+      household_id: userAHouseholdId,
+      recurring_rule_id: userARecurringRuleId,
+      occurrence_date: '2027-04-01',
+    }).select('id').single();
+    expect(occurrenceError).toBeNull();
+
+    const { data: planned, error: plannedError } = await asUserA.from('transactions').insert({
+      household_id: userAHouseholdId,
+      transaction_date: '2027-04-01',
+      transaction_type: 'expense',
+      flow_class: 'consumption',
+      recurring_rule_id: userARecurringRuleId,
+      recurring_occurrence_id: occurrence!.id,
+      amount: 35000,
+      description: '교차 세대 링크 시도용 예정 거래',
+      status: 'planned',
+    }).select('id').single();
+    expect(plannedError).toBeNull();
+
+
+    const { data: postedB, error: postedBError } = await admin.from('transactions').insert({
+      household_id: userBHouseholdId,
+      transaction_date: '2027-04-01',
+      transaction_type: 'expense',
+      flow_class: 'consumption',
+      amount: 35000,
+      description: 'B 소유 확정 거래',
+      status: 'posted',
+    }).select('id').single();
+    expect(postedBError).toBeNull();
+
+    // The occurrence and planned transaction are legitimately A's own, so the RPC's first two
+    // invoker-RLS lookups pass; only the posted transaction belongs to B. The existing test at
+    // "allows only one transaction per occurrence..." only ever called this RPC as user B passing
+    // all-A ids, which dies at the very first lookup (the occurrence itself is invisible to B).
+    // This is the untested direction: a legitimate caller whose *posted transaction* argument
+    // reaches across households must still be rejected.
+    const { error: linkError } = await asUserA.rpc('link_recurring_occurrence', {
+      p_occurrence_id: occurrence!.id,
+      p_planned_transaction_id: planned!.id,
+      p_posted_transaction_id: postedB!.id,
+    });
+    expect(linkError).not.toBeNull();
   });
 });
