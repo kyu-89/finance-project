@@ -6,15 +6,18 @@ import { AllTransactionsTab } from './AllTransactionsTab';
 import type { Transaction } from '@/lib/transactions';
 import type { CategoryWithSubcategories } from '@/lib/categories';
 import type { PaymentMethod } from '@/lib/payment-methods';
+import type { DuplicateCandidate } from '@/lib/recurring-duplicates';
 
 export function MonthlyPageTabs({
   transactions,
   categories,
   paymentMethods,
+  duplicateCandidates,
 }: {
   transactions: Transaction[];
   categories: CategoryWithSubcategories[];
   paymentMethods: PaymentMethod[];
+  duplicateCandidates: Record<string, DuplicateCandidate[]>;
 }) {
   const [tab, setTab] = useState<'input' | 'all'>('input');
 
@@ -37,7 +40,7 @@ export function MonthlyPageTabs({
         </button>
       </div>
       {tab === 'input' ? (
-        <MonthlyInputTab initialTransactions={transactions} categories={categories} paymentMethods={paymentMethods} />
+        <MonthlyInputTab initialTransactions={transactions} categories={categories} paymentMethods={paymentMethods} duplicateCandidates={duplicateCandidates} />
       ) : (
         <AllTransactionsTab initialTransactions={transactions} />
       )}

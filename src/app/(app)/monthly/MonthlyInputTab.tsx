@@ -6,6 +6,7 @@ import {
   createMonthlyRowAction,
   confirmPlannedTransactionAction,
   skipPlannedTransactionAction,
+  linkRecurringOccurrenceAction,
   updateCostBehaviorAction,
 } from '@/actions/transaction-actions';
 import { FormMessage } from '@/components/FormMessage';
@@ -13,6 +14,7 @@ import { INITIAL_ACTION_STATE } from '@/lib/action-result';
 import type { Transaction } from '@/lib/transactions';
 import type { CategoryWithSubcategories } from '@/lib/categories';
 import type { PaymentMethod } from '@/lib/payment-methods';
+import type { DuplicateCandidate } from '@/lib/recurring-duplicates';
 
 // No optional row models (sorting/filtering/etc.) are needed for this first-pass read-only
 // table, so the feature registry is empty — the core row model is automatic in v9.
@@ -68,9 +70,10 @@ function CostBehaviorEditor({ transaction }: { transaction: Transaction }) {
   );
 }
 
-function PlannedTransactionEditor({ transaction, paymentMethods }: { transaction: Transaction; paymentMethods: PaymentMethod[] }) {
+function PlannedTransactionEditor({ transaction, paymentMethods, candidates }: { transaction: Transaction; paymentMethods: PaymentMethod[]; candidates: DuplicateCandidate[] }) {
   const [confirmState, confirmAction, confirmPending] = useActionState(confirmPlannedTransactionAction, INITIAL_ACTION_STATE);
   const [skipState, skipAction, skipPending] = useActionState(skipPlannedTransactionAction, INITIAL_ACTION_STATE);
+  const [linkState, linkAction, linkPending] = useActionState(linkRecurringOccurrenceAction, INITIAL_ACTION_STATE);
   if (transaction.status !== 'planned') return <span className="text-xs text-[var(--tds-grey-500)]">처리 완료</span>;
 
   return <div className="flex min-w-[420px] flex-col gap-1">
@@ -87,11 +90,19 @@ function PlannedTransactionEditor({ transaction, paymentMethods }: { transaction
       <input type="hidden" name="id" value={transaction.id} />
       <button type="submit" disabled={skipPending} className="min-h-11 px-3 text-xs font-semibold text-[var(--tds-red-500)]">이번 회차 건너뛰기</button>
     </form>
-    <FormMessage result={confirmState} /><FormMessage result={skipState} />
+    {candidates.length > 0 && transaction.recurringOccurrenceId && <form action={linkAction} className="flex items-center gap-1 rounded-xl bg-[var(--tds-blue-50)] p-2">
+      <input type="hidden" name="occurrenceId" value={transaction.recurringOccurrenceId} />
+      <input type="hidden" name="plannedTransactionId" value={transaction.id} />
+      <select name="postedTransactionId" className="min-w-0 flex-1 px-2 py-1 text-xs" aria-label="중복 후보 거래">
+        {candidates.map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.transactionDate} · {candidate.description}</option>)}
+      </select>
+      <button type="submit" disabled={linkPending} className="secondary-button px-3 text-xs">기존 거래와 연결</button>
+    </form>}
+    <FormMessage result={confirmState} /><FormMessage result={skipState} /><FormMessage result={linkState} />
   </div>;
 }
 
-function makeColumns(paymentMethods: PaymentMethod[]) {
+function makeColumns(paymentMethods: PaymentMethod[], duplicateCandidates: Record<string, DuplicateCandidate[]>) {
   return columnHelper.columns([
   columnHelper.accessor('transactionDate', { header: '날짜' }),
   columnHelper.accessor('status', { header: '상태', cell: (info) => <span className="tds-chip">{STATUS_LABEL[info.getValue()]}</span> }),
@@ -107,7 +118,7 @@ function makeColumns(paymentMethods: PaymentMethod[]) {
   columnHelper.display({
     id: 'plannedAction',
     header: '예정 거래 처리',
-    cell: (info) => <PlannedTransactionEditor transaction={info.row.original} paymentMethods={paymentMethods} />,
+    cell: (info) => <PlannedTransactionEditor transaction={info.row.original} paymentMethods={paymentMethods} candidates={duplicateCandidates[info.row.original.id] ?? []} />,
   }),
   ]);
 }
@@ -116,12 +127,14 @@ export function MonthlyInputTab({
   initialTransactions,
   categories,
   paymentMethods,
+  duplicateCandidates,
 }: {
   initialTransactions: Transaction[];
   categories: CategoryWithSubcategories[];
   paymentMethods: PaymentMethod[];
+  duplicateCandidates: Record<string, DuplicateCandidate[]>;
 }) {
-  const columns = useMemo(() => makeColumns(paymentMethods), [paymentMethods]);
+  const columns = useMemo(() => makeColumns(paymentMethods, duplicateCandidates), [paymentMethods, duplicateCandidates]);
   const table = useTable({ features, columns, data: initialTransactions });
 
   const [categoryId, setCategoryId] = useState('');

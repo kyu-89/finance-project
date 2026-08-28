@@ -74,7 +74,10 @@
 - 이어서 구현됨(다음 커밋): 설정 > 반복항목 생성·목록·일시중지·재개·종료, 월 진입 시 planned idempotent 생성.
 - `20260831020000`은 soft-delete 뒤 동일 회차가 재생성되지 않도록 회차당 transaction을 절대 유일하게 만든다. 운영 Supabase 적용 완료.
 - 월간입력의 planned 행에서 날짜·금액·결제수단을 조정해 `posted` 확정하거나 해당 회차를 `skipped` 처리하는 UI 구현 완료(다음 커밋).
-- 최신 검증: lint/build ✅, unit 10 files / 32 tests ✅.
+- 직접 입력 posted 거래 중 동일 금액·예정일 ±3일 후보를 분류/결제수단 일치도로 정렬하고, 선택한 기존 거래와 원자적으로 연결하는 흐름 구현 완료.
+- 연결 시 occurrence가 posted 거래를 가리키고 생성 planned 행은 `cancelled`가 되어 실적에 중복 합산되지 않는다.
+- `20260831030000_link_recurring_occurrence.sql`은 원격 적용 후 앱을 배포할 것.
+- 최신 검증: lint/build ✅, unit 11 files / 34 tests ✅.
 
 ---
 

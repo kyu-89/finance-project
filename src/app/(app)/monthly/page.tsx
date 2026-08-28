@@ -4,6 +4,7 @@ import { listCategoriesWithSubcategories } from '@/lib/categories';
 import { listPaymentMethods } from '@/lib/payment-methods';
 import { currentMonthRangeInSeoul } from '@/lib/date';
 import { materializeRecurringRulesForRange } from '@/lib/recurring-rules';
+import { findRecurringDuplicateCandidates } from '@/lib/recurring-duplicates';
 import { MonthlyPageTabs } from './MonthlyPageTabs';
 
 export default async function MonthlyPage() {
@@ -19,6 +20,7 @@ export default async function MonthlyPage() {
 
   const expenseCategories = categories.filter((c) => c.transactionType === 'expense' && c.isActive);
   const activePaymentMethods = paymentMethods.filter((m) => m.isActive);
+  const duplicateCandidates = findRecurringDuplicateCandidates(transactions);
 
   return (
     <div className="tds-page">
@@ -30,6 +32,7 @@ export default async function MonthlyPage() {
         transactions={transactions}
         categories={expenseCategories}
         paymentMethods={activePaymentMethods}
+        duplicateCandidates={duplicateCandidates}
       />
     </div>
   );

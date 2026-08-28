@@ -13,6 +13,7 @@ import { getCurrentHouseholdId } from '@/lib/household';
 import { todayInSeoul } from '@/lib/date';
 import type { TransactionType } from '@/lib/cost-behavior';
 import { fail, ok, type ActionResult } from '@/lib/action-result';
+import { linkRecurringOccurrence } from '@/lib/recurring-rules';
 
 export async function createQuickTransactionAction(
   _prevState: ActionResult,
@@ -198,6 +199,25 @@ export async function skipPlannedTransactionAction(
     await skipPlannedTransaction(id);
   } catch (error) {
     return fail(error instanceof Error ? error.message : '예정 거래 건너뛰기에 실패했어요.');
+  }
+  revalidatePath('/monthly');
+  return ok();
+}
+
+export async function linkRecurringOccurrenceAction(
+  _prevState: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const occurrenceId = String(formData.get('occurrenceId') ?? '');
+  const plannedTransactionId = String(formData.get('plannedTransactionId') ?? '');
+  const postedTransactionId = String(formData.get('postedTransactionId') ?? '');
+  if (!occurrenceId || !plannedTransactionId || !postedTransactionId) return fail('연결할 거래를 선택해 주세요.');
+
+  try {
+    await getCurrentHouseholdId();
+    await linkRecurringOccurrence({ occurrenceId, plannedTransactionId, postedTransactionId });
+  } catch (error) {
+    return fail(error instanceof Error ? error.message : '기존 거래 연결에 실패했어요.');
   }
   revalidatePath('/monthly');
   return ok();

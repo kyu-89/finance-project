@@ -210,3 +210,17 @@ export async function materializeRecurringRulesForRange(
   if (transactionError) throw new Error(`반복 예정거래 생성 실패: ${transactionError.message}`);
   return inserted?.length ?? 0;
 }
+
+export async function linkRecurringOccurrence(input: {
+  occurrenceId: string;
+  plannedTransactionId: string;
+  postedTransactionId: string;
+}): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc('link_recurring_occurrence', {
+    p_occurrence_id: input.occurrenceId,
+    p_planned_transaction_id: input.plannedTransactionId,
+    p_posted_transaction_id: input.postedTransactionId,
+  });
+  if (error) throw new Error(`기존 거래 연결 실패: ${error.message}`);
+}
