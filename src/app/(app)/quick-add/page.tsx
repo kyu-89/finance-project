@@ -1,10 +1,22 @@
-export default function QuickAddPage() {
+import { ensureHouseholdForCurrentUser } from '@/lib/household';
+import { listCategoriesWithSubcategories } from '@/lib/categories';
+import { listPaymentMethods } from '@/lib/payment-methods';
+import { QuickAddForm } from './QuickAddForm';
+
+export default async function QuickAddPage() {
+  const household = await ensureHouseholdForCurrentUser();
+  const [categories, paymentMethods] = await Promise.all([
+    listCategoriesWithSubcategories(household.id),
+    listPaymentMethods(household.id),
+  ]);
+
+  const expenseCategories = categories.filter((c) => c.transactionType === 'expense' && c.isActive);
+  const activePaymentMethods = paymentMethods.filter((m) => m.isActive);
+
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-semibold">거래 기록</h1>
-      <p className="text-sm text-gray-500">
-        Sprint 1에서 금액 → 대분류 → 소분류 → 결제수단 → 내용 → 저장(10초 입력)을 구현합니다.
-      </p>
+    <div className="p-4">
+      <h1 className="mb-4 text-xl font-semibold">거래 기록</h1>
+      <QuickAddForm categories={expenseCategories} paymentMethods={activePaymentMethods} />
     </div>
   );
 }
