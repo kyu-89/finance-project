@@ -1,9 +1,11 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useActionState, useMemo, useState } from 'react';
 import { createColumnHelper, tableFeatures, useTable } from '@tanstack/react-table';
 import {
   createMonthlyRowAction,
+  confirmPlannedTransactionAction,
+  skipPlannedTransactionAction,
   updateCostBehaviorAction,
 } from '@/actions/transaction-actions';
 import { FormMessage } from '@/components/FormMessage';
@@ -66,9 +68,33 @@ function CostBehaviorEditor({ transaction }: { transaction: Transaction }) {
   );
 }
 
-const columns = columnHelper.columns([
+function PlannedTransactionEditor({ transaction, paymentMethods }: { transaction: Transaction; paymentMethods: PaymentMethod[] }) {
+  const [confirmState, confirmAction, confirmPending] = useActionState(confirmPlannedTransactionAction, INITIAL_ACTION_STATE);
+  const [skipState, skipAction, skipPending] = useActionState(skipPlannedTransactionAction, INITIAL_ACTION_STATE);
+  if (transaction.status !== 'planned') return <span className="text-xs text-[var(--tds-grey-500)]">처리 완료</span>;
+
+  return <div className="flex min-w-[420px] flex-col gap-1">
+    <form action={confirmAction} className="flex items-center gap-1">
+      <input type="hidden" name="id" value={transaction.id} />
+      <input type="date" name="transactionDate" defaultValue={transaction.transactionDate} required className="w-36 px-2 py-1 text-xs" />
+      <input type="number" name="amount" defaultValue={transaction.amount} min="1" step="1" required className="w-28 px-2 py-1 text-xs" />
+      <select name="paymentMethodId" defaultValue={transaction.paymentMethodId ?? ''} className="w-28 px-2 py-1 text-xs">
+        <option value="">결제수단 없음</option>{paymentMethods.map((method) => <option key={method.id} value={method.id}>{method.name}</option>)}
+      </select>
+      <button type="submit" disabled={confirmPending} className="tds-primary-button min-h-11 px-3 text-xs">확정</button>
+    </form>
+    <form action={skipAction} className="flex items-center justify-end gap-2">
+      <input type="hidden" name="id" value={transaction.id} />
+      <button type="submit" disabled={skipPending} className="min-h-11 px-3 text-xs font-semibold text-[var(--tds-red-500)]">이번 회차 건너뛰기</button>
+    </form>
+    <FormMessage result={confirmState} /><FormMessage result={skipState} />
+  </div>;
+}
+
+function makeColumns(paymentMethods: PaymentMethod[]) {
+  return columnHelper.columns([
   columnHelper.accessor('transactionDate', { header: '날짜' }),
-  columnHelper.accessor('status', { header: '상태', cell: (info) => STATUS_LABEL[info.getValue()] }),
+  columnHelper.accessor('status', { header: '상태', cell: (info) => <span className="tds-chip">{STATUS_LABEL[info.getValue()]}</span> }),
   columnHelper.accessor('costBehavior', {
     header: '비용성격',
     cell: (info) => <CostBehaviorEditor transaction={info.row.original} />,
@@ -78,7 +104,13 @@ const columns = columnHelper.columns([
     header: '금액',
     cell: (info) => `${info.getValue().toLocaleString('ko-KR')}원`,
   }),
-]);
+  columnHelper.display({
+    id: 'plannedAction',
+    header: '예정 거래 처리',
+    cell: (info) => <PlannedTransactionEditor transaction={info.row.original} paymentMethods={paymentMethods} />,
+  }),
+  ]);
+}
 
 export function MonthlyInputTab({
   initialTransactions,
@@ -89,6 +121,7 @@ export function MonthlyInputTab({
   categories: CategoryWithSubcategories[];
   paymentMethods: PaymentMethod[];
 }) {
+  const columns = useMemo(() => makeColumns(paymentMethods), [paymentMethods]);
   const table = useTable({ features, columns, data: initialTransactions });
 
   const [categoryId, setCategoryId] = useState('');
@@ -166,7 +199,7 @@ export function MonthlyInputTab({
       </form>
 
       <div className="table-surface overflow-x-auto">
-        <table className="w-full min-w-[640px] border-collapse text-sm">
+        <table className="w-full min-w-[1080px] border-collapse text-sm">
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="border-b text-left">

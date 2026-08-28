@@ -72,7 +72,9 @@
 - 검증: lint/build ✅, unit **10 files / 32 tests** ✅, Supabase `db push --dry-run` ✅
 - `20260831010000`은 운영 Supabase 적용 완료, 로컬/원격 migration 이력 일치 확인 완료.
 - 이어서 구현됨(다음 커밋): 설정 > 반복항목 생성·목록·일시중지·재개·종료, 월 진입 시 planned idempotent 생성.
-- `20260831020000`은 soft-delete 뒤 동일 회차가 재생성되지 않도록 회차당 transaction을 절대 유일하게 만든다. 원격 적용 후 앱을 배포할 것.
+- `20260831020000`은 soft-delete 뒤 동일 회차가 재생성되지 않도록 회차당 transaction을 절대 유일하게 만든다. 운영 Supabase 적용 완료.
+- 월간입력의 planned 행에서 날짜·금액·결제수단을 조정해 `posted` 확정하거나 해당 회차를 `skipped` 처리하는 UI 구현 완료(다음 커밋).
+- 최신 검증: lint/build ✅, unit 10 files / 32 tests ✅.
 
 ---
 

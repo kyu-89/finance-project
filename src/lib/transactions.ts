@@ -19,6 +19,8 @@ export type Transaction = {
   memo: string | null;
   includeInBudget: boolean;
   needsReview: boolean;
+  recurringRuleId: string | null;
+  recurringOccurrenceId: string | null;
   status: 'planned' | 'posted' | 'skipped' | 'cancelled';
 };
 
@@ -41,7 +43,8 @@ function mapRow(row: {
   flow_class: string; cost_behavior: string | null; payment_method_id: string | null;
   category_id: string | null; subcategory_id: string | null; payer_member_id: string | null;
   beneficiary_member_id: string | null; amount: number; description: string; memo: string | null;
-  include_in_budget: boolean; needs_review: boolean; status: string;
+  include_in_budget: boolean; needs_review: boolean; recurring_rule_id: string | null;
+  recurring_occurrence_id: string | null; status: string;
 }): Transaction {
   return {
     id: row.id,
@@ -60,6 +63,8 @@ function mapRow(row: {
     memo: row.memo,
     includeInBudget: row.include_in_budget,
     needsReview: row.needs_review,
+    recurringRuleId: row.recurring_rule_id,
+    recurringOccurrenceId: row.recurring_occurrence_id,
     status: row.status as Transaction['status'],
   };
 }
@@ -68,7 +73,7 @@ function mapRow(row: {
 // this as a literal string type, not a widened `string` — Supabase's `.select()` overloads
 // parse the select-string type at compile time to produce the typed row shape, and a widened
 // `string` makes that parse fail with a generic, untyped `GenericStringError` result.
-const TRANSACTION_COLUMNS = `id, household_id, transaction_date, transaction_type, flow_class, cost_behavior, payment_method_id, category_id, subcategory_id, payer_member_id, beneficiary_member_id, amount, description, memo, include_in_budget, needs_review, status`;
+const TRANSACTION_COLUMNS = `id, household_id, transaction_date, transaction_type, flow_class, cost_behavior, payment_method_id, category_id, subcategory_id, payer_member_id, beneficiary_member_id, amount, description, memo, include_in_budget, needs_review, recurring_rule_id, recurring_occurrence_id, status`;
 
 export async function createTransaction(input: {
   householdId: string;
@@ -234,4 +239,43 @@ export async function updateTransactionCostBehavior(
   if (error) {
     throw new Error(`비용성격 수정 실패: ${error.message}`);
   }
+}
+
+export async function confirmPlannedTransaction(input: {
+  id: string;
+  transactionDate: string;
+  amount: number;
+  paymentMethodId: string | null;
+}): Promise<void> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('transactions')
+    .update({
+      transaction_date: input.transactionDate,
+      amount: input.amount,
+      payment_method_id: input.paymentMethodId,
+      status: 'posted',
+      needs_review: false,
+    })
+    .eq('id', input.id)
+    .eq('status', 'planned')
+    .is('deleted_at', null)
+    .select('id');
+
+  if (error) throw new Error(`예정 거래 확정 실패: ${error.message}`);
+  if (data.length !== 1) throw new Error('확정할 예정 거래를 찾지 못했어요.');
+}
+
+export async function skipPlannedTransaction(id: string): Promise<void> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('transactions')
+    .update({ status: 'skipped' })
+    .eq('id', id)
+    .eq('status', 'planned')
+    .is('deleted_at', null)
+    .select('id');
+
+  if (error) throw new Error(`예정 거래 건너뛰기 실패: ${error.message}`);
+  if (data.length !== 1) throw new Error('건너뛸 예정 거래를 찾지 못했어요.');
 }

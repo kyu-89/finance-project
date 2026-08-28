@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import {
   createTransaction,
+  confirmPlannedTransaction,
+  skipPlannedTransaction,
   undoTransaction,
   updateTransactionCostBehavior,
 } from '@/lib/transactions';
@@ -160,6 +162,43 @@ export async function updateCostBehaviorAction(
     return fail(error instanceof Error ? error.message : '비용성격 수정에 실패했습니다.');
   }
 
+  revalidatePath('/monthly');
+  return ok();
+}
+
+export async function confirmPlannedTransactionAction(
+  _prevState: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const id = String(formData.get('id') ?? '');
+  const transactionDate = String(formData.get('transactionDate') ?? '');
+  const amount = Number(formData.get('amount'));
+  const paymentMethodId = String(formData.get('paymentMethodId') ?? '') || null;
+  if (!id || !/^\d{4}-\d{2}-\d{2}$/.test(transactionDate)) return fail('거래 날짜를 확인해 주세요.');
+  if (!Number.isSafeInteger(amount) || amount <= 0) return fail('금액은 0보다 큰 원 단위 정수여야 해요.');
+
+  try {
+    await getCurrentHouseholdId();
+    await confirmPlannedTransaction({ id, transactionDate, amount, paymentMethodId });
+  } catch (error) {
+    return fail(error instanceof Error ? error.message : '예정 거래 확정에 실패했어요.');
+  }
+  revalidatePath('/monthly');
+  return ok();
+}
+
+export async function skipPlannedTransactionAction(
+  _prevState: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const id = String(formData.get('id') ?? '');
+  if (!id) return fail('거래 id가 없습니다.');
+  try {
+    await getCurrentHouseholdId();
+    await skipPlannedTransaction(id);
+  } catch (error) {
+    return fail(error instanceof Error ? error.message : '예정 거래 건너뛰기에 실패했어요.');
+  }
   revalidatePath('/monthly');
   return ok();
 }
