@@ -1013,7 +1013,9 @@ export async function updateSession(request: NextRequest) {
 
   if (isProtected && user && !isAal2Exempt) {
     const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-    if (aal && aal.currentLevel !== 'aal2') {
+    // Fail closed: if the AAL lookup itself errors (aal === null), treat it as "not aal2"
+    // rather than silently skipping the check and letting the request through.
+    if (!aal || aal.currentLevel !== 'aal2') {
       return NextResponse.redirect(new URL('/mfa/verify', request.url));
     }
   }
