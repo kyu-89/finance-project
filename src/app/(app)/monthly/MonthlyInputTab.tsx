@@ -87,7 +87,15 @@ export function MonthlyInputTab({
           ))}
         </select>
         <input name="description" placeholder="내용" required className="rounded border px-2 py-1 text-sm" />
-        <input name="amount" type="number" placeholder="금액" required className="rounded border px-2 py-1 text-sm" />
+        <input
+          name="amount"
+          type="number"
+          step="1"
+          min="1"
+          placeholder="금액"
+          required
+          className="rounded border px-2 py-1 text-sm"
+        />
         <button type="submit" className="col-span-2 rounded bg-black px-3 py-1 text-sm text-white md:col-span-1">
           행 추가
         </button>

@@ -2,13 +2,12 @@ import { ensureHouseholdForCurrentUser } from '@/lib/household';
 import { listTransactions } from '@/lib/transactions';
 import { listCategoriesWithSubcategories } from '@/lib/categories';
 import { listPaymentMethods } from '@/lib/payment-methods';
+import { currentMonthRangeInSeoul } from '@/lib/date';
 import { MonthlyPageTabs } from './MonthlyPageTabs';
 
 export default async function MonthlyPage() {
   const household = await ensureHouseholdForCurrentUser();
-  const now = new Date();
-  const fromDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-  const toDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+  const { fromDate, toDate } = currentMonthRangeInSeoul();
 
   const [transactions, categories, paymentMethods] = await Promise.all([
     listTransactions({ householdId: household.id, fromDate, toDate }),
