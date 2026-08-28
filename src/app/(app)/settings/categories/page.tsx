@@ -2,6 +2,7 @@ import { ensureHouseholdForCurrentUser } from '@/lib/household';
 import { listCategoriesWithSubcategories } from '@/lib/categories';
 import { CategoryForm } from './CategoryForm';
 import { DeactivateCategoryButton } from './DeactivateCategoryButton';
+import { CategoryEditor } from './CategoryEditor';
 
 export default async function CategoriesSettingsPage() {
   const household = await ensureHouseholdForCurrentUser();
@@ -15,19 +16,13 @@ export default async function CategoriesSettingsPage() {
 
       <ul className="flex flex-col gap-3">
         {categories.map((category) => (
-          <li key={category.id} className="rounded border p-3">
-            <div className="flex items-center justify-between">
-              <span className={category.isActive ? '' : 'text-gray-400 line-through'}>
-                [{category.transactionType === 'income' ? '수입' : '지출'}] {category.name}
-                {category.defaultCostBehavior && ` (${category.defaultCostBehavior === 'fixed' ? '고정비' : '변동비'})`}
-              </span>
+          <li key={category.id}>
+            <div className="flex items-start gap-2">
+              <div className="flex-1">
+                <CategoryEditor category={category} />
+              </div>
               {category.isActive && <DeactivateCategoryButton id={category.id} />}
             </div>
-            {category.subcategories.length > 0 && (
-              <p className="mt-1 text-sm text-gray-500">
-                {category.subcategories.map((sub) => sub.name).join(', ')}
-              </p>
-            )}
           </li>
         ))}
       </ul>

@@ -175,9 +175,14 @@ export async function listCategoriesWithSubcategories(
 
   const { data, error } = await supabase
     .from('categories')
-    .select('id, household_id, transaction_type, name, default_cost_behavior, is_active, subcategories(id, category_id, name, is_active)')
+    .select(
+      'id, household_id, transaction_type, name, default_cost_behavior, is_active, subcategories(id, category_id, name, is_active)',
+    )
     .eq('household_id', householdId)
-    .order('display_order', { ascending: true });
+    .order('display_order', { ascending: true })
+    .order('name', { ascending: true })
+    .order('display_order', { referencedTable: 'subcategories', ascending: true })
+    .order('name', { referencedTable: 'subcategories', ascending: true });
 
   if (error) {
     throw new Error(`카테고리 목록 조회 실패: ${error.message}`);
@@ -237,5 +242,51 @@ export async function deactivateCategory(id: string): Promise<void> {
   const { error } = await supabase.from('categories').update({ is_active: false }).eq('id', id);
   if (error) {
     throw new Error(`카테고리 비활성화 실패: ${error.message}`);
+  }
+}
+
+export async function updateCategory(input: {
+  id: string;
+  name: string;
+  defaultCostBehavior: 'fixed' | 'variable' | null;
+}): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('categories')
+    .update({ name: input.name, default_cost_behavior: input.defaultCostBehavior })
+    .eq('id', input.id);
+
+  if (error) {
+    throw new Error(`카테고리 수정 실패: ${error.message}`);
+  }
+}
+
+export async function createSubcategory(input: { categoryId: string; name: string }): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('subcategories')
+    .insert({ category_id: input.categoryId, name: input.name });
+
+  if (error) {
+    throw new Error(`소분류 생성 실패: ${error.message}`);
+  }
+}
+
+export async function updateSubcategory(input: { id: string; name: string }): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase.from('subcategories').update({ name: input.name }).eq('id', input.id);
+
+  if (error) {
+    throw new Error(`소분류 수정 실패: ${error.message}`);
+  }
+}
+
+export async function deactivateSubcategory(id: string): Promise<void> {
+  const supabase = await createClient();
+  // Deactivate, never delete — existing transactions reference this row (§4.3, §23.2).
+  const { error } = await supabase.from('subcategories').update({ is_active: false }).eq('id', id);
+
+  if (error) {
+    throw new Error(`소분류 비활성화 실패: ${error.message}`);
   }
 }
