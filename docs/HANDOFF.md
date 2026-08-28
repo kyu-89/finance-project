@@ -1,18 +1,18 @@
 # 인수인계 문서 (HANDOFF)
 
-> 최종 갱신: 2026-08-29 · 현재 기능 HEAD `7b57346` · 운영 자동 배포 예정
-> Supabase migration **13개** 동기화. 기능 커밋과 이 문서를 push하면 된다.
+> 최종 갱신: 2026-08-29 · 현재 기능 HEAD `5466fab` · 운영 배포 Ready
+> `main` / `origin/main` 기능 동기화, Supabase migration **15개** 동기화. 이 문서 커밋만 추가된다.
 > 다음 작업자(다른 AI 세션 또는 사람)가 이 문서만 읽고 이어서 작업할 수 있도록 작성됨
 
 ## 최종 체크포인트 (2026-08-29 02:45 KST)
 
 - **운영 URL:** `https://personal-finance-one-virid.vercel.app`
-- **최신 배포:** `https://personal-finance-g4f7mpcj3-kyu17.vercel.app` — Production Ready
-- **기능 HEAD:** `7b57346 fix: make ended recurring rules terminal`
+- **최신 배포:** `https://personal-finance-7cvfhryev-kyu17.vercel.app` — Production Ready
+- **기능 HEAD:** `5466fab feat: show budget averages and savings target gap`
 - **Git:** `main == origin/main`, 기능 작업 트리 clean (이 문서 갱신만 커밋 예정)
-- **Supabase:** `20260828010000` ~ `20260831070000`, 로컬/원격 13개 일치
-- **검증:** lint ✅, Next.js 16.3.3 production build ✅, unit 11 files / 35 tests ✅
-- **통합 검증:** 직전 전체 57 tests ✅, 반복항목 대상 파일 **20 tests** ✅
+- **Supabase:** `20260828010000` ~ `20260901020000`, 로컬/원격 15개 일치
+- **검증:** lint ✅, Next.js 16.3.3 production build ✅, unit 12 files / 39 tests ✅
+- **통합 검증:** budgets 포함 RLS 대상 파일 **21 tests** ✅
 
 ### 이번 연속 작업에서 완료한 Sprint 2 범위
 
@@ -29,17 +29,30 @@
 - frequency/interval/monthly day 변경 UI; 이미 회차가 생성된 월은 날짜 집합을 고정해 중복 생성을 차단하고 다음 미생성 월부터 반영
 - `ended` 규칙은 DB RPC에서도 재활성화할 수 없는 최종 상태로 고정, 통합 테스트 통과
 
+### Sprint 3 예산·결산 완료 범위
+
+- 계획서: `docs/superpowers/plans/2026-08-29-sprint3-budgets-closing.md`
+- `budgets` 테이블, owner RLS, category/subcategory tenant trigger, history 보존(DELETE 정책 없음)
+- 소비 카테고리별 1~12월 연간 예산 편집기, 연 합계·월평균
+- 총수입 계획·저축 목표는 카테고리 이름과 무관한 월 총액 목표로 저장
+- 전년도 예산 복사, 전년도 posted 소비 실적 기반 자동초안
+- 월간관리 `예산·결산` 탭: 수입/소비/저축/차액, 수입·저축 예산차, 저축률·소비율, 목표 저축률 차이
+- 카테고리 예산/실적/잔액 및 70% 주의·90% 임박·100% 초과 텍스트 경고
+- `include_in_budget=false`, planned/skipped/cancelled 거래는 예산 소진에서 제외
+- migration: `20260901010000_budgets.sql`, `20260901020000_budget_total_targets.sql` 운영 적용 완료
+
 ### 다음 AI가 바로 시작할 작업
 
-1. 운영 브라우저에서 테스트용 반복 규칙 생성 → 월간 planned → 확정/skip/중복연결 E2E 검증
+1. 운영 브라우저에서 예산 저장/전년도 복사/실적 초안 및 월간 결산 E2E 검증
+2. 반복 규칙 생성 → 월간 planned → 확정/skip/중복연결 E2E 검증
    - 운영 데이터를 변경하므로 기존 세션에서는 자동 수행하지 않았음
-2. Sprint 2 최종 리뷰 후 Sprint 3 예산·결산 계획 작성
+3. Sprint 3 최종 리뷰 후 Sprint 4 자산·금융 상품 계획 작성
 
 ### 현재 완성도 추정
 
-- 전체 PRD: 약 **37%**
-- Phase 1/MVP: 약 **55%**
-- Sprint 0·1·1.5 완료, Sprint 2 핵심 기능 완료·최종 경계 기능/리뷰 단계
+- 전체 PRD: 약 **45%**
+- Phase 1/MVP: 약 **70%**
+- Sprint 0·1·1.5·2·3 핵심 구현 완료, 운영 E2E와 Sprint 3 최종 리뷰가 남음
 
 ## 0. 최신 연속 작업 상태 (2026-08-28 Codex)
 
