@@ -76,8 +76,11 @@
 - 월간입력의 planned 행에서 날짜·금액·결제수단을 조정해 `posted` 확정하거나 해당 회차를 `skipped` 처리하는 UI 구현 완료(다음 커밋).
 - 직접 입력 posted 거래 중 동일 금액·예정일 ±3일 후보를 분류/결제수단 일치도로 정렬하고, 선택한 기존 거래와 원자적으로 연결하는 흐름 구현 완료.
 - 연결 시 occurrence가 posted 거래를 가리키고 생성 planned 행은 `cancelled`가 되어 실적에 중복 합산되지 않는다.
-- `20260831030000_link_recurring_occurrence.sql`은 원격 적용 후 앱을 배포할 것.
-- 최신 검증: lint/build ✅, unit 11 files / 34 tests ✅.
+- `20260831030000_link_recurring_occurrence.sql` 운영 Supabase 적용 완료.
+- 최신 기능 커밋 `348ea45`, Vercel Production **Ready**: `https://personal-finance-ncl137xah-kyu17.vercel.app`
+- 최신 검증: lint/build ✅, unit 11 files / 34 tests ✅, 전체 Supabase 통합 포함 **13 files / 57 tests** ✅.
+- 반복 금액 변경: 월간 예정행 편집은 이번 달만, 설정의 금액 변경은 이번 달부터 미래 planned와 규칙 기본금액을 함께 갱신하도록 구현.
+- `20260831040000_update_recurring_amount.sql`은 원격 적용 후 앱을 배포할 것.
 
 ---
 

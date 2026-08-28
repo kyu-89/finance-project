@@ -224,3 +224,17 @@ export async function linkRecurringOccurrence(input: {
   });
   if (error) throw new Error(`기존 거래 연결 실패: ${error.message}`);
 }
+
+export async function updateRecurringRuleAmount(input: {
+  ruleId: string;
+  amount: number;
+  effectiveDate: string;
+}): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc('update_recurring_rule_amount', {
+    p_rule_id: input.ruleId,
+    p_amount: input.amount,
+    p_effective_date: input.effectiveDate,
+  });
+  if (error) throw new Error(`반복 금액 변경 실패: ${error.message}`);
+}

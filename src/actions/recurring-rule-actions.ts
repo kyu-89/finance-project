@@ -6,11 +6,13 @@ import { ensureHouseholdForCurrentUser } from '@/lib/household';
 import {
   createRecurringRule,
   updateRecurringRuleStatus,
+  updateRecurringRuleAmount,
   type RecurringRuleStatus,
   type RecurringSourceType,
 } from '@/lib/recurring-rules';
 import type { TransactionType } from '@/lib/cost-behavior';
 import type { RecurrenceFrequency } from '@/lib/recurrence';
+import { todayInSeoul } from '@/lib/date';
 
 const TRANSACTION_TYPES = new Set<TransactionType>([
   'income', 'expense', 'saving', 'investment', 'debt_principal',
@@ -101,5 +103,25 @@ export async function updateRecurringRuleStatusAction(
   }
 
   revalidatePath('/settings/recurring');
+  return ok();
+}
+
+export async function updateRecurringRuleAmountAction(
+  _previous: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const ruleId = String(formData.get('id') ?? '');
+  const amount = Number(formData.get('amount'));
+  if (!ruleId || !Number.isSafeInteger(amount) || amount <= 0) {
+    return fail('금액은 0보다 큰 원 단위 정수여야 해요.');
+  }
+  try {
+    await ensureHouseholdForCurrentUser();
+    await updateRecurringRuleAmount({ ruleId, amount, effectiveDate: todayInSeoul() });
+  } catch (error) {
+    return fail(error instanceof Error ? error.message : '반복 금액 변경에 실패했어요.');
+  }
+  revalidatePath('/settings/recurring');
+  revalidatePath('/monthly');
   return ok();
 }
