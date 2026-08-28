@@ -3,18 +3,18 @@ import { SignOutButton } from '@/components/SignOutButton';
 
 export default function SettingsPage() {
   return (
-    <div className="flex flex-col gap-4 p-6">
-      <h1 className="text-xl font-semibold">설정</h1>
-      <p className="text-sm text-gray-500">가족 구성원/카테고리/목표·일정/데이터/보안을 관리합니다.</p>
-      <nav className="flex flex-col gap-2">
-        <Link href="/settings/categories" className="underline">
-          카테고리 관리
+    <div className="tds-page max-w-3xl">
+      <h1 className="tds-title mb-2">설정을 관리해요</h1>
+      <p className="mb-6 text-sm text-[var(--tds-grey-700)]">분류와 결제수단을 우리 집에 맞게 바꿀 수 있어요.</p>
+      <nav className="list-surface flex flex-col divide-y divide-[var(--tds-grey-200)]">
+        <Link href="/settings/categories" className="flex min-h-16 items-center justify-between px-5 text-[15px] font-semibold">
+          <span>카테고리 관리</span><span className="text-[var(--tds-grey-400)]">›</span>
         </Link>
-        <Link href="/settings/payment-methods" className="underline">
-          결제수단 관리
+        <Link href="/settings/payment-methods" className="flex min-h-16 items-center justify-between px-5 text-[15px] font-semibold">
+          <span>결제수단 관리</span><span className="text-[var(--tds-grey-400)]">›</span>
         </Link>
       </nav>
-      <div className="mt-6">
+      <div className="mt-8">
         <SignOutButton />
       </div>
     </div>

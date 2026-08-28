@@ -26,43 +26,44 @@ export function AllTransactionsTab({ initialTransactions }: { initialTransaction
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {(['all', 'planned', 'posted', 'skipped', 'cancelled'] as const).map((status) => (
           <button
             key={status}
             type="button"
             onClick={() => setStatusFilter(status)}
-            className={`rounded border px-2 py-1 text-sm ${statusFilter === status ? 'bg-black text-white' : ''}`}
+            data-selected={statusFilter === status}
+            className="tds-chip px-4"
           >
             {status === 'all' ? '전체' : STATUS_LABEL[status]}
           </button>
         ))}
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="table-surface overflow-x-auto">
         <table className="w-full min-w-[640px] border-collapse text-sm">
           <thead>
             <tr className="border-b text-left">
-              <th className="p-2">날짜</th>
-              <th className="p-2">상태</th>
-              <th className="p-2">내용</th>
-              <th className="p-2 text-right">금액</th>
+              <th className="px-4 py-3">날짜</th>
+              <th className="px-4 py-3">상태</th>
+              <th className="px-4 py-3">내용</th>
+              <th className="px-4 py-3 text-right">금액</th>
             </tr>
           </thead>
           <tbody>
             {filtered.map((transaction) => (
-              <tr key={transaction.id} className="border-b">
-                <td className="p-2">{transaction.transactionDate}</td>
-                <td className="p-2">{STATUS_LABEL[transaction.status]}</td>
-                <td className="p-2">{transaction.description}</td>
-                <td className="p-2 text-right">{transaction.amount.toLocaleString('ko-KR')}원</td>
+              <tr key={transaction.id} className="border-b last:border-b-0">
+                <td className="px-4 py-3">{transaction.transactionDate}</td>
+                <td className="px-4 py-3">{STATUS_LABEL[transaction.status]}</td>
+                <td className="px-4 py-3">{transaction.description}</td>
+                <td className="px-4 py-3 text-right font-semibold tabular-nums">{transaction.amount.toLocaleString('ko-KR')}원</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      <div className="flex flex-col items-end gap-1 text-sm">
+      <div className="tds-card flex flex-col items-end gap-1 p-4 text-sm">
         <p className="font-medium">
           소비 합계 (확정): {consumptionTotal.toLocaleString('ko-KR')}원
         </p>

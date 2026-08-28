@@ -36,8 +36,9 @@ export default function SignupPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-4 p-6">
-      <h1 className="text-xl font-semibold">회원가입</h1>
+    <main className="auth-shell">
+      <section className="auth-card">
+      <div><p className="mb-2 text-sm font-semibold text-[var(--tds-blue-500)]">우리집 가계부</p><h1 className="tds-title">가계부를 시작해요</h1></div>
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <input
           type="email"
@@ -45,7 +46,7 @@ export default function SignupPage() {
           placeholder="이메일"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="rounded border px-3 py-2"
+          className="px-4 py-3"
         />
         <input
           type="password"
@@ -54,17 +55,18 @@ export default function SignupPage() {
           placeholder="비밀번호 (8자 이상)"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="rounded border px-3 py-2"
+          className="px-4 py-3"
         />
         {error && <p className="text-sm text-red-600">{error}</p>}
         <button
           type="submit"
           disabled={submitting}
-          className="rounded bg-black px-3 py-2 text-white disabled:opacity-50"
+          className="tds-primary-button mt-2 px-5"
         >
           {submitting ? '가입 중...' : '가입하기'}
         </button>
       </form>
+      </section>
     </main>
   );
 }

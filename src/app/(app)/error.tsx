@@ -23,18 +23,16 @@ export default function AppError({
   }, [error]);
 
   return (
-    <div className="flex flex-col items-center gap-4 p-8 text-center">
-      <h2 className="text-lg font-semibold">문제가 발생했습니다.</h2>
-      <p className="text-sm text-gray-500">
-        입력한 내용이 저장되지 않았을 수 있습니다. 다시 시도해주세요.
-      </p>
-      <button
-        type="button"
-        onClick={() => reset()}
-        className="rounded bg-black px-4 py-2 text-sm text-white"
-      >
-        다시 시도
-      </button>
-    </div>
+    <main className="tds-page flex min-h-[60vh] items-center justify-center">
+      <section className="tds-card flex w-full max-w-md flex-col items-center gap-4 p-6 text-center sm:p-8">
+        <h2 className="text-xl font-bold text-[var(--tds-grey-900)]">문제가 생겼어요</h2>
+        <p className="text-sm leading-6 text-[var(--tds-grey-700)]">
+          입력한 내용이 저장되지 않았을 수 있어요. 잠시 후 다시 시도해 주세요.
+        </p>
+        <button type="button" onClick={() => reset()} className="tds-primary-button mt-2 w-full">
+          다시 시도하기
+        </button>
+      </section>
+    </main>
   );
 }

@@ -8,14 +8,14 @@ export default async function PaymentMethodsSettingsPage() {
   const paymentMethods = await listPaymentMethods(household.id);
 
   return (
-    <div className="flex flex-col gap-6 p-6">
-      <h1 className="text-xl font-semibold">결제수단 관리</h1>
+    <div className="tds-page flex max-w-3xl flex-col gap-6">
+      <div><h1 className="tds-title mb-2">결제수단을 관리해요</h1><p className="text-sm text-[var(--tds-grey-700)]">자주 쓰는 카드와 계좌를 추가할 수 있어요.</p></div>
 
       <PaymentMethodForm />
 
-      <ul className="flex flex-col gap-2">
+      <ul className="list-surface flex flex-col divide-y divide-[var(--tds-grey-200)]">
         {paymentMethods.map((method) => (
-          <li key={method.id} className="flex items-center justify-between rounded border p-3">
+          <li key={method.id} className="flex min-h-16 items-center justify-between px-5">
             <span className={method.isActive ? '' : 'text-gray-400 line-through'}>{method.name}</span>
             {method.isActive && <DeactivatePaymentMethodButton id={method.id} />}
           </li>

@@ -31,14 +31,14 @@ function CostBehaviorEditor({ transaction }: { transaction: Transaction }) {
   );
 
   return (
-    <form action={formAction} className="flex min-w-[170px] flex-col gap-1">
+    <form action={formAction} className="flex min-w-[190px] flex-col gap-1">
       <input type="hidden" name="id" value={transaction.id} />
       <div className="flex gap-1">
         <select
           name="costBehavior"
           defaultValue={transaction.costBehavior ?? ''}
           aria-label={`${transaction.description} 비용성격`}
-          className="min-w-0 flex-1 rounded border px-1 py-1 text-xs"
+          className="min-w-0 flex-1 px-2 py-1 text-xs"
         >
           <option value="">미지정</option>
           <option value="fixed">고정비</option>
@@ -47,7 +47,7 @@ function CostBehaviorEditor({ transaction }: { transaction: Transaction }) {
         <button
           type="submit"
           disabled={pending}
-          className="rounded border px-2 py-1 text-xs disabled:opacity-50"
+          className="secondary-button px-3 text-xs"
         >
           {pending ? '저장 중' : '변경'}
         </button>
@@ -99,7 +99,7 @@ export function MonthlyInputTab({
     <div className="flex flex-col gap-4">
       <form
         action={formAction}
-        className="grid grid-cols-2 gap-2 rounded border p-3 md:grid-cols-7"
+        className="tds-card grid grid-cols-2 gap-3 p-5 md:grid-cols-7"
       >
         <div className="col-span-2 md:col-span-7">
           <FormMessage result={state} />
@@ -159,13 +159,13 @@ export function MonthlyInputTab({
         <button
           type="submit"
           disabled={pending}
-          className="col-span-2 rounded bg-black px-3 py-1 text-sm text-white disabled:opacity-50 md:col-span-1"
+          className="tds-primary-button col-span-2 px-4 text-[15px] md:col-span-1"
         >
           {pending ? '추가 중...' : '행 추가'}
         </button>
       </form>
 
-      <div className="overflow-x-auto">
+      <div className="table-surface overflow-x-auto">
         <table className="w-full min-w-[640px] border-collapse text-sm">
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -173,7 +173,7 @@ export function MonthlyInputTab({
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className={`p-2 ${header.column.id === 'amount' ? 'text-right' : ''}`}
+                    className={`px-4 py-3 ${header.column.id === 'amount' ? 'text-right' : ''}`}
                   >
                     {header.isPlaceholder ? null : <table.FlexRender header={header} />}
                   </th>
@@ -183,11 +183,11 @@ export function MonthlyInputTab({
           </thead>
           <tbody>
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="border-b">
+              <tr key={row.id} className="border-b last:border-b-0">
                 {row.getAllCells().map((cell) => (
                   <td
                     key={cell.id}
-                    className={`p-2 ${cell.column.id === 'amount' ? 'text-right' : ''}`}
+                    className={`px-4 py-3 ${cell.column.id === 'amount' ? 'text-right font-semibold tabular-nums' : ''}`}
                   >
                     <table.FlexRender cell={cell} />
                   </td>

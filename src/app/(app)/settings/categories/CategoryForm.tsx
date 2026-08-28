@@ -9,22 +9,22 @@ export function CategoryForm() {
   const [state, formAction, pending] = useActionState(createCategoryAction, INITIAL_ACTION_STATE);
 
   return (
-    <form action={formAction} className="flex flex-wrap items-end gap-2 rounded border p-4">
+    <form action={formAction} className="tds-card grid gap-4 p-5 md:grid-cols-[1fr_2fr_1.5fr_auto] md:items-end">
       <FormMessage result={state} />
       <label className="flex flex-col gap-1 text-sm">
         유형
-        <select name="transactionType" className="rounded border px-2 py-1">
+        <select name="transactionType" className="px-3 py-2">
           <option value="expense">지출</option>
           <option value="income">수입</option>
         </select>
       </label>
       <label className="flex flex-col gap-1 text-sm">
         이름
-        <input name="name" required className="rounded border px-2 py-1" />
+        <input name="name" required className="px-3 py-2" />
       </label>
       <label className="flex flex-col gap-1 text-sm">
         기본 비용성격
-        <select name="defaultCostBehavior" className="rounded border px-2 py-1">
+        <select name="defaultCostBehavior" className="px-3 py-2">
           <option value="">(해당 없음)</option>
           <option value="fixed">고정비</option>
           <option value="variable">변동비</option>
@@ -33,7 +33,7 @@ export function CategoryForm() {
       <button
         type="submit"
         disabled={pending}
-        className="rounded bg-black px-3 py-1 text-white disabled:opacity-50"
+        className="tds-primary-button min-w-24 px-5"
       >
         {pending ? '저장 중...' : '추가'}
       </button>

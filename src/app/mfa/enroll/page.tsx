@@ -87,15 +87,16 @@ export default function MfaEnrollPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-4 p-6">
-      <h1 className="text-xl font-semibold">2단계 인증(TOTP) 설정</h1>
-      <p className="text-sm text-gray-600">
-        Google Authenticator, 1Password 등 인증 앱으로 아래 QR 코드를 스캔하세요.
+    <main className="auth-shell">
+      <section className="auth-card">
+      <h1 className="tds-title">2단계 인증을 설정해요</h1>
+      <p className="text-sm text-[var(--tds-grey-700)]">
+        인증 앱으로 아래 QR 코드를 스캔하면 안전하게 보호할 수 있어요.
       </p>
       {error && <p className="text-sm text-red-600">{error}</p>}
       {qrCode && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={qrCode} alt="TOTP QR 코드" className="h-48 w-48 self-center" />
+        <img src={qrCode} alt="TOTP QR 코드" className="h-48 w-48 self-center rounded-2xl border bg-white p-3" />
       )}
       {secret && (
         <p className="break-all text-xs text-gray-500">수동 입력 키: {secret}</p>
@@ -108,12 +109,13 @@ export default function MfaEnrollPage() {
           placeholder="6자리 코드"
           value={code}
           onChange={(e) => setCode(e.target.value)}
-          className="rounded border px-3 py-2"
+          className="px-4 py-3 text-center text-lg tracking-[0.2em]"
         />
-        <button type="submit" className="rounded bg-black px-3 py-2 text-white">
+        <button type="submit" className="tds-primary-button px-5">
           확인 및 활성화
         </button>
       </form>
+      </section>
     </main>
   );
 }

@@ -20,11 +20,11 @@ export function CategoryEditor({ category }: { category: CategoryWithSubcategori
   );
 
   return (
-    <div className="rounded border p-3">
+    <div className="tds-card p-4">
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="w-full text-left text-sm font-medium"
+        className="min-h-11 w-full text-left text-[15px] font-semibold"
       >
         {expanded ? '▾' : '▸'} [{category.transactionType === 'income' ? '수입' : '지출'}]{' '}
         {category.name}
@@ -42,7 +42,7 @@ export function CategoryEditor({ category }: { category: CategoryWithSubcategori
                 name="name"
                 defaultValue={category.name}
                 required
-                className="rounded border px-2 py-1"
+                className="px-3 py-2"
               />
             </label>
             <label className="flex flex-col gap-1 text-sm">
@@ -50,7 +50,7 @@ export function CategoryEditor({ category }: { category: CategoryWithSubcategori
               <select
                 name="defaultCostBehavior"
                 defaultValue={category.defaultCostBehavior ?? ''}
-                className="rounded border px-2 py-1"
+                className="px-3 py-2"
               >
                 <option value="">(해당 없음)</option>
                 <option value="fixed">고정비</option>
@@ -60,14 +60,14 @@ export function CategoryEditor({ category }: { category: CategoryWithSubcategori
             <button
               type="submit"
               disabled={editPending}
-              className="rounded bg-black px-3 py-1 text-white disabled:opacity-50"
+              className="secondary-button px-4"
             >
               {editPending ? '저장 중...' : '수정'}
             </button>
           </form>
           <FormMessage result={editState} />
           <p className="text-xs text-gray-500">
-            기본 비용성격을 바꿔도 이미 기록된 거래는 변경되지 않습니다 (PRD §35).
+            기본 비용성격을 바꿔도 이미 기록된 거래는 바뀌지 않아요.
           </p>
 
           <div className="flex flex-col gap-2">
@@ -79,7 +79,10 @@ export function CategoryEditor({ category }: { category: CategoryWithSubcategori
                   {sub.isActive && (
                     <form action={deactivateAction}>
                       <input type="hidden" name="id" value={sub.id} />
-                      <button type="submit" className="text-xs text-red-600">
+                      <button
+                        type="submit"
+                        className="min-h-11 px-3 text-sm font-semibold text-[var(--tds-red-500)]"
+                      >
                         비활성화
                       </button>
                     </form>
@@ -95,12 +98,12 @@ export function CategoryEditor({ category }: { category: CategoryWithSubcategori
                 name="name"
                 placeholder="새 소분류"
                 required
-                className="rounded border px-2 py-1 text-sm"
+                className="min-w-0 flex-1 px-3 py-2 text-sm"
               />
               <button
                 type="submit"
                 disabled={subPending}
-                className="rounded border px-2 py-1 text-sm disabled:opacity-50"
+                className="secondary-button px-4"
               >
                 {subPending ? '추가 중...' : '추가'}
               </button>
