@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ensureHouseholdForCurrentUser } from '@/actions/household';
+import { ensureHouseholdForCurrentUser } from '@/lib/household';
 import { AppShell } from '@/components/nav/AppShell';
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
