@@ -18,9 +18,16 @@ const percent = (value: number | null) => value === null ? '-' : `${(value * 100
 export function BudgetClosingTab({ transactions, categories, budgets }: { transactions: Transaction[]; categories: CategoryWithSubcategories[]; budgets: Budget[] }) {
   const closing = calculateMonthlyClosing(transactions, budgets.map((budget) => ({ transactionType: budget.transactionType, categoryId: budget.categoryId, amount: budget.amount })));
   const budgetByCategory = new Map(budgets.filter((budget) => budget.transactionType === 'expense' && budget.categoryId).map((budget) => [budget.categoryId!, budget.amount]));
+  // PRD §36: 생활수지, 현금잔여액, 자산형성액, 순자산은 각각 별도의 KPI다. A single "월 차액"
+  // used to stand in for all of them while silently ignoring 대출원금·금융비용·투자, which
+  // overstated spare cash for any household with a loan.
   const metrics = [
-    ['총수입', won(closing.income)], ['소비성지출', won(closing.consumption)], ['저축', won(closing.saving)],
-    ['월 차액', won(closing.balance)], ['수입 예산차', won(closing.incomeVariance)], ['저축 예산차', won(closing.savingVariance)],
+    ['총수입', won(closing.income)], ['소비성지출', won(closing.consumption)], ['금융비용', won(closing.financeCost)],
+    ['생활수지', won(closing.livingBalance)],
+    ['저축', won(closing.saving)], ['투자', won(closing.investment)], ['대출원금상환', won(closing.debtPrincipal)],
+    ['자산형성액', won(closing.wealthBuilt)], ['자산형성률', percent(closing.wealthBuildingRate)],
+    ['현금잔여액', won(closing.cashRemaining)],
+    ['수입 예산차', won(closing.incomeVariance)], ['저축 예산차', won(closing.savingVariance)],
     ['저축률', percent(closing.savingsRate)], ['목표 저축률', percent(closing.targetSavingsRate)],
     ['목표 대비 저축률', closing.savingsRateVariance === null ? '-' : `${closing.savingsRateVariance >= 0 ? '+' : ''}${(closing.savingsRateVariance * 100).toFixed(1)}%p`],
     ['소비율', percent(closing.consumptionRate)],

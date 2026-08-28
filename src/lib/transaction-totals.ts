@@ -15,7 +15,10 @@ export function calculateTransactionTotals(transactions: TotalableTransaction[])
     if (transaction.status === 'posted' && transaction.flowClass === 'consumption') {
       consumptionTotal += transaction.amount;
     }
-    if (transaction.status === 'planned') {
+    // Only planned CONSUMPTION belongs beside the 소비 합계. Summing every planned row added
+    // inflows and outflows together — a household with a 급여 rule (planned income) and a 월세
+    // rule (planned expense) saw the two added into one meaningless figure.
+    if (transaction.status === 'planned' && transaction.flowClass === 'consumption') {
       plannedTotal += transaction.amount;
     }
   }
