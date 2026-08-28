@@ -503,4 +503,83 @@ describe('categories/payment_methods/transactions RLS', () => {
     expect(occurrence?.matched_transaction_id).toBe(userATransactionId);
     expect(planned?.status).toBe('cancelled');
   });
+
+  it('adds an owner-only pause period and skips an already materialized planned row', async () => {
+    const asUserA = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
+    await asUserA.auth.signInWithPassword({ email: userAEmail, password });
+    const { data: occurrence, error: occurrenceError } = await asUserA.from('recurring_occurrences').insert({
+      household_id: userAHouseholdId,
+      recurring_rule_id: userARecurringRuleId,
+      occurrence_date: '2026-10-01',
+    }).select('id').single();
+    expect(occurrenceError).toBeNull();
+    const { data: planned, error: plannedError } = await asUserA.from('transactions').insert({
+      household_id: userAHouseholdId,
+      transaction_date: '2026-10-01',
+      transaction_type: 'expense',
+      flow_class: 'consumption',
+      recurring_rule_id: userARecurringRuleId,
+      recurring_occurrence_id: occurrence!.id,
+      amount: 35000,
+      description: '중지 기간 예정 거래',
+      status: 'planned',
+    }).select('id').single();
+    expect(plannedError).toBeNull();
+
+    const { error: pauseError } = await asUserA.rpc('add_recurring_pause_period', {
+      p_rule_id: userARecurringRuleId,
+      p_start_date: '2026-10-01',
+      p_end_date: '2026-10-31',
+      p_reason: '통합 테스트',
+    });
+    expect(pauseError).toBeNull();
+    const { data: skipped } = await asUserA.from('transactions').select('status').eq('id', planned!.id).single();
+    expect(skipped?.status).toBe('skipped');
+
+    const asUserB = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
+    await asUserB.auth.signInWithPassword({ email: userBEmail, password });
+    const { error: foreignPauseError } = await asUserB.rpc('add_recurring_pause_period', {
+      p_rule_id: userARecurringRuleId,
+      p_start_date: '2026-11-01',
+      p_end_date: '2026-11-30',
+      p_reason: null,
+    });
+    expect(foreignPauseError).not.toBeNull();
+  });
+
+  it('pausing or ending a rule skips future planned rows while preserving prior posted rows', async () => {
+    const asUserA = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
+    await asUserA.auth.signInWithPassword({ email: userAEmail, password });
+    const { data: occurrence } = await asUserA.from('recurring_occurrences').insert({
+      household_id: userAHouseholdId,
+      recurring_rule_id: userARecurringRuleId,
+      occurrence_date: '2026-11-01',
+    }).select('id').single();
+    const { data: planned } = await asUserA.from('transactions').insert({
+      household_id: userAHouseholdId,
+      transaction_date: '2026-11-01',
+      transaction_type: 'expense',
+      flow_class: 'consumption',
+      recurring_rule_id: userARecurringRuleId,
+      recurring_occurrence_id: occurrence!.id,
+      amount: 35000,
+      description: '상태 변경 예정 거래',
+      status: 'planned',
+    }).select('id').single();
+
+    const { error: statusError } = await asUserA.rpc('update_recurring_rule_status', {
+      p_rule_id: userARecurringRuleId,
+      p_status: 'ended',
+      p_effective_date: '2026-11-01',
+    });
+    expect(statusError).toBeNull();
+    const [{ data: rule }, { data: skipped }, { data: priorPosted }] = await Promise.all([
+      asUserA.from('recurring_rules').select('status, end_date').eq('id', userARecurringRuleId).single(),
+      asUserA.from('transactions').select('status').eq('id', planned!.id).single(),
+      asUserA.from('transactions').select('status').eq('id', userATransactionId).single(),
+    ]);
+    expect(rule).toMatchObject({ status: 'ended', end_date: '2026-11-01' });
+    expect(skipped?.status).toBe('skipped');
+    expect(priorPosted?.status).toBe('posted');
+  });
 });
