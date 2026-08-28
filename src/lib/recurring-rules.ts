@@ -128,9 +128,17 @@ export async function createRecurringRule(input: {
   if (error) throw new Error(`반복항목 생성 실패: ${error.message}`);
 }
 
-export async function updateRecurringRuleStatus(id: string, status: RecurringRuleStatus): Promise<void> {
+export async function updateRecurringRuleStatus(
+  id: string,
+  status: RecurringRuleStatus,
+  effectiveDate: string,
+): Promise<void> {
   const supabase = await createClient();
-  const { error } = await supabase.from('recurring_rules').update({ status }).eq('id', id);
+  const { error } = await supabase.rpc('update_recurring_rule_status', {
+    p_rule_id: id,
+    p_status: status,
+    p_effective_date: effectiveDate,
+  });
   if (error) throw new Error(`반복항목 상태 변경 실패: ${error.message}`);
 }
 

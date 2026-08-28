@@ -99,12 +99,14 @@ export async function updateRecurringRuleStatusAction(
   }
 
   try {
-    await updateRecurringRuleStatus(id, status);
+    await ensureHouseholdForCurrentUser();
+    await updateRecurringRuleStatus(id, status, todayInSeoul());
   } catch (error) {
     return fail(error instanceof Error ? error.message : '상태 변경에 실패했어요.');
   }
 
   revalidatePath('/settings/recurring');
+  revalidatePath('/monthly');
   return ok();
 }
 
