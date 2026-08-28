@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import type { Transaction } from '@/lib/transactions';
+import { calculateTransactionTotals } from '@/lib/transaction-totals';
 
 const STATUS_LABEL: Record<Transaction['status'], string> = {
   planned: '예정',
@@ -21,7 +22,7 @@ export function AllTransactionsTab({ initialTransactions }: { initialTransaction
     [initialTransactions, statusFilter],
   );
 
-  const total = filtered.reduce((sum, t) => sum + t.amount, 0);
+  const { consumptionTotal, plannedTotal } = calculateTransactionTotals(filtered);
 
   return (
     <div className="flex flex-col gap-3">
@@ -61,7 +62,16 @@ export function AllTransactionsTab({ initialTransactions }: { initialTransaction
         </table>
       </div>
 
-      <p className="text-right text-sm font-medium">합계: {total.toLocaleString('ko-KR')}원</p>
+      <div className="flex flex-col items-end gap-1 text-sm">
+        <p className="font-medium">
+          소비 합계 (확정): {consumptionTotal.toLocaleString('ko-KR')}원
+        </p>
+        {plannedTotal > 0 && (
+          <p className="text-gray-500">
+            예정 (실적 미포함): {plannedTotal.toLocaleString('ko-KR')}원
+          </p>
+        )}
+      </div>
     </div>
   );
 }

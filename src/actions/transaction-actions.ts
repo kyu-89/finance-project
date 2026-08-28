@@ -2,7 +2,11 @@
 
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { createTransaction } from '@/lib/transactions';
+import {
+  createTransaction,
+  undoTransaction,
+  updateTransactionCostBehavior,
+} from '@/lib/transactions';
 import { getCurrentHouseholdId } from '@/lib/household';
 import { todayInSeoul } from '@/lib/date';
 import type { TransactionType } from '@/lib/cost-behavior';
@@ -12,8 +16,6 @@ export async function createQuickTransactionAction(
   _prevState: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
-  const householdId = await getCurrentHouseholdId();
-
   const amount = Number(formData.get('amount'));
   const categoryId = String(formData.get('categoryId') ?? '') || null;
   const categoryDefaultCostBehavior = (formData.get('categoryDefaultCostBehavior') || null) as
@@ -23,6 +25,9 @@ export async function createQuickTransactionAction(
   const description = String(formData.get('description') ?? '').trim();
   const memo = String(formData.get('memo') ?? '') || null;
   const transactionType = (formData.get('transactionType') as TransactionType) ?? 'expense';
+  const rawCostBehavior = formData.get('costBehaviorOverride');
+  const costBehaviorOverride =
+    rawCostBehavior === 'fixed' || rawCostBehavior === 'variable' ? rawCostBehavior : null;
 
   if (!Number.isFinite(amount) || amount <= 0 || !Number.isInteger(amount)) {
     return fail('금액은 1원 단위의 정수로 입력해주세요.');
@@ -41,13 +46,16 @@ export async function createQuickTransactionAction(
     return fail('결제수단을 선택해주세요.');
   }
 
+  let created;
   try {
-    await createTransaction({
+    const householdId = await getCurrentHouseholdId();
+    created = await createTransaction({
       householdId,
       transactionDate: todayInSeoul(),
       transactionType,
       categoryId,
       categoryDefaultCostBehavior,
+      costBehaviorOverride,
       subcategoryId,
       paymentMethodId,
       amount,
@@ -62,15 +70,13 @@ export async function createQuickTransactionAction(
   // A unique value per save (rather than a constant `1`) so consecutive saves each produce a
   // distinct URL — QuickAddForm keys its "saved" effect (confirmation banner + form reset) off
   // this value, and a same-segment navigation to an unchanged URL wouldn't re-trigger it.
-  redirect(`/quick-add?saved=${Date.now()}`);
+  redirect(`/quick-add?saved=${Date.now()}&undo=${created.id}`);
 }
 
 export async function createMonthlyRowAction(
   _prevState: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
-  const householdId = await getCurrentHouseholdId();
-
   const amount = Number(formData.get('amount'));
   const transactionDate = String(formData.get('transactionDate') ?? '');
   const description = String(formData.get('description') ?? '').trim();
@@ -80,6 +86,9 @@ export async function createMonthlyRowAction(
   const subcategoryId = String(formData.get('subcategoryId') ?? '') || null;
   const paymentMethodId = String(formData.get('paymentMethodId') ?? '') || null;
   const transactionType = (formData.get('transactionType') as TransactionType) ?? 'expense';
+  const rawCostBehavior = formData.get('costBehaviorOverride');
+  const costBehaviorOverride =
+    rawCostBehavior === 'fixed' || rawCostBehavior === 'variable' ? rawCostBehavior : null;
 
   if (!transactionDate) {
     return fail('날짜를 입력해주세요.');
@@ -92,12 +101,14 @@ export async function createMonthlyRowAction(
   }
 
   try {
+    const householdId = await getCurrentHouseholdId();
     await createTransaction({
       householdId,
       transactionDate,
       transactionType,
       categoryId,
       categoryDefaultCostBehavior,
+      costBehaviorOverride,
       subcategoryId,
       paymentMethodId,
       amount,
@@ -105,6 +116,48 @@ export async function createMonthlyRowAction(
     });
   } catch (error) {
     return fail(error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.');
+  }
+
+  revalidatePath('/monthly');
+  return ok();
+}
+
+export async function undoTransactionAction(
+  _prevState: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const id = String(formData.get('id') ?? '');
+  if (!id) {
+    return fail('취소할 거래 id가 없습니다.');
+  }
+
+  try {
+    await getCurrentHouseholdId();
+    await undoTransaction(id);
+  } catch (error) {
+    return fail(error instanceof Error ? error.message : '취소에 실패했습니다.');
+  }
+
+  redirect('/quick-add?undone=1');
+}
+
+export async function updateCostBehaviorAction(
+  _prevState: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const id = String(formData.get('id') ?? '');
+  const raw = formData.get('costBehavior');
+  const costBehavior = raw === 'fixed' || raw === 'variable' ? raw : null;
+
+  if (!id) {
+    return fail('거래 id가 없습니다.');
+  }
+
+  try {
+    await getCurrentHouseholdId();
+    await updateTransactionCostBehavior(id, costBehavior);
+  } catch (error) {
+    return fail(error instanceof Error ? error.message : '비용성격 수정에 실패했습니다.');
   }
 
   revalidatePath('/monthly');

@@ -16,7 +16,6 @@ export async function createCategoryAction(
   _prevState: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
-  const household = await ensureHouseholdForCurrentUser();
   const name = String(formData.get('name') ?? '').trim();
   const transactionType = formData.get('transactionType') === 'income' ? 'income' : 'expense';
   const defaultCostBehaviorRaw = formData.get('defaultCostBehavior');
@@ -28,6 +27,7 @@ export async function createCategoryAction(
   }
 
   try {
+    const household = await ensureHouseholdForCurrentUser();
     await createCategory({ householdId: household.id, transactionType, name, defaultCostBehavior });
   } catch (error) {
     return fail(error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.');

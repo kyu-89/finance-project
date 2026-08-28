@@ -2,7 +2,10 @@
 
 import { useActionState, useState } from 'react';
 import { createColumnHelper, tableFeatures, useTable } from '@tanstack/react-table';
-import { createMonthlyRowAction } from '@/actions/transaction-actions';
+import {
+  createMonthlyRowAction,
+  updateCostBehaviorAction,
+} from '@/actions/transaction-actions';
 import { FormMessage } from '@/components/FormMessage';
 import { INITIAL_ACTION_STATE } from '@/lib/action-result';
 import type { Transaction } from '@/lib/transactions';
@@ -21,9 +24,55 @@ const STATUS_LABEL: Record<Transaction['status'], string> = {
   cancelled: '취소',
 };
 
+function CostBehaviorEditor({ transaction }: { transaction: Transaction }) {
+  const [state, formAction, pending] = useActionState(
+    updateCostBehaviorAction,
+    INITIAL_ACTION_STATE,
+  );
+
+  return (
+    <form action={formAction} className="flex min-w-[170px] flex-col gap-1">
+      <input type="hidden" name="id" value={transaction.id} />
+      <div className="flex gap-1">
+        <select
+          name="costBehavior"
+          defaultValue={transaction.costBehavior ?? ''}
+          aria-label={`${transaction.description} 비용성격`}
+          className="min-w-0 flex-1 rounded border px-1 py-1 text-xs"
+        >
+          <option value="">미지정</option>
+          <option value="fixed">고정비</option>
+          <option value="variable">변동비</option>
+        </select>
+        <button
+          type="submit"
+          disabled={pending}
+          className="rounded border px-2 py-1 text-xs disabled:opacity-50"
+        >
+          {pending ? '저장 중' : '변경'}
+        </button>
+      </div>
+      {state.ok === false && (
+        <span role="alert" className="text-xs text-red-600">
+          {state.message}
+        </span>
+      )}
+      {state.ok === true && (
+        <span role="status" className="text-xs text-green-700">
+          저장됨
+        </span>
+      )}
+    </form>
+  );
+}
+
 const columns = columnHelper.columns([
   columnHelper.accessor('transactionDate', { header: '날짜' }),
   columnHelper.accessor('status', { header: '상태', cell: (info) => STATUS_LABEL[info.getValue()] }),
+  columnHelper.accessor('costBehavior', {
+    header: '비용성격',
+    cell: (info) => <CostBehaviorEditor transaction={info.row.original} />,
+  }),
   columnHelper.accessor('description', { header: '내용' }),
   columnHelper.accessor('amount', {
     header: '금액',
@@ -50,9 +99,9 @@ export function MonthlyInputTab({
     <div className="flex flex-col gap-4">
       <form
         action={formAction}
-        className="grid grid-cols-2 gap-2 rounded border p-3 md:grid-cols-6"
+        className="grid grid-cols-2 gap-2 rounded border p-3 md:grid-cols-7"
       >
-        <div className="col-span-2 md:col-span-6">
+        <div className="col-span-2 md:col-span-7">
           <FormMessage result={state} />
         </div>
         <input type="hidden" name="transactionType" value="expense" />
@@ -91,6 +140,11 @@ export function MonthlyInputTab({
               {method.name}
             </option>
           ))}
+        </select>
+        <select name="costBehaviorOverride" className="rounded border px-2 py-1 text-sm">
+          <option value="">기본 비용성격</option>
+          <option value="fixed">고정비</option>
+          <option value="variable">변동비</option>
         </select>
         <input name="description" placeholder="내용" required className="rounded border px-2 py-1 text-sm" />
         <input

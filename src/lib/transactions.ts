@@ -213,7 +213,9 @@ export async function listRecentUsage(householdId: string, limit = 50): Promise<
     }
   }
 
-  return { categoryIds, subcategoryIdsByCategory, paymentMethodIds };
+  // Only the five most-recent categories move to the top; everything else keeps the
+  // configured display order from listCategoriesWithSubcategories (PRD §5.1).
+  return { categoryIds: categoryIds.slice(0, 5), subcategoryIdsByCategory, paymentMethodIds };
 }
 
 export async function undoTransaction(id: string): Promise<void> {

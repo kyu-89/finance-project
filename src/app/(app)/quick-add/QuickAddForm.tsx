@@ -1,7 +1,10 @@
 'use client';
 
 import { useActionState, useEffect, useState } from 'react';
-import { createQuickTransactionAction } from '@/actions/transaction-actions';
+import {
+  createQuickTransactionAction,
+  undoTransactionAction,
+} from '@/actions/transaction-actions';
 import { CategoryPicker } from '@/components/CategoryPicker';
 import { FormMessage } from '@/components/FormMessage';
 import { INITIAL_ACTION_STATE } from '@/lib/action-result';
@@ -11,11 +14,19 @@ import type { PaymentMethod } from '@/lib/payment-methods';
 export function QuickAddForm({
   categories,
   paymentMethods,
+  recentCategoryIds,
+  recentSubcategoryIdsByCategory,
   saved,
+  undoId,
+  undone,
 }: {
   categories: CategoryWithSubcategories[];
   paymentMethods: PaymentMethod[];
+  recentCategoryIds: string[];
+  recentSubcategoryIdsByCategory: Record<string, string[]>;
   saved?: string;
+  undoId?: string;
+  undone: boolean;
 }) {
   const [amountDisplay, setAmountDisplay] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<CategoryWithSubcategories | null>(null);
@@ -24,6 +35,10 @@ export function QuickAddForm({
   const [showMore, setShowMore] = useState(false);
   const [showSavedBanner, setShowSavedBanner] = useState(false);
   const [state, formAction, pending] = useActionState(createQuickTransactionAction, INITIAL_ACTION_STATE);
+  const [undoState, undoAction, undoPending] = useActionState(
+    undoTransactionAction,
+    INITIAL_ACTION_STATE,
+  );
 
   // The quick-add form is a same-segment navigation target (`/quick-add?saved=...`), so React
   // state above survives the redirect — without this the user taps 저장 and sees no visible
@@ -51,7 +66,7 @@ export function QuickAddForm({
     if (!showSavedBanner) {
       return;
     }
-    const timer = setTimeout(() => setShowSavedBanner(false), 3000);
+    const timer = setTimeout(() => setShowSavedBanner(false), 5000);
     return () => clearTimeout(timer);
   }, [showSavedBanner]);
 
@@ -73,11 +88,30 @@ export function QuickAddForm({
       className="flex flex-col gap-4"
     >
       {showSavedBanner && (
-        <div className="rounded border border-green-500 bg-green-50 px-3 py-2 text-sm text-green-700">
-          저장되었습니다
+        <div className="flex items-center justify-between rounded border border-green-500 bg-green-50 px-3 py-2 text-sm text-green-700">
+          <span>저장되었습니다</span>
+          {undoId && (
+            <button
+              type="submit"
+              name="id"
+              value={undoId}
+              formAction={undoAction}
+              formNoValidate
+              disabled={undoPending}
+              className="underline disabled:opacity-50"
+            >
+              {undoPending ? '취소 중...' : '실행취소'}
+            </button>
+          )}
         </div>
       )}
+      {undone && (
+        <p className="rounded border border-blue-300 bg-blue-50 px-3 py-2 text-sm text-blue-700">
+          방금 저장한 거래를 취소했습니다.
+        </p>
+      )}
       <FormMessage result={state} />
+      <FormMessage result={undoState} />
       <input type="hidden" name="transactionType" value="expense" />
       <input type="hidden" name="categoryId" value={selectedCategory?.id ?? ''} />
       <input
@@ -107,6 +141,8 @@ export function QuickAddForm({
         <CategoryPicker
           key={saved ?? 'initial'}
           categories={categories}
+          recentCategoryIds={recentCategoryIds}
+          recentSubcategoryIdsByCategory={recentSubcategoryIdsByCategory}
           onSelect={(category, subcategoryId) => {
             setSelectedCategory(category);
             setSelectedSubcategoryId(subcategoryId);
@@ -141,10 +177,20 @@ export function QuickAddForm({
         {showMore ? '접기' : '더보기 (명의자/비고/태그)'}
       </button>
       {showMore && (
-        <label className="flex flex-col gap-1">
-          <span className="text-sm text-gray-600">비고</span>
-          <input name="memo" className="rounded border px-3 py-2" />
-        </label>
+        <div className="flex flex-col gap-3">
+          <label className="flex flex-col gap-1">
+            <span className="text-sm text-gray-600">비용성격</span>
+            <select name="costBehaviorOverride" className="rounded border px-3 py-2">
+              <option value="">카테고리 기본값 사용</option>
+              <option value="fixed">고정비</option>
+              <option value="variable">변동비</option>
+            </select>
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-sm text-gray-600">비고</span>
+            <input name="memo" className="rounded border px-3 py-2" />
+          </label>
+        </div>
       )}
 
       <button

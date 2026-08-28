@@ -5,19 +5,44 @@ import type { CategoryWithSubcategories } from '@/lib/categories';
 
 export function CategoryPicker({
   categories,
+  recentCategoryIds = [],
+  recentSubcategoryIdsByCategory = {},
   onSelect,
 }: {
   categories: CategoryWithSubcategories[];
+  recentCategoryIds?: string[];
+  recentSubcategoryIdsByCategory?: Record<string, string[]>;
   onSelect: (category: CategoryWithSubcategories, subcategoryId: string | null) => void;
 }) {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string | null>(null);
   const selectedCategory = categories.find((c) => c.id === selectedCategoryId) ?? null;
+  const orderedCategories = [...categories].sort((a, b) => {
+    const aRank = recentCategoryIds.indexOf(a.id);
+    const bRank = recentCategoryIds.indexOf(b.id);
+    if (aRank === bRank) return 0;
+    if (aRank === -1) return 1;
+    if (bRank === -1) return -1;
+    return aRank - bRank;
+  });
+  const recentSubcategoryIds = selectedCategory
+    ? (recentSubcategoryIdsByCategory[selectedCategory.id] ?? [])
+    : [];
+  const orderedSubcategories = selectedCategory
+    ? [...selectedCategory.subcategories].sort((a, b) => {
+        const aRank = recentSubcategoryIds.indexOf(a.id);
+        const bRank = recentSubcategoryIds.indexOf(b.id);
+        if (aRank === bRank) return 0;
+        if (aRank === -1) return 1;
+        if (bRank === -1) return -1;
+        return aRank - bRank;
+      })
+    : [];
 
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap gap-2">
-        {categories.map((category) => (
+        {orderedCategories.map((category) => (
           <button
             key={category.id}
             type="button"
@@ -35,9 +60,9 @@ export function CategoryPicker({
           </button>
         ))}
       </div>
-      {selectedCategory && selectedCategory.subcategories.length > 0 && (
+      {selectedCategory && orderedSubcategories.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          {selectedCategory.subcategories.map((sub) => (
+          {orderedSubcategories.map((sub) => (
             <button
               key={sub.id}
               type="button"
