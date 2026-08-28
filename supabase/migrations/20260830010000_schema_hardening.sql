@@ -40,6 +40,10 @@ create trigger transactions_set_updated_at
 -- could distinguish a concurrent-insert race from a real failure. A PARTIAL unique
 -- index on member_type='self' fixes that without breaking PRD §3.1's multi-child
 -- model (자녀1/자녀2 both legitimately have member_type='child').
+--
+-- Note: the predicate does not exempt is_active = false. If the app ever supports
+-- deactivating and replacing a 'self' member, the inactive row would still occupy the
+-- index and block the replacement — revisit the predicate then.
 create unique index household_members_one_self_per_household
   on public.household_members (household_id)
   where member_type = 'self';
@@ -118,6 +122,14 @@ begin
 end;
 $$;
 
+-- What actually makes the two checks above safe is the explicit `= new.household_id`
+-- predicate baked into every branch — NOT RLS visibility, and not the deliberate absence of
+-- `security definer`. That distinction matters: because the predicate does the work, these
+-- checks hold identically under an `authenticated` caller, under `service_role`/`postgres`
+-- (which bypass RLS entirely — the migration role, the integration tests' admin client, and
+-- any future bulk writer such as Sprint 2's recurring engine), and they cannot be weakened by
+-- an RLS misconfiguration. Do not "simplify" these predicates on the assumption that RLS is
+-- already scoping the subqueries.
 create trigger transactions_tenant_check_trigger
   before insert or update on public.transactions
   for each row execute function public.transactions_tenant_check();

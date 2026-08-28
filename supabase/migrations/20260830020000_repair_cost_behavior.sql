@@ -9,6 +9,22 @@
 -- rows still holding the incorrect 'variable' value, and only transactions whose
 -- cost_behavior still matches the (wrong) category default -- a user who has since
 -- overridden a transaction individually is left alone.
+--
+-- !! DO NOT RE-RUN THIS FILE MANUALLY AFTER Sprint 1.5 Tasks 5 and 7 SHIP. !!
+-- It is safe to re-run ONLY in the world it was written for: one where no category-editing UI
+-- and no per-transaction cost_behavior override exist, so every 'variable' row under these
+-- three categories is provably a snapshot of the buggy seed default rather than a user's
+-- decision. Once those UIs exist, statement 2's guard can no longer tell the two apart and
+-- would silently clobber a deliberate override; statement 1 would likewise overwrite a
+-- deliberate category-level change. `supabase db push` applies each migration once and will
+-- never re-run this on its own -- the hazard is only a manual replay (SQL editor, DR restore,
+-- a script that reapplies files outside Supabase's tracked-migration bookkeeping).
+
+-- Side effect worth knowing: migration 20260830010000 installed set_updated_at triggers just
+-- before this one runs, so every row repaired below gets its updated_at bumped to the repair's
+-- execution time, indistinguishable from a real user edit. Nothing reads updated_at today, so
+-- this is inert -- but a future "last edited" indicator, sync cursor, or optimistic-concurrency
+-- check would misread every repaired row as freshly touched.
 
 -- 1. Repair the category defaults themselves.
 update public.categories
