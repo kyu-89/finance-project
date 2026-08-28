@@ -6,7 +6,7 @@ import { RecurringRuleForm } from './RecurringRuleForm';
 import { RecurringRuleStatusButton } from './RecurringRuleStatusButton';
 import { RecurringRuleAmountForm } from './RecurringRuleAmountForm';
 import { RecurringPauseForm } from './RecurringPauseForm';
-import { RecurringRuleDayForm } from './RecurringRuleDayForm';
+import { RecurringRuleScheduleForm } from './RecurringRuleScheduleForm';
 
 const STATUS_LABEL = { active: '사용 중', paused: '일시중지', ended: '종료' } as const;
 const FREQUENCY_LABEL = { monthly: '개월', weekly: '주', yearly: '년', custom: '일' } as const;
@@ -29,7 +29,7 @@ export default async function RecurringSettingsPage() {
           <p className="mt-1 text-sm text-[var(--tds-grey-700)]">
             {rule.defaultAmount.toLocaleString('ko-KR')}원 · {rule.intervalCount}{FREQUENCY_LABEL[rule.frequency]}마다 · {rule.startDate}부터
           </p><RecurringRuleAmountForm id={rule.id} amount={rule.defaultAmount} ended={rule.status === 'ended'} />
-          {rule.frequency === 'monthly' && <RecurringRuleDayForm id={rule.id} day={rule.dayOfMonth ?? 1} ended={rule.status === 'ended'} />}
+          <RecurringRuleScheduleForm id={rule.id} frequency={rule.frequency} intervalCount={rule.intervalCount} day={rule.dayOfMonth ?? 1} ended={rule.status === 'ended'} />
           <RecurringPauseForm id={rule.id} ended={rule.status === 'ended'} pauses={pauses.filter((pause) => pause.recurringRuleId === rule.id)} /></div>
         <RecurringRuleStatusButton id={rule.id} status={rule.status} />
       </li>)}

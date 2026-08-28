@@ -8,7 +8,7 @@ import {
   updateRecurringRuleStatus,
   updateRecurringRuleAmount,
   addRecurringPausePeriod,
-  updateRecurringRuleDay,
+  updateRecurringRuleSchedule,
   type RecurringRuleStatus,
   type RecurringSourceType,
 } from '@/lib/recurring-rules';
@@ -151,20 +151,25 @@ export async function addRecurringPausePeriodAction(
   return ok();
 }
 
-export async function updateRecurringRuleDayAction(
+export async function updateRecurringRuleScheduleAction(
   _previous: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
   const ruleId = String(formData.get('id') ?? '');
-  const dayOfMonth = Number(formData.get('dayOfMonth'));
-  if (!ruleId || !Number.isInteger(dayOfMonth) || dayOfMonth < 1 || dayOfMonth > 31) {
+  const frequency = String(formData.get('frequency')) as RecurrenceFrequency;
+  const intervalCount = Number(formData.get('intervalCount'));
+  const rawDay = String(formData.get('dayOfMonth') ?? '');
+  const dayOfMonth = rawDay ? Number(rawDay) : null;
+  if (!ruleId || !FREQUENCIES.has(frequency)) return fail('반복 주기를 확인해 주세요.');
+  if (!Number.isInteger(intervalCount) || intervalCount < 1) return fail('반복 간격은 1 이상의 정수여야 해요.');
+  if (frequency === 'monthly' && (!Number.isInteger(dayOfMonth) || dayOfMonth! < 1 || dayOfMonth! > 31)) {
     return fail('월 납부일은 1~31일 중에서 선택해 주세요.');
   }
   try {
     await ensureHouseholdForCurrentUser();
-    await updateRecurringRuleDay(ruleId, dayOfMonth);
+    await updateRecurringRuleSchedule({ ruleId, frequency, intervalCount, dayOfMonth });
   } catch (error) {
-    return fail(error instanceof Error ? error.message : '월 납부일 변경에 실패했어요.');
+    return fail(error instanceof Error ? error.message : '반복 주기 변경에 실패했어요.');
   }
   revalidatePath('/settings/recurring');
   return ok();

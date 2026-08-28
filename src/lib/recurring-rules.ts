@@ -196,8 +196,21 @@ export async function materializeRecurringRulesForRange(
     ranges.push({ startDate: pause.start_date, endDate: pause.end_date });
     pausesByRule.set(pause.recurring_rule_id, ranges);
   }
+  const { data: preexistingOccurrences, error: preexistingError } = rules.length === 0
+    ? { data: [], error: null }
+    : await supabase.from('recurring_occurrences')
+      .select('recurring_rule_id')
+      .eq('household_id', householdId)
+      .in('recurring_rule_id', rules.map((rule) => rule.id))
+      .gte('occurrence_date', fromDate)
+      .lte('occurrence_date', toDate);
+  if (preexistingError) throw new Error(`기존 반복 회차 조회 실패: ${preexistingError.message}`);
+  const materializedRuleIds = new Set((preexistingOccurrences ?? []).map((row) => row.recurring_rule_id));
   const ruleById = new Map(rules.map((rule) => [rule.id, rule]));
-  const occurrenceRows = rules.flatMap((rule) => excludePausedDates(listOccurrenceDates({
+  // Once any occurrence for a rule has been materialized in a range, that range's schedule is
+  // frozen. A settings change therefore applies to the next unmaterialized month and cannot
+  // create a second current-month row on a new payment day.
+  const occurrenceRows = rules.filter((rule) => !materializedRuleIds.has(rule.id)).flatMap((rule) => excludePausedDates(listOccurrenceDates({
     startDate: rule.start_date,
     endDate: rule.end_date,
     frequency: rule.frequency,
@@ -209,12 +222,13 @@ export async function materializeRecurringRulesForRange(
     occurrence_date: occurrenceDate,
   })));
 
-  if (occurrenceRows.length === 0) return 0;
-  const { error: occurrenceError } = await supabase.from('recurring_occurrences').upsert(
-    occurrenceRows,
-    { onConflict: 'recurring_rule_id,occurrence_date', ignoreDuplicates: true },
-  );
-  if (occurrenceError) throw new Error(`반복 회차 생성 실패: ${occurrenceError.message}`);
+  if (occurrenceRows.length > 0) {
+    const { error: occurrenceError } = await supabase.from('recurring_occurrences').upsert(
+      occurrenceRows,
+      { onConflict: 'recurring_rule_id,occurrence_date', ignoreDuplicates: true },
+    );
+    if (occurrenceError) throw new Error(`반복 회차 생성 실패: ${occurrenceError.message}`);
+  }
 
   const { data: occurrences, error: readError } = await supabase
     .from('recurring_occurrences')
@@ -302,14 +316,22 @@ export async function addRecurringPausePeriod(input: {
   if (error) throw new Error(`일시중지 기간 추가 실패: ${error.message}`);
 }
 
-export async function updateRecurringRuleDay(ruleId: string, dayOfMonth: number): Promise<void> {
+export async function updateRecurringRuleSchedule(input: {
+  ruleId: string;
+  frequency: RecurrenceFrequency;
+  intervalCount: number;
+  dayOfMonth: number | null;
+}): Promise<void> {
   const supabase = await createClient();
   const { data, error } = await supabase.from('recurring_rules')
-    .update({ day_of_month: dayOfMonth })
-    .eq('id', ruleId)
-    .eq('frequency', 'monthly')
+    .update({
+      frequency: input.frequency,
+      interval_count: input.intervalCount,
+      day_of_month: input.frequency === 'monthly' ? input.dayOfMonth : null,
+    })
+    .eq('id', input.ruleId)
     .neq('status', 'ended')
     .select('id');
-  if (error) throw new Error(`월 납부일 변경 실패: ${error.message}`);
-  if (data.length !== 1) throw new Error('변경할 월 반복항목을 찾지 못했어요.');
+  if (error) throw new Error(`반복 주기 변경 실패: ${error.message}`);
+  if (data.length !== 1) throw new Error('변경할 반복항목을 찾지 못했어요.');
 }
