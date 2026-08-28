@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { FLOW_CLASS_BY_TRANSACTION_TYPE } from '@/lib/transactions';
 import type { CostBehavior, TransactionType } from '@/lib/cost-behavior';
 import { excludePausedDates, listOccurrenceDates, type RecurrenceFrequency } from '@/lib/recurrence';
+import { buildLoanOccurrenceAmounts, type LoanOccurrenceAmounts } from '@/lib/product-recurring';
 
 export type RecurringRuleStatus = 'active' | 'paused' | 'ended';
 export type RecurringSourceType = 'insurance' | 'saving' | 'loan' | 'subscription' | 'salary' | 'manual';
@@ -162,6 +163,8 @@ type MaterializationRule = {
   description: string;
   memo: string | null;
   include_in_budget: boolean;
+  source_type: RecurringSourceType;
+  source_id: string | null;
 };
 
 export async function materializeRecurringRulesForRange(
@@ -172,7 +175,7 @@ export async function materializeRecurringRulesForRange(
   const supabase = await createClient();
   const { data: rawRules, error: rulesError } = await supabase
     .from('recurring_rules')
-    .select('id, household_id, start_date, end_date, frequency, interval_count, day_of_month, default_amount, transaction_type, flow_class, cost_behavior, category_id, subcategory_id, payment_method_id, payer_member_id, beneficiary_member_id, description, memo, include_in_budget')
+    .select('id, household_id, start_date, end_date, frequency, interval_count, day_of_month, default_amount, transaction_type, flow_class, cost_behavior, category_id, subcategory_id, payment_method_id, payer_member_id, beneficiary_member_id, description, memo, include_in_budget, source_type, source_id')
     .eq('household_id', householdId)
     .eq('status', 'active')
     .eq('auto_generate', true)
@@ -181,6 +184,28 @@ export async function materializeRecurringRulesForRange(
 
   if (rulesError) throw new Error(`반복항목 생성 대상 조회 실패: ${rulesError.message}`);
   const rules = (rawRules ?? []) as MaterializationRule[];
+  const loanIds = [...new Set(rules.filter((rule) => rule.source_type === 'loan' && rule.source_id).map((rule) => rule.source_id as string))];
+  const loanAmounts = new Map<string, Map<string, LoanOccurrenceAmounts>>();
+  if (loanIds.length > 0) {
+    const { data: loans, error: loanError } = await supabase.from('loans')
+      .select('id, original_amount, annual_rate, repayment_method, first_payment_date, maturity_date, grace_months')
+      .eq('household_id', householdId).in('id', loanIds);
+    if (loanError) throw new Error(`대출 반복금액 조회 실패: ${loanError.message}`);
+    for (const loan of loans ?? []) {
+      loanAmounts.set(loan.id, buildLoanOccurrenceAmounts({
+        id: loan.id, originalAmount: loan.original_amount, annualRate: Number(loan.annual_rate),
+        repaymentMethod: loan.repayment_method, firstPaymentDate: loan.first_payment_date,
+        maturityDate: loan.maturity_date, graceMonths: loan.grace_months,
+      }));
+    }
+  }
+  const amountFor = (rule: MaterializationRule, occurrenceDate: string): number => {
+    if (rule.source_type !== 'loan' || !rule.source_id) return rule.default_amount;
+    const amounts = loanAmounts.get(rule.source_id)?.get(occurrenceDate);
+    if (!amounts) return 0;
+    return rule.transaction_type === 'debt_principal' ? amounts.debtPrincipal
+      : rule.transaction_type === 'finance_cost' ? amounts.financeCost : 0;
+  };
   const { data: rawPauses, error: pausesError } = rules.length === 0
     ? { data: [], error: null }
     : await supabase.from('recurring_rule_pauses')
@@ -216,7 +241,7 @@ export async function materializeRecurringRulesForRange(
     frequency: rule.frequency,
     intervalCount: rule.interval_count,
     dayOfMonth: rule.day_of_month,
-  }, fromDate, toDate), pausesByRule.get(rule.id) ?? []).map((occurrenceDate) => ({
+  }, fromDate, toDate), pausesByRule.get(rule.id) ?? []).filter((occurrenceDate) => amountFor(rule, occurrenceDate) > 0).map((occurrenceDate) => ({
     household_id: householdId,
     recurring_rule_id: rule.id,
     occurrence_date: occurrenceDate,
@@ -255,7 +280,7 @@ export async function materializeRecurringRulesForRange(
       beneficiary_member_id: rule.beneficiary_member_id,
       recurring_rule_id: rule.id,
       recurring_occurrence_id: occurrence.id,
-      amount: rule.default_amount,
+      amount: amountFor(rule, occurrence.occurrence_date),
       description: rule.description,
       memo: rule.memo,
       include_in_budget: rule.include_in_budget,

@@ -31,8 +31,7 @@ export function RecurringRuleForm({
       <label className="flex flex-col gap-1 text-sm">종류
         <select name="sourceType" className="px-3 py-2">
           <option value="manual">일반 반복거래</option><option value="subscription">구독</option>
-          <option value="salary">급여</option><option value="insurance">보험</option>
-          <option value="saving">적금</option><option value="loan">대출</option>
+          <option value="salary">급여</option>
         </select>
       </label>
       <label className="flex flex-col gap-1 text-sm">거래 유형

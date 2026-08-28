@@ -61,7 +61,7 @@ export function SavingsProductManager({ deposits, savings, accounts, members, to
         <AccountSelect accounts={accounts} />
         <Field label="비고"><input name="memo" className="px-3" /></Field>
         <label className="flex min-h-12 items-center gap-3 rounded-xl bg-[var(--tds-grey-100)] px-4 text-sm font-medium"><input name="autoRecurring" type="checkbox" className="h-5 w-5" />월간 반복납입 사용</label>
-        <p className="md:col-span-2 xl:col-span-4 text-xs text-[var(--tds-grey-500)]">반복납입 예정거래 생성은 Sprint 4 상품 연계 단계에서 활성화됩니다.</p>
+        <p className="md:col-span-2 xl:col-span-4 text-xs text-[var(--tds-grey-500)]">반복납입을 켜면 만기 전까지 월간관리에 저축 예정거래가 자동 생성돼요.</p>
         <button disabled={savingsPending} className="tds-primary-button md:col-span-2 xl:col-span-4">{savingsPending ? '저장 중...' : '적금 추가'}</button>
       </form>
       <div className="grid gap-4 xl:grid-cols-2">{savings.length === 0 && <Empty text="등록한 적금이 없어요." />}{savings.map((item) => <SavingsCard key={item.id} item={item} today={today} />)}</div>
