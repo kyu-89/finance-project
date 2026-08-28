@@ -70,7 +70,9 @@
   - monthly / weekly / yearly / custom 일 간격
   - 월말 clamp, 윤년, 종료일/조회범위 처리
 - 검증: lint/build ✅, unit **10 files / 32 tests** ✅, Supabase `db push --dry-run` ✅
-- 아직 원격 DB에는 migration을 적용하지 않았다. 커밋 후 `npx supabase db push`로 적용할 것.
+- `20260831010000`은 운영 Supabase 적용 완료, 로컬/원격 migration 이력 일치 확인 완료.
+- 이어서 구현됨(다음 커밋): 설정 > 반복항목 생성·목록·일시중지·재개·종료, 월 진입 시 planned idempotent 생성.
+- `20260831020000`은 soft-delete 뒤 동일 회차가 재생성되지 않도록 회차당 transaction을 절대 유일하게 만든다. 원격 적용 후 앱을 배포할 것.
 
 ---
 

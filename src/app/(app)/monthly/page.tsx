@@ -3,11 +3,13 @@ import { listTransactions } from '@/lib/transactions';
 import { listCategoriesWithSubcategories } from '@/lib/categories';
 import { listPaymentMethods } from '@/lib/payment-methods';
 import { currentMonthRangeInSeoul } from '@/lib/date';
+import { materializeRecurringRulesForRange } from '@/lib/recurring-rules';
 import { MonthlyPageTabs } from './MonthlyPageTabs';
 
 export default async function MonthlyPage() {
   const household = await ensureHouseholdForCurrentUser();
   const { fromDate, toDate } = currentMonthRangeInSeoul();
+  await materializeRecurringRulesForRange(household.id, fromDate, toDate);
 
   const [transactions, categories, paymentMethods] = await Promise.all([
     listTransactions({ householdId: household.id, fromDate, toDate }),
@@ -22,7 +24,7 @@ export default async function MonthlyPage() {
     <div className="tds-page">
       <h1 className="tds-title mb-2">이번 달 내역을 관리해요</h1>
       <p className="mb-6 text-sm text-[var(--tds-grey-700)]">
-        {fromDate} ~ {toDate} · 예산·결산/반복항목/월말점검 탭은 Sprint 2-3에서 추가됩니다.
+        {fromDate} ~ {toDate} · 활성 반복항목은 예정 거래로 자동 채워져요.
       </p>
       <MonthlyPageTabs
         transactions={transactions}

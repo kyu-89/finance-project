@@ -13,6 +13,9 @@ export default function SettingsPage() {
         <Link href="/settings/payment-methods" className="flex min-h-16 items-center justify-between px-5 text-[15px] font-semibold">
           <span>결제수단 관리</span><span className="text-[var(--tds-grey-400)]">›</span>
         </Link>
+        <Link href="/settings/recurring" className="flex min-h-16 items-center justify-between px-5 text-[15px] font-semibold">
+          <span>반복항목 관리</span><span className="text-[var(--tds-grey-400)]">›</span>
+        </Link>
       </nav>
       <div className="mt-8">
         <SignOutButton />
