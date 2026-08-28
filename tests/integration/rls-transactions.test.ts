@@ -581,5 +581,12 @@ describe('categories/payment_methods/transactions RLS', () => {
     expect(rule).toMatchObject({ status: 'ended', end_date: '2026-11-01' });
     expect(skipped?.status).toBe('skipped');
     expect(priorPosted?.status).toBe('posted');
+
+    const { error: reactivateError } = await asUserA.rpc('update_recurring_rule_status', {
+      p_rule_id: userARecurringRuleId,
+      p_status: 'active',
+      p_effective_date: '2026-11-02',
+    });
+    expect(reactivateError).not.toBeNull();
   });
 });
