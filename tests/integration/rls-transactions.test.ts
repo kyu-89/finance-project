@@ -613,6 +613,25 @@ describe('categories/payment_methods/transactions RLS', () => {
       household_id: userAHouseholdId, year: 2027, month: 1, category_id: userACategoryId,
     }).single();
     expect(saved?.amount).toBe(550000);
+    const { error: incomeTargetError } = await asUserA.from('budgets').insert({
+      household_id: userAHouseholdId,
+      year: 2027,
+      month: 1,
+      transaction_type: 'income',
+      category_id: null,
+      subcategory_id: null,
+      amount: 3000000,
+    });
+    expect(incomeTargetError).toBeNull();
+    const { error: categorylessExpenseError } = await asUserA.from('budgets').insert({
+      household_id: userAHouseholdId,
+      year: 2027,
+      month: 4,
+      transaction_type: 'expense',
+      category_id: null,
+      amount: 1,
+    });
+    expect(categorylessExpenseError).not.toBeNull();
 
     const asUserB = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
     await asUserB.auth.signInWithPassword({ email: userBEmail, password });
