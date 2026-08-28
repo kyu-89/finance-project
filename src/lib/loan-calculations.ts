@@ -19,6 +19,12 @@ export type AmortizationRow = {
   remainingBalance: number;
 };
 
+export function paymentMonthsInclusive(from: string, to: string): number {
+  const [fromYear, fromMonth] = from.split('-').map(Number);
+  const [toYear, toMonth] = to.split('-').map(Number);
+  return Math.max(1, (toYear - fromYear) * 12 + toMonth - fromMonth + 1);
+}
+
 function addMonthsClamped(isoDate: string, months: number): string {
   const [year, month, day] = isoDate.split('-').map(Number);
   const targetMonthIndex = month - 1 + months;
