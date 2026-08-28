@@ -21,7 +21,9 @@ export function BudgetClosingTab({ transactions, categories, budgets }: { transa
   const metrics = [
     ['총수입', won(closing.income)], ['소비성지출', won(closing.consumption)], ['저축', won(closing.saving)],
     ['월 차액', won(closing.balance)], ['수입 예산차', won(closing.incomeVariance)], ['저축 예산차', won(closing.savingVariance)],
-    ['저축률', percent(closing.savingsRate)], ['소비율', percent(closing.consumptionRate)],
+    ['저축률', percent(closing.savingsRate)], ['목표 저축률', percent(closing.targetSavingsRate)],
+    ['목표 대비 저축률', closing.savingsRateVariance === null ? '-' : `${closing.savingsRateVariance >= 0 ? '+' : ''}${(closing.savingsRateVariance * 100).toFixed(1)}%p`],
+    ['소비율', percent(closing.consumptionRate)],
   ];
   return <div className="flex flex-col gap-5">
     <section className="grid grid-cols-2 gap-3 md:grid-cols-3">{metrics.map(([label, value]) => <div key={label} className="tds-card p-4">

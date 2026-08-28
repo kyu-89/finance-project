@@ -30,10 +30,14 @@ describe('calculateMonthlyClosing', () => {
     expect(result).toMatchObject({ income: 3000000, plannedIncome: 2800000, incomeVariance: 200000, saving: 500000, savingBudget: 600000, savingVariance: -100000, consumption: 800000, budgetedConsumption: 700000, balance: 1700000, budgetTotal: 1000000, budgetRemaining: 300000 });
     expect(result.spentByCategory.food).toBe(700000);
     expect(result.savingsRate).toBeCloseTo(1 / 6);
+    expect(result.targetSavingsRate).toBeCloseTo(600000 / 2800000);
+    expect(result.savingsRateVariance).toBeCloseTo((1 / 6) - (600000 / 2800000));
   });
   it('avoids division by zero when there is no income or budget', () => {
     const result = calculateMonthlyClosing([], []);
     expect(result.savingsRate).toBeNull();
+    expect(result.targetSavingsRate).toBeNull();
+    expect(result.savingsRateVariance).toBeNull();
     expect(result.consumptionRate).toBeNull();
     expect(result.budgetUsageRate).toBeNull();
   });

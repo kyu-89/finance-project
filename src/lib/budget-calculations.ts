@@ -43,6 +43,8 @@ export function calculateMonthlyClosing(transactions: ClosingTransaction[], budg
   const savingBudget = budgets.filter((budget) => budget.transactionType === 'saving').reduce((sum, budget) => sum + budget.amount, 0);
   const budgetedConsumption = Object.values(spentByCategory).reduce((sum, amount) => sum + amount, 0);
   const balance = income - saving - consumption;
+  const savingsRate = income > 0 ? saving / income : null;
+  const targetSavingsRate = plannedIncome > 0 ? savingBudget / plannedIncome : null;
   return {
     income,
     saving,
@@ -50,7 +52,9 @@ export function calculateMonthlyClosing(transactions: ClosingTransaction[], budg
     budgetedConsumption,
     totalExpense: saving + consumption,
     balance,
-    savingsRate: income > 0 ? saving / income : null,
+    savingsRate,
+    targetSavingsRate,
+    savingsRateVariance: savingsRate !== null && targetSavingsRate !== null ? savingsRate - targetSavingsRate : null,
     consumptionRate: income > 0 ? consumption / income : null,
     budgetTotal,
     plannedIncome,
