@@ -26,7 +26,7 @@ export default async function MonthlyPage() {
   const budgetCategories = categories.filter((c) => c.transactionType === 'expense');
   const activePaymentMethods = paymentMethods.filter((m) => m.isActive);
   const duplicateCandidates = findRecurringDuplicateCandidates(transactions);
-  const budgets = annualBudgets.filter((budget) => budget.month === month && budget.transactionType === 'expense');
+  const budgets = annualBudgets.filter((budget) => budget.month === month);
 
   return (
     <div className="tds-page">

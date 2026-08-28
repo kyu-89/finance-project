@@ -18,7 +18,7 @@ export type ClosingTransaction = {
   categoryId: string | null;
 };
 
-export type MonthlyBudget = { categoryId: string; amount: number };
+export type MonthlyBudget = { transactionType: 'income' | 'expense' | 'saving'; categoryId: string; amount: number };
 
 export function calculateMonthlyClosing(transactions: ClosingTransaction[], budgets: MonthlyBudget[]) {
   let income = 0;
@@ -38,7 +38,9 @@ export function calculateMonthlyClosing(transactions: ClosingTransaction[], budg
     }
   }
 
-  const budgetTotal = budgets.reduce((sum, budget) => sum + budget.amount, 0);
+  const budgetTotal = budgets.filter((budget) => budget.transactionType === 'expense').reduce((sum, budget) => sum + budget.amount, 0);
+  const plannedIncome = budgets.filter((budget) => budget.transactionType === 'income').reduce((sum, budget) => sum + budget.amount, 0);
+  const savingBudget = budgets.filter((budget) => budget.transactionType === 'saving').reduce((sum, budget) => sum + budget.amount, 0);
   const budgetedConsumption = Object.values(spentByCategory).reduce((sum, amount) => sum + amount, 0);
   const balance = income - saving - consumption;
   return {
@@ -51,6 +53,10 @@ export function calculateMonthlyClosing(transactions: ClosingTransaction[], budg
     savingsRate: income > 0 ? saving / income : null,
     consumptionRate: income > 0 ? consumption / income : null,
     budgetTotal,
+    plannedIncome,
+    savingBudget,
+    incomeVariance: income - plannedIncome,
+    savingVariance: saving - savingBudget,
     budgetRemaining: budgetTotal - budgetedConsumption,
     budgetUsageRate: budgetTotal > 0 ? budgetedConsumption / budgetTotal : null,
     spentByCategory,

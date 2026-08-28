@@ -16,11 +16,12 @@ const won = (value: number) => `${value.toLocaleString('ko-KR')}원`;
 const percent = (value: number | null) => value === null ? '-' : `${(value * 100).toFixed(1)}%`;
 
 export function BudgetClosingTab({ transactions, categories, budgets }: { transactions: Transaction[]; categories: CategoryWithSubcategories[]; budgets: Budget[] }) {
-  const closing = calculateMonthlyClosing(transactions, budgets.map((budget) => ({ categoryId: budget.categoryId, amount: budget.amount })));
-  const budgetByCategory = new Map(budgets.map((budget) => [budget.categoryId, budget.amount]));
+  const closing = calculateMonthlyClosing(transactions, budgets.map((budget) => ({ transactionType: budget.transactionType, categoryId: budget.categoryId, amount: budget.amount })));
+  const budgetByCategory = new Map(budgets.filter((budget) => budget.transactionType === 'expense').map((budget) => [budget.categoryId, budget.amount]));
   const metrics = [
     ['총수입', won(closing.income)], ['소비성지출', won(closing.consumption)], ['저축', won(closing.saving)],
-    ['월 차액', won(closing.balance)], ['저축률', percent(closing.savingsRate)], ['소비율', percent(closing.consumptionRate)],
+    ['월 차액', won(closing.balance)], ['수입 예산차', won(closing.incomeVariance)], ['저축 예산차', won(closing.savingVariance)],
+    ['저축률', percent(closing.savingsRate)], ['소비율', percent(closing.consumptionRate)],
   ];
   return <div className="flex flex-col gap-5">
     <section className="grid grid-cols-2 gap-3 md:grid-cols-3">{metrics.map(([label, value]) => <div key={label} className="tds-card p-4">

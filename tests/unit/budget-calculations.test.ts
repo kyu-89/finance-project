@@ -22,8 +22,12 @@ describe('calculateMonthlyClosing', () => {
       { amount: 700000, transactionType: 'expense', flowClass: 'consumption', status: 'posted', includeInBudget: true, categoryId: 'food' },
       { amount: 100000, transactionType: 'expense', flowClass: 'consumption', status: 'posted', includeInBudget: false, categoryId: 'food' },
       { amount: 999999, transactionType: 'expense', flowClass: 'consumption', status: 'planned', includeInBudget: true, categoryId: 'food' },
-    ], [{ categoryId: 'food', amount: 1000000 }]);
-    expect(result).toMatchObject({ income: 3000000, saving: 500000, consumption: 800000, budgetedConsumption: 700000, balance: 1700000, budgetTotal: 1000000, budgetRemaining: 300000 });
+    ], [
+      { transactionType: 'expense', categoryId: 'food', amount: 1000000 },
+      { transactionType: 'income', categoryId: 'income', amount: 2800000 },
+      { transactionType: 'saving', categoryId: 'saving', amount: 600000 },
+    ]);
+    expect(result).toMatchObject({ income: 3000000, plannedIncome: 2800000, incomeVariance: 200000, saving: 500000, savingBudget: 600000, savingVariance: -100000, consumption: 800000, budgetedConsumption: 700000, balance: 1700000, budgetTotal: 1000000, budgetRemaining: 300000 });
     expect(result.spentByCategory.food).toBe(700000);
     expect(result.savingsRate).toBeCloseTo(1 / 6);
   });

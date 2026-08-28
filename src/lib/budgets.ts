@@ -47,16 +47,16 @@ async function upsertBudgets(rows: BudgetInput[]): Promise<void> {
   if (error) throw new Error(`예산 저장 실패: ${error.message}`);
 }
 
-export async function saveAnnualExpenseBudgets(input: {
+export async function saveAnnualBudgets(input: {
   householdId: string;
   year: number;
-  values: { categoryId: string; month: number; amount: number }[];
+  values: { transactionType: Budget['transactionType']; categoryId: string; month: number; amount: number }[];
 }): Promise<void> {
   await upsertBudgets(input.values.map((value) => ({
     householdId: input.householdId,
     year: input.year,
     month: value.month,
-    transactionType: 'expense',
+    transactionType: value.transactionType,
     categoryId: value.categoryId,
     subcategoryId: null,
     amount: value.amount,
@@ -102,11 +102,12 @@ export async function draftBudgetsFromPreviousActuals(householdId: string, year:
     .eq('household_id', householdId)
     .eq('transaction_type', 'expense');
   if (categoryError) throw new Error(`예산 카테고리 조회 실패: ${categoryError.message}`);
-  await saveAnnualExpenseBudgets({
+  await saveAnnualBudgets({
     householdId,
     year,
     values: (categories ?? []).flatMap((category) => Array.from({ length: 12 }, (_, index) => ({
       categoryId: category.id,
+      transactionType: 'expense' as const,
       month: index + 1,
       amount: totals.get(`${category.id}:${index + 1}`) ?? 0,
     }))),
