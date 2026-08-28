@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { listOccurrenceDates } from '@/lib/recurrence';
+import { excludePausedDates, listOccurrenceDates } from '@/lib/recurrence';
 
 describe('listOccurrenceDates', () => {
   it('clamps a monthly day to each month end without drifting', () => {
@@ -32,5 +32,12 @@ describe('listOccurrenceDates', () => {
       '2026-08-01',
       '2026-08-31',
     )).toEqual(['2026-08-01', '2026-08-11', '2026-08-21', '2026-08-31']);
+  });
+
+  it('excludes occurrence dates inside inclusive pause periods', () => {
+    expect(excludePausedDates(
+      ['2026-08-01', '2026-09-01', '2026-10-01', '2026-11-01'],
+      [{ startDate: '2026-09-01', endDate: '2026-10-15' }],
+    )).toEqual(['2026-08-01', '2026-11-01']);
   });
 });

@@ -2,7 +2,7 @@ import 'server-only';
 import { createClient } from '@/lib/supabase/server';
 import { FLOW_CLASS_BY_TRANSACTION_TYPE } from '@/lib/transactions';
 import type { CostBehavior, TransactionType } from '@/lib/cost-behavior';
-import { listOccurrenceDates, type RecurrenceFrequency } from '@/lib/recurrence';
+import { excludePausedDates, listOccurrenceDates, type RecurrenceFrequency } from '@/lib/recurrence';
 
 export type RecurringRuleStatus = 'active' | 'paused' | 'ended';
 export type RecurringSourceType = 'insurance' | 'saving' | 'loan' | 'subscription' | 'salary' | 'manual';
@@ -19,6 +19,14 @@ export type RecurringRule = {
   endDate: string | null;
   status: RecurringRuleStatus;
   sourceType: RecurringSourceType;
+};
+
+export type RecurringPause = {
+  id: string;
+  recurringRuleId: string;
+  startDate: string;
+  endDate: string;
+  reason: string | null;
 };
 
 const RULE_COLUMNS = `id, description, default_amount, transaction_type, frequency, interval_count, day_of_month, start_date, end_date, status, source_type`;
@@ -46,6 +54,22 @@ export async function listRecurringRules(householdId: string): Promise<Recurring
     endDate: row.end_date,
     status: row.status as RecurringRuleStatus,
     sourceType: row.source_type as RecurringSourceType,
+  }));
+}
+
+export async function listRecurringPauses(householdId: string): Promise<RecurringPause[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from('recurring_rule_pauses')
+    .select('id, recurring_rule_id, start_date, end_date, reason')
+    .eq('household_id', householdId)
+    .order('start_date', { ascending: false });
+  if (error) throw new Error(`일시중지 기간 조회 실패: ${error.message}`);
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    recurringRuleId: row.recurring_rule_id,
+    startDate: row.start_date,
+    endDate: row.end_date,
+    reason: row.reason,
   }));
 }
 
@@ -149,14 +173,29 @@ export async function materializeRecurringRulesForRange(
 
   if (rulesError) throw new Error(`반복항목 생성 대상 조회 실패: ${rulesError.message}`);
   const rules = (rawRules ?? []) as MaterializationRule[];
+  const { data: rawPauses, error: pausesError } = rules.length === 0
+    ? { data: [], error: null }
+    : await supabase.from('recurring_rule_pauses')
+      .select('recurring_rule_id, start_date, end_date')
+      .eq('household_id', householdId)
+      .in('recurring_rule_id', rules.map((rule) => rule.id))
+      .lte('start_date', toDate)
+      .gte('end_date', fromDate);
+  if (pausesError) throw new Error(`일시중지 기간 조회 실패: ${pausesError.message}`);
+  const pausesByRule = new Map<string, { startDate: string; endDate: string }[]>();
+  for (const pause of rawPauses ?? []) {
+    const ranges = pausesByRule.get(pause.recurring_rule_id) ?? [];
+    ranges.push({ startDate: pause.start_date, endDate: pause.end_date });
+    pausesByRule.set(pause.recurring_rule_id, ranges);
+  }
   const ruleById = new Map(rules.map((rule) => [rule.id, rule]));
-  const occurrenceRows = rules.flatMap((rule) => listOccurrenceDates({
+  const occurrenceRows = rules.flatMap((rule) => excludePausedDates(listOccurrenceDates({
     startDate: rule.start_date,
     endDate: rule.end_date,
     frequency: rule.frequency,
     intervalCount: rule.interval_count,
     dayOfMonth: rule.day_of_month,
-  }, fromDate, toDate).map((occurrenceDate) => ({
+  }, fromDate, toDate), pausesByRule.get(rule.id) ?? []).map((occurrenceDate) => ({
     household_id: householdId,
     recurring_rule_id: rule.id,
     occurrence_date: occurrenceDate,
@@ -237,4 +276,20 @@ export async function updateRecurringRuleAmount(input: {
     p_effective_date: input.effectiveDate,
   });
   if (error) throw new Error(`반복 금액 변경 실패: ${error.message}`);
+}
+
+export async function addRecurringPausePeriod(input: {
+  ruleId: string;
+  startDate: string;
+  endDate: string;
+  reason: string | null;
+}): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc('add_recurring_pause_period', {
+    p_rule_id: input.ruleId,
+    p_start_date: input.startDate,
+    p_end_date: input.endDate,
+    p_reason: input.reason,
+  });
+  if (error) throw new Error(`일시중지 기간 추가 실패: ${error.message}`);
 }

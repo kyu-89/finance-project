@@ -7,6 +7,7 @@ import {
   createRecurringRule,
   updateRecurringRuleStatus,
   updateRecurringRuleAmount,
+  addRecurringPausePeriod,
   type RecurringRuleStatus,
   type RecurringSourceType,
 } from '@/lib/recurring-rules';
@@ -120,6 +121,27 @@ export async function updateRecurringRuleAmountAction(
     await updateRecurringRuleAmount({ ruleId, amount, effectiveDate: todayInSeoul() });
   } catch (error) {
     return fail(error instanceof Error ? error.message : '반복 금액 변경에 실패했어요.');
+  }
+  revalidatePath('/settings/recurring');
+  revalidatePath('/monthly');
+  return ok();
+}
+
+export async function addRecurringPausePeriodAction(
+  _previous: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const ruleId = String(formData.get('id') ?? '');
+  const startDate = String(formData.get('startDate') ?? '');
+  const endDate = String(formData.get('endDate') ?? '');
+  const reason = String(formData.get('reason') ?? '').trim() || null;
+  if (!ruleId || !DATE_PATTERN.test(startDate) || !DATE_PATTERN.test(endDate)) return fail('중지 기간을 확인해 주세요.');
+  if (endDate < startDate) return fail('중지 종료일은 시작일보다 빠를 수 없어요.');
+  try {
+    await ensureHouseholdForCurrentUser();
+    await addRecurringPausePeriod({ ruleId, startDate, endDate, reason });
+  } catch (error) {
+    return fail(error instanceof Error ? error.message : '일시중지 기간 추가에 실패했어요.');
   }
   revalidatePath('/settings/recurring');
   revalidatePath('/monthly');
