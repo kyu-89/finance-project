@@ -3,12 +3,12 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { createTransaction } from '@/lib/transactions';
-import { ensureHouseholdForCurrentUser } from '@/lib/household';
+import { getCurrentHouseholdId } from '@/lib/household';
 import { todayInSeoul } from '@/lib/date';
 import type { TransactionType } from '@/lib/cost-behavior';
 
 export async function createQuickTransactionAction(formData: FormData) {
-  const household = await ensureHouseholdForCurrentUser();
+  const householdId = await getCurrentHouseholdId();
 
   const amount = Number(formData.get('amount'));
   const categoryId = String(formData.get('categoryId') ?? '') || null;
@@ -38,7 +38,7 @@ export async function createQuickTransactionAction(formData: FormData) {
   }
 
   await createTransaction({
-    householdId: household.id,
+    householdId,
     transactionDate: todayInSeoul(),
     transactionType,
     categoryId,
@@ -57,7 +57,7 @@ export async function createQuickTransactionAction(formData: FormData) {
 }
 
 export async function createMonthlyRowAction(formData: FormData) {
-  const household = await ensureHouseholdForCurrentUser();
+  const householdId = await getCurrentHouseholdId();
 
   const amount = Number(formData.get('amount'));
   const transactionDate = String(formData.get('transactionDate') ?? '');
@@ -80,7 +80,7 @@ export async function createMonthlyRowAction(formData: FormData) {
   }
 
   await createTransaction({
-    householdId: household.id,
+    householdId,
     transactionDate,
     transactionType,
     categoryId,

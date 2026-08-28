@@ -63,11 +63,42 @@ export const ensureHouseholdForCurrentUser = cache(async (): Promise<Household> 
     }
   }
 
-  await ensureSelfMember(supabase, household.id);
-  await ensureDefaultCategoriesSeeded(household.id);
-  await ensureDefaultPaymentMethodsSeeded(household.id);
+  // These three are independent of each other and, on an already-bootstrapped household,
+  // are all no-op existence checks. Awaiting them in sequence made every single request pay
+  // three serial Supabase round trips for nothing; running them together pays one.
+  await Promise.all([
+    ensureSelfMember(supabase, household.id),
+    ensureDefaultCategoriesSeeded(household.id),
+    ensureDefaultPaymentMethodsSeeded(household.id),
+  ]);
 
   return household;
+});
+
+// Hot path for Server Actions that only need to know WHICH household to write to.
+// The full bootstrap above belongs to page rendering (the (app) layout runs it on every
+// navigation); making a save re-run all of its seeding checks doubled the round trips on
+// the one interaction PRD §5.1 wants to finish in seconds. Falls back to the full bootstrap
+// only when no household exists yet, which cannot normally happen — reaching an action
+// implies a page already rendered, and rendering bootstraps.
+export const getCurrentHouseholdId = cache(async (): Promise<string> => {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    throw new Error('로그인이 필요합니다.');
+  }
+
+  const household = await selectHousehold(supabase, user.id);
+  if (household) {
+    return household.id;
+  }
+
+  return (await ensureHouseholdForCurrentUser()).id;
 });
 
 async function selectHousehold(
