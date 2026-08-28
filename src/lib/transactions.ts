@@ -168,3 +168,68 @@ export async function softDeleteTransaction(id: string): Promise<void> {
     throw new Error(`거래 삭제 실패: ${error.message}`);
   }
 }
+
+export type RecentUsage = {
+  categoryIds: string[];
+  subcategoryIdsByCategory: Record<string, string[]>;
+  paymentMethodIds: string[];
+};
+
+// PRD §5.1 속도 정책: 최근 사용 대분류 5개를 상단 노출, 대분류 선택 시 최근 사용 소분류 우선 정렬,
+// 최근 결제수단 자동 제안. Derived from the last N posted transactions rather than stored
+// separately, so it needs no extra table and can never drift from the actual ledger.
+export async function listRecentUsage(householdId: string, limit = 50): Promise<RecentUsage> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('category_id, subcategory_id, payment_method_id')
+    .eq('household_id', householdId)
+    .eq('status', 'posted')
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw new Error(`최근 사용 내역 조회 실패: ${error.message}`);
+  }
+
+  const categoryIds: string[] = [];
+  const subcategoryIdsByCategory: Record<string, string[]> = {};
+  const paymentMethodIds: string[] = [];
+
+  for (const row of data ?? []) {
+    if (row.category_id && !categoryIds.includes(row.category_id)) {
+      categoryIds.push(row.category_id);
+    }
+    if (row.payment_method_id && !paymentMethodIds.includes(row.payment_method_id)) {
+      paymentMethodIds.push(row.payment_method_id);
+    }
+    if (row.category_id && row.subcategory_id) {
+      const list = (subcategoryIdsByCategory[row.category_id] ??= []);
+      if (!list.includes(row.subcategory_id)) {
+        list.push(row.subcategory_id);
+      }
+    }
+  }
+
+  return { categoryIds, subcategoryIdsByCategory, paymentMethodIds };
+}
+
+export async function undoTransaction(id: string): Promise<void> {
+  // §5.1's 5초 Undo is just a soft delete — the row stays recoverable for 30 days
+  // either way (§5.4), so "undo" and "delete" are the same operation here.
+  await softDeleteTransaction(id);
+}
+
+export async function updateTransactionCostBehavior(
+  id: string,
+  costBehavior: 'fixed' | 'variable' | null,
+): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase.from('transactions').update({ cost_behavior: costBehavior }).eq('id', id);
+
+  if (error) {
+    throw new Error(`비용성격 수정 실패: ${error.message}`);
+  }
+}
