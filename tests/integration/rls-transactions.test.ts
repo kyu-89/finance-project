@@ -589,4 +589,45 @@ describe('categories/payment_methods/transactions RLS', () => {
     });
     expect(reactivateError).not.toBeNull();
   });
+
+  it('isolates budgets, supports idempotent upsert, and rejects cross-household categories', async () => {
+    const asUserA = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
+    await asUserA.auth.signInWithPassword({ email: userAEmail, password });
+    const budgetRow = {
+      household_id: userAHouseholdId,
+      year: 2027,
+      month: 1,
+      transaction_type: 'expense',
+      category_id: userACategoryId,
+      subcategory_id: null,
+      amount: 500000,
+    };
+    const { error: insertError } = await asUserA.from('budgets').insert(budgetRow);
+    expect(insertError).toBeNull();
+    const { error: upsertError } = await asUserA.from('budgets').upsert(
+      { ...budgetRow, amount: 550000 },
+      { onConflict: 'household_id,year,month,transaction_type,category_id,subcategory_id' },
+    );
+    expect(upsertError).toBeNull();
+    const { data: saved } = await asUserA.from('budgets').select('amount').match({
+      household_id: userAHouseholdId, year: 2027, month: 1, category_id: userACategoryId,
+    }).single();
+    expect(saved?.amount).toBe(550000);
+
+    const asUserB = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
+    await asUserB.auth.signInWithPassword({ email: userBEmail, password });
+    const { data: hidden } = await asUserB.from('budgets').select('id').eq('household_id', userAHouseholdId);
+    expect(hidden).toEqual([]);
+    const { error: spoofError } = await asUserB.from('budgets').insert({ ...budgetRow, month: 2 });
+    expect(spoofError).not.toBeNull();
+
+    const { data: householdB } = await admin.from('households').select('id').eq('owner_user_id', userBId).single();
+    const { data: categoryB } = await admin.from('categories').select('id').eq('household_id', householdB!.id).limit(1).single();
+    const { error: tenantError } = await admin.from('budgets').insert({
+      ...budgetRow,
+      month: 3,
+      category_id: categoryB!.id,
+    });
+    expect(tenantError).not.toBeNull();
+  });
 });
