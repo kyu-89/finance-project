@@ -79,7 +79,8 @@
 - 연결 시 occurrence가 posted 거래를 가리키고 생성 planned 행은 `cancelled`가 되어 실적에 중복 합산되지 않는다.
 - `20260831030000_link_recurring_occurrence.sql` 운영 Supabase 적용 완료.
 - 최신 기능 커밋 `81951d8`, Vercel Production **Ready**: `https://personal-finance-6ek69txu9-kyu17.vercel.app`
-- 최신 검증: lint/build ✅, unit 11 files / 34 tests ✅, 전체 Supabase 통합 포함 **13 files / 57 tests** ✅.
+- 최신 검증: lint/build ✅, unit 11 files / 34 tests ✅. 직전 전체 suite 57 tests 통과 후 신규 통합 3개를 추가했다.
+- 반복항목 전용 통합 검증 추가: owner 생성, 회차/거래 유일성, user B 격리·RPC 차단, 원자적 연결 후 planned 취소 — 해당 파일 **18 tests 통과**.
 - 반복 금액 변경: 월간 예정행 편집은 이번 달만, 설정의 금액 변경은 이번 달부터 미래 planned와 규칙 기본금액을 함께 갱신하도록 구현.
 - `20260831040000_update_recurring_amount.sql` 운영 Supabase 적용 완료. 로컬/원격 migration 10개 일치 확인 완료.
 - 전체 PRD 기준 추정 완성도 약 **35%**, Phase 1/MVP 기준 약 **50%**. Sprint 0·1·1.5 완료, Sprint 2 핵심 vertical slice 완료 상태.

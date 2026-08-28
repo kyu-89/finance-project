@@ -17,6 +17,9 @@ describe('categories/payment_methods/transactions RLS', () => {
   let userACategoryId: string;
   let userAPaymentMethodId: string;
   let userATransactionId: string;
+  let userARecurringRuleId: string;
+  let userAOccurrenceId: string;
+  let userAPlannedTransactionId: string;
   const userAEmail = randomTestEmail('a');
   const userBEmail = randomTestEmail('b');
   const password = 'Sprint1-Test-Password-1!';
@@ -409,5 +412,95 @@ describe('categories/payment_methods/transactions RLS', () => {
     });
 
     expect(mismatchError).not.toBeNull();
+  });
+
+  it('owner can create an isolated recurring rule and occurrence exactly once', async () => {
+    const asUserA = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
+    const { error: signInError } = await asUserA.auth.signInWithPassword({ email: userAEmail, password });
+    expect(signInError).toBeNull();
+
+    const { data: rule, error: ruleError } = await asUserA.from('recurring_rules').insert({
+      household_id: userAHouseholdId,
+      source_type: 'subscription',
+      start_date: '2026-09-01',
+      frequency: 'monthly',
+      interval_count: 1,
+      day_of_month: 1,
+      default_amount: 35000,
+      transaction_type: 'expense',
+      flow_class: 'consumption',
+      cost_behavior: 'fixed',
+      category_id: userACategoryId,
+      payment_method_id: userAPaymentMethodId,
+      description: '반복 RLS 테스트',
+    }).select('id').single();
+    expect(ruleError).toBeNull();
+    userARecurringRuleId = rule!.id;
+
+    const { data: occurrence, error: occurrenceError } = await asUserA.from('recurring_occurrences').insert({
+      household_id: userAHouseholdId,
+      recurring_rule_id: userARecurringRuleId,
+      occurrence_date: '2026-09-01',
+    }).select('id').single();
+    expect(occurrenceError).toBeNull();
+    userAOccurrenceId = occurrence!.id;
+
+    const { error: duplicateError } = await asUserA.from('recurring_occurrences').insert({
+      household_id: userAHouseholdId,
+      recurring_rule_id: userARecurringRuleId,
+      occurrence_date: '2026-09-01',
+    });
+    expect(duplicateError).not.toBeNull();
+  });
+
+  it('allows only one transaction per occurrence and hides recurring data from user B', async () => {
+    const asUserA = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
+    await asUserA.auth.signInWithPassword({ email: userAEmail, password });
+    const plannedRow = {
+      household_id: userAHouseholdId,
+      transaction_date: '2026-09-01',
+      transaction_type: 'expense',
+      flow_class: 'consumption',
+      recurring_rule_id: userARecurringRuleId,
+      recurring_occurrence_id: userAOccurrenceId,
+      amount: 35000,
+      description: '반복 예정 거래',
+      status: 'planned',
+    };
+    const { data: planned, error: plannedError } = await asUserA.from('transactions').insert(plannedRow).select('id').single();
+    expect(plannedError).toBeNull();
+    userAPlannedTransactionId = planned!.id;
+    const { error: duplicateTransactionError } = await asUserA.from('transactions').insert(plannedRow);
+    expect(duplicateTransactionError).not.toBeNull();
+
+    const asUserB = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
+    const { error: signInError } = await asUserB.auth.signInWithPassword({ email: userBEmail, password });
+    expect(signInError).toBeNull();
+    const { data: hiddenRules } = await asUserB.from('recurring_rules').select('id').eq('id', userARecurringRuleId);
+    expect(hiddenRules).toEqual([]);
+    const { error: linkError } = await asUserB.rpc('link_recurring_occurrence', {
+      p_occurrence_id: userAOccurrenceId,
+      p_planned_transaction_id: userAPlannedTransactionId,
+      p_posted_transaction_id: userATransactionId,
+    });
+    expect(linkError).not.toBeNull();
+  });
+
+  it('atomically links an existing posted transaction and cancels the planned duplicate', async () => {
+    const asUserA = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
+    await asUserA.auth.signInWithPassword({ email: userAEmail, password });
+    const { error: linkError } = await asUserA.rpc('link_recurring_occurrence', {
+      p_occurrence_id: userAOccurrenceId,
+      p_planned_transaction_id: userAPlannedTransactionId,
+      p_posted_transaction_id: userATransactionId,
+    });
+    expect(linkError).toBeNull();
+
+    const [{ data: occurrence }, { data: planned }] = await Promise.all([
+      asUserA.from('recurring_occurrences').select('matched_transaction_id').eq('id', userAOccurrenceId).single(),
+      asUserA.from('transactions').select('status').eq('id', userAPlannedTransactionId).single(),
+    ]);
+    expect(occurrence?.matched_transaction_id).toBe(userATransactionId);
+    expect(planned?.status).toBe('cancelled');
   });
 });
