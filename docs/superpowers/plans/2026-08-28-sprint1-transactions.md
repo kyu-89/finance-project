@@ -459,69 +459,97 @@ const SAVING_CATEGORY_DEFAULT_COST_BEHAVIOR = null; // saving/investment exclude
 export async function ensureDefaultCategoriesSeeded(householdId: string): Promise<void> {
   const supabase = await createClient();
 
-  const { data: existing, error: existingError } = await supabase
+  // Check existence PER ROW (by transaction_type+name / by name), not just "does any category
+  // exist for this household" — ~30 sequential inserts follow, and a bare existence guard would
+  // mean a partial failure (race, transient network error, timeout) leaves the household
+  // PERMANENTLY missing whatever didn't get inserted, since the guard would short-circuit before
+  // ever retrying the gap. This makes every call (including the household's very next login)
+  // fill in only what's actually still missing.
+  const { data: existingCategories, error: existingError } = await supabase
     .from('categories')
-    .select('id')
-    .eq('household_id', householdId)
-    .limit(1);
+    .select('id, transaction_type, name')
+    .eq('household_id', householdId);
 
   if (existingError) {
     throw new Error(`카테고리 시드 확인 실패: ${existingError.message}`);
   }
-  if (existing && existing.length > 0) {
-    return; // already seeded for this household
+
+  const existingCategoryIdByKey = new Map(
+    (existingCategories ?? []).map((c) => [`${c.transaction_type}:${c.name}`, c.id as string]),
+  );
+
+  let incomeCategoryId = existingCategoryIdByKey.get('income:수입');
+  if (!incomeCategoryId) {
+    const { data: incomeCategory, error: incomeError } = await supabase
+      .from('categories')
+      .insert({ household_id: householdId, transaction_type: 'income', name: '수입' })
+      .select('id')
+      .single();
+
+    if (incomeError) {
+      throw new Error(`수입 카테고리 시드 실패: ${incomeError.message}`);
+    }
+    incomeCategoryId = incomeCategory.id;
   }
 
-  const { data: incomeCategory, error: incomeError } = await supabase
-    .from('categories')
-    .insert({ household_id: householdId, transaction_type: 'income', name: '수입' })
-    .select('id')
-    .single();
-
-  if (incomeError) {
-    throw new Error(`수입 카테고리 시드 실패: ${incomeError.message}`);
-  }
-
-  const incomeSubcategoryRows = DEFAULT_INCOME_SUBCATEGORY_NAMES.map((name, index) => ({
-    category_id: incomeCategory.id,
-    name,
-    display_order: index,
-  }));
-
-  const { error: incomeSubError } = await supabase.from('subcategories').insert(incomeSubcategoryRows);
-  if (incomeSubError) {
-    throw new Error(`수입 소분류 시드 실패: ${incomeSubError.message}`);
-  }
+  await ensureSubcategoriesSeeded(supabase, incomeCategoryId, DEFAULT_INCOME_SUBCATEGORY_NAMES);
 
   for (const [categoryIndex, category] of DEFAULT_EXPENSE_CATEGORIES.entries()) {
     const isSavingCategory = category.name === '저축성지출';
 
-    const { data: expenseCategory, error: expenseError } = await supabase
-      .from('categories')
-      .insert({
-        household_id: householdId,
-        transaction_type: 'expense',
-        name: category.name,
-        default_cost_behavior: isSavingCategory ? SAVING_CATEGORY_DEFAULT_COST_BEHAVIOR : 'variable',
-        display_order: categoryIndex,
-      })
-      .select('id')
-      .single();
+    let categoryId = existingCategoryIdByKey.get(`expense:${category.name}`);
+    if (!categoryId) {
+      const { data: expenseCategory, error: expenseError } = await supabase
+        .from('categories')
+        .insert({
+          household_id: householdId,
+          transaction_type: 'expense',
+          name: category.name,
+          default_cost_behavior: isSavingCategory ? SAVING_CATEGORY_DEFAULT_COST_BEHAVIOR : 'variable',
+          display_order: categoryIndex,
+        })
+        .select('id')
+        .single();
 
-    if (expenseError) {
-      throw new Error(`지출 카테고리(${category.name}) 시드 실패: ${expenseError.message}`);
+      if (expenseError) {
+        throw new Error(`지출 카테고리(${category.name}) 시드 실패: ${expenseError.message}`);
+      }
+      categoryId = expenseCategory.id;
     }
 
-    const subcategoryRows = category.subcategoryNames.map((name, index) => ({
-      category_id: expenseCategory.id,
-      name,
-      display_order: index,
-    }));
+    await ensureSubcategoriesSeeded(supabase, categoryId, category.subcategoryNames);
+  }
+}
 
-    const { error: subError } = await supabase.from('subcategories').insert(subcategoryRows);
-    if (subError) {
-      throw new Error(`소분류(${category.name}) 시드 실패: ${subError.message}`);
-    }
+async function ensureSubcategoriesSeeded(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  categoryId: string,
+  names: string[],
+): Promise<void> {
+  const { data: existingSubcategories, error: existingError } = await supabase
+    .from('subcategories')
+    .select('name')
+    .eq('category_id', categoryId);
+
+  if (existingError) {
+    throw new Error(`소분류 시드 확인 실패: ${existingError.message}`);
+  }
+
+  const existingNames = new Set((existingSubcategories ?? []).map((s) => s.name));
+  const missingNames = names.filter((name) => !existingNames.has(name));
+  if (missingNames.length === 0) {
+    return;
+  }
+
+  const rows = missingNames.map((name) => ({
+    category_id: categoryId,
+    name,
+    display_order: names.indexOf(name),
+  }));
+
+  const { error } = await supabase.from('subcategories').insert(rows);
+  if (error) {
+    throw new Error(`소분류 시드 실패: ${error.message}`);
   }
 }
 
@@ -619,23 +647,34 @@ export const DEFAULT_PAYMENT_METHOD_NAMES = ['계좌이체', '현금'];
 export async function ensureDefaultPaymentMethodsSeeded(householdId: string): Promise<void> {
   const supabase = await createClient();
 
+  // Per-row existence check (by name), same rationale as ensureDefaultCategoriesSeeded's fix:
+  // a partial failure between the two inserts must not permanently strand the household missing
+  // one of them.
   const { data: existing, error: existingError } = await supabase
     .from('payment_methods')
-    .select('id')
-    .eq('household_id', householdId)
-    .limit(1);
+    .select('name')
+    .eq('household_id', householdId);
 
   if (existingError) {
     throw new Error(`결제수단 시드 확인 실패: ${existingError.message}`);
   }
-  if (existing && existing.length > 0) {
+
+  const existingNames = new Set((existing ?? []).map((row) => row.name));
+  const defaults = [
+    { name: '계좌이체', method_type: 'account_transfer', display_order: 0 },
+    { name: '현금', method_type: 'cash', display_order: 1 },
+  ];
+  const missing = defaults.filter((d) => !existingNames.has(d.name));
+  if (missing.length === 0) {
     return;
   }
 
-  const rows = [
-    { household_id: householdId, name: '계좌이체', method_type: 'account_transfer', display_order: 0 },
-    { household_id: householdId, name: '현금', method_type: 'cash', display_order: 1 },
-  ];
+  const rows = missing.map((d) => ({
+    household_id: householdId,
+    name: d.name,
+    method_type: d.method_type,
+    display_order: d.display_order,
+  }));
 
   const { error } = await supabase.from('payment_methods').insert(rows);
   if (error) {

@@ -16,23 +16,34 @@ export const DEFAULT_PAYMENT_METHOD_NAMES = ['계좌이체', '현금'];
 export async function ensureDefaultPaymentMethodsSeeded(householdId: string): Promise<void> {
   const supabase = await createClient();
 
+  // Per-row existence check (by name), same rationale as ensureDefaultCategoriesSeeded's fix:
+  // a partial failure between the two inserts must not permanently strand the household missing
+  // one of them.
   const { data: existing, error: existingError } = await supabase
     .from('payment_methods')
-    .select('id')
-    .eq('household_id', householdId)
-    .limit(1);
+    .select('name')
+    .eq('household_id', householdId);
 
   if (existingError) {
     throw new Error(`결제수단 시드 확인 실패: ${existingError.message}`);
   }
-  if (existing && existing.length > 0) {
+
+  const existingNames = new Set((existing ?? []).map((row) => row.name));
+  const defaults = [
+    { name: '계좌이체', method_type: 'account_transfer', display_order: 0 },
+    { name: '현금', method_type: 'cash', display_order: 1 },
+  ];
+  const missing = defaults.filter((d) => !existingNames.has(d.name));
+  if (missing.length === 0) {
     return;
   }
 
-  const rows = [
-    { household_id: householdId, name: '계좌이체', method_type: 'account_transfer', display_order: 0 },
-    { household_id: householdId, name: '현금', method_type: 'cash', display_order: 1 },
-  ];
+  const rows = missing.map((d) => ({
+    household_id: householdId,
+    name: d.name,
+    method_type: d.method_type,
+    display_order: d.display_order,
+  }));
 
   const { error } = await supabase.from('payment_methods').insert(rows);
   if (error) {
