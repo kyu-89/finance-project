@@ -60,7 +60,15 @@ export function QuickAddForm({
   const numericAmount = amountDisplay.replace(/,/g, '');
 
   return (
-    <form action={createQuickTransactionAction} className="flex flex-col gap-4">
+    // Remount the whole form subtree on each save. The state-adjustment block above resets the
+    // controlled state, but `description`/`memo` are uncontrolled native inputs whose DOM nodes
+    // survive this same-segment navigation untouched — so without this key the user sees
+    // "저장되었습니다" while the previous entry's text is still sitting in the 내용 box.
+    <form
+      key={saved ?? 'initial'}
+      action={createQuickTransactionAction}
+      className="flex flex-col gap-4"
+    >
       {showSavedBanner && (
         <div className="rounded border border-green-500 bg-green-50 px-3 py-2 text-sm text-green-700">
           저장되었습니다
