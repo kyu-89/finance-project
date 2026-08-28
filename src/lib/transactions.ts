@@ -24,7 +24,7 @@ export type Transaction = {
 
 // PRD §1.4 — maps transaction_type to the flow_class analysis axis. Kept as a single
 // source of truth so no two call sites can disagree on which flow_class a type maps to.
-const FLOW_CLASS_BY_TRANSACTION_TYPE: Record<TransactionType, string> = {
+export const FLOW_CLASS_BY_TRANSACTION_TYPE: Record<TransactionType, string> = {
   income: 'cash_in',
   expense: 'consumption',
   saving: 'saving',

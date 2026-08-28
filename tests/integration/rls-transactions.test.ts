@@ -279,4 +279,135 @@ describe('categories/payment_methods/transactions RLS', () => {
     expect(stillThere?.id).toBe(userATransactionId);
     expect(stillThere?.deleted_at).toBeNull();
   });
+
+  it('hides a soft-deleted transaction from its own owner (PRD §5.4)', async () => {
+    const asUserA = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
+    const { error: signInError } = await asUserA.auth.signInWithPassword({
+      email: userAEmail,
+      password,
+    });
+    expect(signInError).toBeNull();
+
+    const { data: inserted, error: insertError } = await asUserA
+      .from('transactions')
+      .insert({
+        household_id: userAHouseholdId,
+        transaction_date: '2026-08-28',
+        transaction_type: 'expense',
+        flow_class: 'consumption',
+        category_id: userACategoryId,
+        amount: 5000,
+        description: '소프트 삭제 대상',
+      })
+      .select('id')
+      .single();
+    expect(insertError).toBeNull();
+
+    // Visible before deletion.
+    const { data: before } = await asUserA
+      .from('transactions')
+      .select('id')
+      .eq('id', inserted!.id)
+      .is('deleted_at', null);
+    expect(before).toHaveLength(1);
+
+    const { error: softDeleteError } = await asUserA
+      .from('transactions')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', inserted!.id);
+    expect(softDeleteError).toBeNull();
+
+    // Gone from the app's read path...
+    const { data: after } = await asUserA
+      .from('transactions')
+      .select('id')
+      .eq('id', inserted!.id)
+      .is('deleted_at', null);
+    expect(after).toEqual([]);
+
+    // ...but the row itself still exists, which is what makes 30-day recovery possible.
+    const { data: stillThere } = await admin
+      .from('transactions')
+      .select('id, deleted_at')
+      .eq('id', inserted!.id)
+      .single();
+    expect(stillThere?.id).toBe(inserted!.id);
+    expect(stillThere?.deleted_at).not.toBeNull();
+  });
+
+  it("rejects a transaction referencing another household's category", async () => {
+    // Build a second household owned by user B, with its own category.
+    const { data: householdB, error: householdBError } = await admin
+      .from('households')
+      .insert({ owner_user_id: userBId, name: 'B네 집' })
+      .select('id')
+      .single();
+    expect(householdBError).toBeNull();
+
+    const { data: categoryB, error: categoryBError } = await admin
+      .from('categories')
+      .insert({ household_id: householdB!.id, transaction_type: 'expense', name: 'B의 카테고리' })
+      .select('id')
+      .single();
+    expect(categoryBError).toBeNull();
+
+    const asUserA = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
+    const { error: signInError } = await asUserA.auth.signInWithPassword({
+      email: userAEmail,
+      password,
+    });
+    expect(signInError).toBeNull();
+
+    // User A inserts into their OWN household (so RLS permits it) but points category_id
+    // at user B's category. RLS alone would allow this; the tenant-check trigger must not.
+    const { error: crossTenantError } = await asUserA.from('transactions').insert({
+      household_id: userAHouseholdId,
+      transaction_date: '2026-08-28',
+      transaction_type: 'expense',
+      flow_class: 'consumption',
+      category_id: categoryB!.id,
+      amount: 1000,
+      description: '교차 테넌트 FK 시도',
+    });
+
+    expect(crossTenantError).not.toBeNull();
+  });
+
+  it('rejects a subcategory that does not belong to the given category', async () => {
+    const { data: otherCategory, error: otherCategoryError } = await admin
+      .from('categories')
+      .insert({ household_id: userAHouseholdId, transaction_type: 'expense', name: '다른 카테고리' })
+      .select('id')
+      .single();
+    expect(otherCategoryError).toBeNull();
+
+    const { data: otherSub, error: otherSubError } = await admin
+      .from('subcategories')
+      .insert({ category_id: otherCategory!.id, name: '다른 소분류' })
+      .select('id')
+      .single();
+    expect(otherSubError).toBeNull();
+
+    const asUserA = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
+    const { error: signInError } = await asUserA.auth.signInWithPassword({
+      email: userAEmail,
+      password,
+    });
+    expect(signInError).toBeNull();
+
+    // Same household (so the tenant check passes) but the subcategory belongs to a
+    // different category — the subcategory-consistency trigger must reject it.
+    const { error: mismatchError } = await asUserA.from('transactions').insert({
+      household_id: userAHouseholdId,
+      transaction_date: '2026-08-28',
+      transaction_type: 'expense',
+      flow_class: 'consumption',
+      category_id: userACategoryId,
+      subcategory_id: otherSub!.id,
+      amount: 1000,
+      description: '소분류 불일치 시도',
+    });
+
+    expect(mismatchError).not.toBeNull();
+  });
 });
