@@ -50,3 +50,6 @@ supabase/.temp
 *.xlsm
 *.xlsx
 *.csv
+
+.vercel
+.env*
