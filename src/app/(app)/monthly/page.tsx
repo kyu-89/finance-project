@@ -1,10 +1,35 @@
-export default function MonthlyPage() {
+import { ensureHouseholdForCurrentUser } from '@/lib/household';
+import { listTransactions } from '@/lib/transactions';
+import { listCategoriesWithSubcategories } from '@/lib/categories';
+import { listPaymentMethods } from '@/lib/payment-methods';
+import { MonthlyPageTabs } from './MonthlyPageTabs';
+
+export default async function MonthlyPage() {
+  const household = await ensureHouseholdForCurrentUser();
+  const now = new Date();
+  const fromDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+  const toDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+
+  const [transactions, categories, paymentMethods] = await Promise.all([
+    listTransactions({ householdId: household.id, fromDate, toDate }),
+    listCategoriesWithSubcategories(household.id),
+    listPaymentMethods(household.id),
+  ]);
+
+  const expenseCategories = categories.filter((c) => c.transactionType === 'expense' && c.isActive);
+  const activePaymentMethods = paymentMethods.filter((m) => m.isActive);
+
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-semibold">월간관리</h1>
-      <p className="text-sm text-gray-500">
-        Sprint 1에서 월간입력/전체내역/예산·결산/반복항목/월말점검 탭을 구현합니다.
+    <div className="p-4">
+      <h1 className="mb-1 text-xl font-semibold">월간관리</h1>
+      <p className="mb-4 text-sm text-gray-500">
+        {fromDate} ~ {toDate} · 예산·결산/반복항목/월말점검 탭은 Sprint 2-3에서 추가됩니다.
       </p>
+      <MonthlyPageTabs
+        transactions={transactions}
+        categories={expenseCategories}
+        paymentMethods={activePaymentMethods}
+      />
     </div>
   );
 }
