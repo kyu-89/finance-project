@@ -7,6 +7,7 @@ import {
   createSubcategoryAction,
   deactivateSubcategoryAction,
   updateCategoryAction,
+  updateSubcategoryAction,
 } from '@/actions/category-actions';
 import type { CategoryWithSubcategories } from '@/lib/categories';
 
@@ -14,6 +15,10 @@ export function CategoryEditor({ category }: { category: CategoryWithSubcategori
   const [expanded, setExpanded] = useState(false);
   const [editState, editAction, editPending] = useActionState(updateCategoryAction, INITIAL_ACTION_STATE);
   const [subState, subAction, subPending] = useActionState(createSubcategoryAction, INITIAL_ACTION_STATE);
+  const [subEditState, subEditAction, subEditPending] = useActionState(
+    updateSubcategoryAction,
+    INITIAL_ACTION_STATE,
+  );
   const [deactivateState, deactivateAction] = useActionState(
     deactivateSubcategoryAction,
     INITIAL_ACTION_STATE,
@@ -74,10 +79,32 @@ export function CategoryEditor({ category }: { category: CategoryWithSubcategori
             <span className="text-sm font-medium">소분류</span>
             <ul className="flex flex-col gap-1">
               {category.subcategories.map((sub) => (
-                <li key={sub.id} className="flex items-center justify-between text-sm">
-                  <span className={sub.isActive ? '' : 'text-gray-400 line-through'}>{sub.name}</span>
+                <li key={sub.id} className="flex flex-wrap items-center gap-2 text-sm">
+                  {sub.isActive ? (
+                    <form action={subEditAction} className="flex min-w-0 flex-1 items-center gap-2">
+                      <input type="hidden" name="id" value={sub.id} />
+                      <input
+                        name="name"
+                        defaultValue={sub.name}
+                        aria-label={`${sub.name} 소분류 이름`}
+                        required
+                        className="min-w-0 flex-1 px-3 py-2 text-sm"
+                      />
+                      <button
+                        type="submit"
+                        disabled={subEditPending}
+                        className="secondary-button shrink-0 px-3"
+                      >
+                        저장
+                      </button>
+                    </form>
+                  ) : (
+                    <span className="min-h-11 flex-1 px-3 py-3 text-gray-400 line-through">
+                      {sub.name}
+                    </span>
+                  )}
                   {sub.isActive && (
-                    <form action={deactivateAction}>
+                    <form action={deactivateAction} className="shrink-0">
                       <input type="hidden" name="id" value={sub.id} />
                       <button
                         type="submit"
@@ -90,6 +117,7 @@ export function CategoryEditor({ category }: { category: CategoryWithSubcategori
                 </li>
               ))}
             </ul>
+            <FormMessage result={subEditState} />
             <FormMessage result={deactivateState} />
 
             <form action={subAction} className="flex items-end gap-2">
