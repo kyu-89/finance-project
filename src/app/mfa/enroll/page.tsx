@@ -15,6 +15,32 @@ export default function MfaEnrollPage() {
   useEffect(() => {
     async function enroll() {
       const supabase = createClient();
+
+      const { data: factorsData, error: listError } = await supabase.auth.mfa.listFactors();
+      if (listError) {
+        setError(listError.message);
+        return;
+      }
+
+      const totpFactors = factorsData.all.filter((factor) => factor.factor_type === 'totp');
+      const verifiedFactor = totpFactors.find((factor) => factor.status === 'verified');
+
+      if (verifiedFactor) {
+        router.replace('/mfa/verify');
+        return;
+      }
+
+      const unverifiedFactor = totpFactors.find((factor) => factor.status === 'unverified');
+      if (unverifiedFactor) {
+        const { error: unenrollError } = await supabase.auth.mfa.unenroll({
+          factorId: unverifiedFactor.id,
+        });
+        if (unenrollError) {
+          setError(unenrollError.message);
+          return;
+        }
+      }
+
       const { data, error: enrollError } = await supabase.auth.mfa.enroll({
         factorType: 'totp',
       });
@@ -30,7 +56,7 @@ export default function MfaEnrollPage() {
     }
 
     enroll();
-  }, []);
+  }, [router]);
 
   async function handleVerify(e: React.FormEvent) {
     e.preventDefault();
