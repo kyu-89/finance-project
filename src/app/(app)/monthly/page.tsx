@@ -5,6 +5,7 @@ import { listPaymentMethods } from '@/lib/payment-methods';
 import { currentMonthRangeInSeoul } from '@/lib/date';
 import { materializeRecurringRulesForRange } from '@/lib/recurring-rules';
 import { findRecurringDuplicateCandidates } from '@/lib/recurring-duplicates';
+import { listBudgets } from '@/lib/budgets';
 import { MonthlyPageTabs } from './MonthlyPageTabs';
 
 export default async function MonthlyPage() {
@@ -12,15 +13,20 @@ export default async function MonthlyPage() {
   const { fromDate, toDate } = currentMonthRangeInSeoul();
   await materializeRecurringRulesForRange(household.id, fromDate, toDate);
 
-  const [transactions, categories, paymentMethods] = await Promise.all([
+  const year = Number(fromDate.slice(0, 4));
+  const month = Number(fromDate.slice(5, 7));
+  const [transactions, categories, paymentMethods, annualBudgets] = await Promise.all([
     listTransactions({ householdId: household.id, fromDate, toDate }),
     listCategoriesWithSubcategories(household.id),
     listPaymentMethods(household.id),
+    listBudgets(household.id, year),
   ]);
 
   const expenseCategories = categories.filter((c) => c.transactionType === 'expense' && c.isActive);
+  const budgetCategories = categories.filter((c) => c.transactionType === 'expense');
   const activePaymentMethods = paymentMethods.filter((m) => m.isActive);
   const duplicateCandidates = findRecurringDuplicateCandidates(transactions);
+  const budgets = annualBudgets.filter((budget) => budget.month === month && budget.transactionType === 'expense');
 
   return (
     <div className="tds-page">
@@ -33,6 +39,8 @@ export default async function MonthlyPage() {
         categories={expenseCategories}
         paymentMethods={activePaymentMethods}
         duplicateCandidates={duplicateCandidates}
+        budgets={budgets}
+        budgetCategories={budgetCategories}
       />
     </div>
   );

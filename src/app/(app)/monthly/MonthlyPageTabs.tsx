@@ -7,19 +7,25 @@ import type { Transaction } from '@/lib/transactions';
 import type { CategoryWithSubcategories } from '@/lib/categories';
 import type { PaymentMethod } from '@/lib/payment-methods';
 import type { DuplicateCandidate } from '@/lib/recurring-duplicates';
+import type { Budget } from '@/lib/budgets';
+import { BudgetClosingTab } from './BudgetClosingTab';
 
 export function MonthlyPageTabs({
   transactions,
   categories,
   paymentMethods,
   duplicateCandidates,
+  budgets,
+  budgetCategories,
 }: {
   transactions: Transaction[];
   categories: CategoryWithSubcategories[];
   paymentMethods: PaymentMethod[];
   duplicateCandidates: Record<string, DuplicateCandidate[]>;
+  budgets: Budget[];
+  budgetCategories: CategoryWithSubcategories[];
 }) {
-  const [tab, setTab] = useState<'input' | 'all'>('input');
+  const [tab, setTab] = useState<'input' | 'all' | 'closing'>('input');
 
   return (
     <div className="flex flex-col gap-4">
@@ -38,11 +44,20 @@ export function MonthlyPageTabs({
         >
           전체내역
         </button>
+        <button
+          type="button"
+          onClick={() => setTab('closing')}
+          className={`min-h-12 px-4 text-[15px] font-semibold ${tab === 'closing' ? 'border-b-2 border-[var(--tds-blue-500)] text-[var(--tds-grey-900)]' : 'text-[var(--tds-grey-500)]'}`}
+        >
+          예산·결산
+        </button>
       </div>
       {tab === 'input' ? (
         <MonthlyInputTab initialTransactions={transactions} categories={categories} paymentMethods={paymentMethods} duplicateCandidates={duplicateCandidates} />
-      ) : (
+      ) : tab === 'all' ? (
         <AllTransactionsTab initialTransactions={transactions} />
+      ) : (
+        <BudgetClosingTab transactions={transactions} categories={budgetCategories} budgets={budgets} />
       )}
     </div>
   );
