@@ -1,8 +1,45 @@
 # 인수인계 문서 (HANDOFF)
 
-> 최종 갱신: 2026-08-28 · 현재 기능 HEAD `81951d8` · 운영 배포 Ready
-> `main` / `origin/main`, Supabase migration 10개가 모두 동기화됨. 이 문서 갱신 커밋만 추가된다.
+> 최종 갱신: 2026-08-29 · 현재 기능 HEAD `acbe98c` · 운영 배포 Ready
+> `main` / `origin/main` 동기화, Supabase migration **12개** 동기화. 이 문서 커밋만 추가된다.
 > 다음 작업자(다른 AI 세션 또는 사람)가 이 문서만 읽고 이어서 작업할 수 있도록 작성됨
+
+## 최종 체크포인트 (2026-08-29 02:45 KST)
+
+- **운영 URL:** `https://personal-finance-one-virid.vercel.app`
+- **최신 배포:** `https://personal-finance-g4f7mpcj3-kyu17.vercel.app` — Production Ready
+- **기능 HEAD:** `acbe98c feat: enforce recurring status lifecycle`
+- **Git:** `main == origin/main`, 기능 작업 트리 clean (이 문서 갱신만 커밋 예정)
+- **Supabase:** `20260828010000` ~ `20260831060000`, 로컬/원격 12개 일치
+- **검증:** lint ✅, Next.js 16.3.3 production build ✅, unit 11 files / 35 tests ✅
+- **통합 검증:** 직전 전체 57 tests ✅, 반복항목 대상 파일 18 tests ✅
+
+### 이번 연속 작업에서 완료한 Sprint 2 범위
+
+- 반복 규칙/회차 스키마, owner RLS, 교차 household trigger, hard-delete 차단
+- monthly/weekly/yearly/custom 일정 계산, 월말 clamp·윤년 테스트
+- 설정 > 반복항목 생성/목록/일시중지/재개/종료
+- 월 진입 시 `planned` 거래 idempotent materialize
+- 예정건 날짜·금액·결제수단 수정 후 `posted` 확정 또는 `skipped`
+- 직접 입력 posted 거래 중복 후보 탐지 및 원자적 연결; generated planned는 `cancelled`
+- 이번 달만 금액 변경 / 이번 달부터 이후 규칙 금액 변경
+- 기간 일시중지: 중지 구간 생성 제외 + 이미 생성된 planned 자동 skip
+- 월 납부일 변경: 다음 생성 회차부터 반영, 과거 거래 보존
+- 전체 pause/end 시 오늘 이후 planned 자동 skip; end date 고정
+
+### 다음 AI가 바로 시작할 작업
+
+1. 반복 규칙의 `frequency`/`interval_count` 자체 변경 UI와 효력일 정책 마무리
+2. 기간 일시중지와 상태 수명주기 RPC에 대한 통합 테스트 추가
+3. 운영 브라우저에서 테스트용 반복 규칙 생성 → 월간 planned → 확정/skip/중복연결 E2E 검증
+   - 운영 데이터를 변경하므로 기존 세션에서는 자동 수행하지 않았음
+4. Sprint 2 최종 리뷰 후 Sprint 3 예산·결산 계획 작성
+
+### 현재 완성도 추정
+
+- 전체 PRD: 약 **37%**
+- Phase 1/MVP: 약 **55%**
+- Sprint 0·1·1.5 완료, Sprint 2 핵심 기능 완료·최종 경계 기능/리뷰 단계
 
 ## 0. 최신 연속 작업 상태 (2026-08-28 Codex)
 
