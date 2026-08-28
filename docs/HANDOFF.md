@@ -1,16 +1,16 @@
 # 인수인계 문서 (HANDOFF)
 
-> 최종 갱신: 2026-08-29 · 현재 기능 HEAD `7c2df2f` · 운영 자동 배포 진행
-> `main` / `origin/main` 동기화, Supabase migration **12개** 동기화. 이 문서 커밋만 추가된다.
+> 최종 갱신: 2026-08-29 · 현재 기능 HEAD `7b57346` · 운영 자동 배포 예정
+> Supabase migration **13개** 동기화. 기능 커밋과 이 문서를 push하면 된다.
 > 다음 작업자(다른 AI 세션 또는 사람)가 이 문서만 읽고 이어서 작업할 수 있도록 작성됨
 
 ## 최종 체크포인트 (2026-08-29 02:45 KST)
 
 - **운영 URL:** `https://personal-finance-one-virid.vercel.app`
 - **최신 배포:** `https://personal-finance-g4f7mpcj3-kyu17.vercel.app` — Production Ready
-- **기능 HEAD:** `7c2df2f feat: update future recurring schedules safely`
+- **기능 HEAD:** `7b57346 fix: make ended recurring rules terminal`
 - **Git:** `main == origin/main`, 기능 작업 트리 clean (이 문서 갱신만 커밋 예정)
-- **Supabase:** `20260828010000` ~ `20260831060000`, 로컬/원격 12개 일치
+- **Supabase:** `20260828010000` ~ `20260831070000`, 로컬/원격 13개 일치
 - **검증:** lint ✅, Next.js 16.3.3 production build ✅, unit 11 files / 35 tests ✅
 - **통합 검증:** 직전 전체 57 tests ✅, 반복항목 대상 파일 **20 tests** ✅
 
@@ -27,6 +27,7 @@
 - 월 납부일 변경: 다음 생성 회차부터 반영, 과거 거래 보존
 - 전체 pause/end 시 오늘 이후 planned 자동 skip; end date 고정
 - frequency/interval/monthly day 변경 UI; 이미 회차가 생성된 월은 날짜 집합을 고정해 중복 생성을 차단하고 다음 미생성 월부터 반영
+- `ended` 규칙은 DB RPC에서도 재활성화할 수 없는 최종 상태로 고정, 통합 테스트 통과
 
 ### 다음 AI가 바로 시작할 작업
 
