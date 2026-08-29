@@ -1,0 +1,2 @@
+'use client'; import { useActionState } from 'react'; import { saveSnapshotAction } from '@/actions/asset-actions'; import { FormMessage } from '@/components/FormMessage'; import { INITIAL_ACTION_STATE } from '@/lib/action-result';
+export function SnapshotButton() { const [state, action, pending] = useActionState(saveSnapshotAction, INITIAL_ACTION_STATE); return <form action={action} className="flex flex-col gap-2"><button disabled={pending} className="tds-primary-button px-6">{pending ? '저장 중...' : '이번 달 스냅샷 저장'}</button><FormMessage result={state} /></form>; }
