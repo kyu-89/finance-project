@@ -1,0 +1,1 @@
+export default function DashboardLoading() { return <div className="tds-page animate-pulse"><div className="h-9 w-72 rounded-xl bg-[var(--tds-grey-200)]" /><div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-5">{Array.from({ length: 10 }, (_, i) => <div key={i} className="h-28 rounded-2xl bg-[var(--tds-grey-200)]" />)}</div></div>; }

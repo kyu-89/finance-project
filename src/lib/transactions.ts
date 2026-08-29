@@ -137,28 +137,21 @@ export async function listTransactions(filter: {
   toDate?: string;
 }): Promise<Transaction[]> {
   const supabase = await createClient();
-
-  let query = supabase
-    .from('transactions')
-    .select(TRANSACTION_COLUMNS)
-    .eq('household_id', filter.householdId)
-    .is('deleted_at', null)
-    .order('transaction_date', { ascending: false });
-
-  if (filter.fromDate) {
-    query = query.gte('transaction_date', filter.fromDate);
+  const pageSize = 1000;
+  const rows: Parameters<typeof mapRow>[0][] = [];
+  for (let from = 0; ; from += pageSize) {
+    let query = supabase.from('transactions').select(TRANSACTION_COLUMNS)
+      .eq('household_id', filter.householdId).is('deleted_at', null)
+      .order('transaction_date', { ascending: false }).order('id', { ascending: true })
+      .range(from, from + pageSize - 1);
+    if (filter.fromDate) query = query.gte('transaction_date', filter.fromDate);
+    if (filter.toDate) query = query.lte('transaction_date', filter.toDate);
+    const { data, error } = await query;
+    if (error) throw new Error(`거래 목록 조회 실패: ${error.message}`);
+    rows.push(...(data ?? []));
+    if ((data?.length ?? 0) < pageSize) break;
   }
-  if (filter.toDate) {
-    query = query.lte('transaction_date', filter.toDate);
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
-    throw new Error(`거래 목록 조회 실패: ${error.message}`);
-  }
-
-  return (data ?? []).map(mapRow);
+  return rows.map(mapRow);
 }
 
 export async function softDeleteTransaction(id: string): Promise<void> {
