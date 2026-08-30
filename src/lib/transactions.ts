@@ -153,6 +153,7 @@ export type ImportedTransactionInput = {
   amount: number;
   description: string;
   categoryId?: string | null;
+  subcategoryId?: string | null;
   paymentMethodId: string;
   memo?: string | null;
   needsReview?: boolean;
@@ -163,6 +164,7 @@ export type ImportTransactionsResult = { insertedCount: number; duplicateCount: 
 function importDuplicateKey(row: { transactionDate: string; transactionType: ImportedTransactionInput['transactionType']; amount: number; description: string; paymentMethodId: string | null }): string {
   return `${row.transactionDate}|${row.transactionType}|${row.amount}|${row.description.trim().toLocaleLowerCase()}|${row.paymentMethodId ?? ''}`;
 }
+
 
 // Imports are intentionally a single transaction-like insert from the authenticated user's
 // Supabase client. Exact duplicates in the same household/card/date/amount/description are
@@ -206,6 +208,7 @@ export async function importTransactions(input: { householdId: string; rows: Imp
       cost_behavior: costBehavior,
       payment_method_id: row.paymentMethodId,
       category_id: row.categoryId ?? null,
+      subcategory_id: row.subcategoryId ?? null,
       amount: row.amount,
       description: row.description.trim(),
       memo: row.memo ?? null,

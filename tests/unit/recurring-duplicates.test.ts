@@ -3,6 +3,7 @@ import { findRecurringDuplicateCandidates, type DuplicateCandidateTransaction } 
 
 const base: DuplicateCandidateTransaction = {
   id: 'planned', transactionDate: '2026-08-10', transactionType: 'expense', amount: 12900, description: '구독료', status: 'planned',
+  flowClass: 'consumption',
   categoryId: 'category', subcategoryId: 'subcategory', paymentMethodId: 'card', recurringOccurrenceId: 'occurrence',
 };
 
@@ -21,6 +22,15 @@ describe('findRecurringDuplicateCandidates', () => {
       { ...base, id: 'expense-posted', transactionType: 'expense', status: 'posted', amount: 300000, recurringOccurrenceId: null },
     ]);
     expect(result['income-planned']).toEqual([]);
+  });
+
+  it('does not match rows with different flow classes even when type, amount and date match', () => {
+    const result = findRecurringDuplicateCandidates([
+      base,
+      { ...base, id: 'posted-saving', status: 'posted', flowClass: 'saving', recurringOccurrenceId: null },
+      { ...base, id: 'posted-consumption', status: 'posted', recurringOccurrenceId: null },
+    ]);
+    expect(result.planned.map((candidate) => candidate.id)).toEqual(['posted-consumption']);
   });
   it('finds exact-amount posted rows within three days and ranks matching axes first', () => {
     const result = findRecurringDuplicateCandidates([

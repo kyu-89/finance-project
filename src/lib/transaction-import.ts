@@ -9,6 +9,7 @@ export type ParsedImportRow = {
   transactionType: 'income' | 'expense' | 'refund';
   description: string;
   categoryName: string | null;
+  subcategoryName: string | null;
   memo: string | null;
   cardLabel: string | null;
   errors: string[];
@@ -130,10 +131,52 @@ export function mapImportRows(rows: unknown[][], headers: string[], mapping: Imp
       transactionType: parsedAmount.negative || isRefund(status) ? 'refund' : isIncome(status) ? 'income' : 'expense',
       description,
       categoryName: String(valueAt(row, headers, mapping.category) ?? '').trim() || null,
+      subcategoryName: null,
       memo: String(valueAt(row, headers, mapping.memo) ?? '').trim() || null,
       cardLabel: String(valueAt(row, headers, mapping.card) ?? '').trim() || null,
       errors,
     });
+  }
+  return result;
+}
+
+export function mapMonthlySheetRows(rows: unknown[][]): ParsedImportRow[] {
+  type Block = { headerRow: number; start: number; kind: 'income' | 'expense' };
+  const blocks: Block[] = [];
+  for (let rowIndex = 0; rowIndex < rows.length; rowIndex += 1) {
+    const row = rows[rowIndex] ?? [];
+    for (let start = 0; start < row.length; start += 1) {
+      if (String(row[start] ?? '').trim() !== '날짜') continue;
+      const next = String(row[start + 1] ?? '').trim();
+      if (next === '대분류') blocks.push({ headerRow: rowIndex, start, kind: 'income' });
+      if (next === '구분') blocks.push({ headerRow: rowIndex, start, kind: 'expense' });
+    }
+  }
+  const result: ParsedImportRow[] = [];
+  for (const block of blocks) {
+    // Income and expense tables can begin on the same row. The boundary is
+    // the next physical header row, not the next block in the list.
+    const nextHeader = blocks.find((candidate) => candidate.headerRow > block.headerRow)?.headerRow ?? rows.length;
+    for (let index = block.headerRow + 1; index < nextHeader; index += 1) {
+      const row = rows[index] ?? [];
+      const data = block.kind === 'income'
+        ? { date: row[block.start], category: row[block.start + 1], subcategory: row[block.start + 2], description: row[block.start + 3], amount: row[block.start + 4], payment: null, memo: null }
+        : { date: row[block.start], category: row[block.start + 2], subcategory: row[block.start + 3], description: row[block.start + 4], amount: row[block.start + 5], payment: row[block.start + 1], memo: row[block.start + 7] };
+      if (![data.date, data.category, data.description, data.amount, data.payment, data.memo].some((value) => String(value ?? '').trim() !== '')) continue;
+      if (block.kind === 'income' && data.amount !== undefined && normalizeImportAmount(data.amount).amount === null && /사용|미정|확인/.test(String(data.amount))) continue;
+      const parsedDate = normalizeImportDate(data.date);
+      const parsedAmount = normalizeImportAmount(data.amount);
+      const description = String(data.description ?? '').trim();
+
+      // Blank dates in this workbook are intentional placeholders for
+      // recurring/planned rows. They are not posted transactions. Likewise,
+      // zero and text-only amount cells are notes or unused template rows.
+      // Do not surface those source rows as import errors or invent a date.
+      if (!parsedDate || !description || parsedAmount.amount === null || parsedAmount.amount <= 0) continue;
+
+      const errors: string[] = [];
+      result.push({ rowNumber: index + 1, transactionDate: parsedDate, amount: parsedAmount.amount, transactionType: block.kind === 'income' ? 'income' : parsedAmount.negative || isRefund(data.memo) ? 'refund' : 'expense', description, categoryName: String(data.category ?? '').trim() || null, subcategoryName: String(data.subcategory ?? '').trim() || null, memo: String(data.memo ?? '').trim() || null, cardLabel: String(data.payment ?? '').trim() || null, errors });
+    }
   }
   return result;
 }
