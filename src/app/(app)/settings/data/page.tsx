@@ -34,7 +34,7 @@ export default async function DataSettingsPage() {
     <PlanningImport />
     <AssetCardImport />
     <AnnualAudit />
-    <section className="tds-card flex items-center justify-between gap-4 p-5"><div><h2 className="text-lg font-bold">데이터 내보내기</h2><p className="mt-1 text-sm text-[var(--tds-grey-700)]">2단계 인증이 완료된 세션에서만 거래 원장을 CSV로 내려받습니다.</p></div><a href="/api/export/transactions" className="tds-button-secondary shrink-0">거래 CSV 다운로드</a></section>
+    <section className="tds-card flex flex-wrap items-center justify-between gap-4 p-5"><div><h2 className="text-lg font-bold">데이터 내보내기</h2><p className="mt-1 text-sm text-[var(--tds-grey-700)]">2단계 인증이 완료된 세션에서만 금융 데이터를 내려받습니다.</p></div><div className="flex flex-wrap gap-2"><a href="/api/export/transactions" className="tds-button-secondary">거래 CSV</a><a href="/api/export/all" className="tds-button-secondary">전체 JSON</a></div></section>
     <WorkbookMonthlyImport categories={categories.filter((category) => category.transactionType === 'expense' && category.isActive)} paymentMethods={paymentMethods.filter((method) => method.isActive)} />
     <DeletedTransactions transactions={deletedTransactions} />
   </div>;
