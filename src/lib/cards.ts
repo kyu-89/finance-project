@@ -24,6 +24,9 @@ export async function listCards(householdId: string): Promise<Card[]> {
 
 export async function createCard(input: Omit<Card, 'id' | 'status' | 'closedAt'> & { householdId: string }): Promise<void> {
   const supabase = await createClient();
+  const { data: existing, error: existingError } = await supabase.from('cards').select('id').eq('household_id', input.householdId).eq('issuer', input.issuer).eq('card_type', input.cardType).eq('card_name', input.cardName).limit(1);
+  if (existingError) throw new Error(existingError.message);
+  if (existing?.length) return;
   const { error } = await supabase.from('cards').insert({
     household_id: input.householdId, issuer: input.issuer, card_type: input.cardType,
     issued_by: input.issuedBy, card_name: input.cardName, annual_fee: input.annualFee,

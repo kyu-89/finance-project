@@ -12,6 +12,9 @@ export async function listInsurances(householdId: string): Promise<Insurance[]> 
 
 export async function createInsurance(input: Omit<Insurance, 'id' | 'status'> & { householdId: string }): Promise<void> {
   const supabase = await createClient();
+  const { data: existing, error: existingError } = await supabase.from('insurances').select('id').eq('household_id', input.householdId).eq('insurer_name', input.insurerName).eq('insurance_type', input.insuranceType).eq('product_name', input.productName).eq('joined_at', input.joinedAt).limit(1);
+  if (existingError) throw new Error(existingError.message);
+  if (existing?.length) return;
   const { error } = await supabase.from('insurances').insert({ household_id: input.householdId, insurer_name: input.insurerName, insurance_type: input.insuranceType, product_name: input.productName, coverage_summary: input.coverageSummary, insured_member_id: input.insuredMemberId, payment_method_id: input.paymentMethodId, payment_method_note: input.paymentMethodNote, joined_at: input.joinedAt, payment_maturity_date: input.paymentMaturityDate, coverage_maturity_date: input.coverageMaturityDate, monthly_premium: input.monthlyPremium, payment_day: input.paymentDay, contact: input.contact, memo: input.memo });
   if (error) throw new Error(`보험 추가 실패: ${error.message}`);
 }
