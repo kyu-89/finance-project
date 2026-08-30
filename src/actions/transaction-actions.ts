@@ -28,6 +28,8 @@ export async function createQuickTransactionAction(
   const subcategoryId = String(formData.get('subcategoryId') ?? '') || null;
   const paymentMethodId = String(formData.get('paymentMethodId') ?? '') || null;
   const accountId = String(formData.get('accountId') ?? '') || null;
+  const payerMemberId = String(formData.get('payerMemberId') ?? '') || null;
+  const beneficiaryMemberId = String(formData.get('beneficiaryMemberId') ?? '') || null;
   const incomeGroup = formData.get('incomeGroup') === 'fixed' || formData.get('incomeGroup') === 'additional' ? formData.get('incomeGroup') as 'fixed' | 'additional' : null;
   const description = String(formData.get('description') ?? '').trim();
   const memo = String(formData.get('memo') ?? '') || null;
@@ -75,6 +77,8 @@ export async function createQuickTransactionAction(
       subcategoryId,
       paymentMethodId,
       accountId,
+      payerMemberId,
+      beneficiaryMemberId,
       incomeGroup,
       amount,
       description,

@@ -11,11 +11,13 @@ import { INITIAL_ACTION_STATE } from '@/lib/action-result';
 import type { CategoryWithSubcategories } from '@/lib/categories';
 import type { PaymentMethod } from '@/lib/payment-methods';
 import type { Account } from '@/lib/accounts';
+import type { HouseholdMember } from '@/lib/household';
 
 export function QuickAddForm({
   categories,
   paymentMethods,
   accounts,
+  members,
   recentCategoryIds,
   recentSubcategoryIdsByCategory,
   saved,
@@ -25,6 +27,7 @@ export function QuickAddForm({
   categories: CategoryWithSubcategories[];
   paymentMethods: PaymentMethod[];
   accounts: Account[];
+  members: HouseholdMember[];
   recentCategoryIds: string[];
   recentSubcategoryIdsByCategory: Record<string, string[]>;
   saved?: string;
@@ -200,6 +203,20 @@ export function QuickAddForm({
       </button>
       {showMore && (
         <div className="flex flex-col gap-3">
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-semibold text-[var(--tds-grey-700)]">명의자</span>
+            <select name="payerMemberId" className="px-4 py-2">
+              <option value="">선택 안 함</option>
+              {members.map((member) => <option key={member.id} value={member.id}>{member.displayName}</option>)}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-semibold text-[var(--tds-grey-700)]">비용 귀속자</span>
+            <select name="beneficiaryMemberId" className="px-4 py-2">
+              <option value="">선택 안 함</option>
+              {members.map((member) => <option key={member.id} value={member.id}>{member.displayName}</option>)}
+            </select>
+          </label>
           {transactionType === 'expense' && (
             <label className="flex flex-col gap-1">
               <span className="text-sm font-semibold text-[var(--tds-grey-700)]">비용성격</span>
