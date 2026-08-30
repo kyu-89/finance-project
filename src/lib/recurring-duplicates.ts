@@ -21,6 +21,10 @@ function dayDistance(left: string, right: string): number {
   return Math.abs(Date.parse(`${left}T00:00:00Z`) - Date.parse(`${right}T00:00:00Z`)) / 86_400_000;
 }
 
+function amountDistance(left: number, right: number): number {
+  return Math.abs(left - right);
+}
+
 export function findRecurringDuplicateCandidates(
   transactions: DuplicateCandidateTransaction[],
 ): Record<string, DuplicateCandidate[]> {
@@ -29,7 +33,7 @@ export function findRecurringDuplicateCandidates(
     .filter((transaction) => transaction.status === 'planned' && transaction.recurringOccurrenceId)
     .map((planned) => {
       const candidates = posted
-        .filter((candidate) => candidate.amount === planned.amount)
+        .filter((candidate) => amountDistance(candidate.amount, planned.amount) <= Math.max(1_000, Math.round(planned.amount * 0.05)))
         .map((candidate) => ({
           candidate,
           distance: dayDistance(planned.transactionDate, candidate.transactionDate),

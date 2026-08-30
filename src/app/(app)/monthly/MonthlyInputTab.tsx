@@ -79,6 +79,7 @@ function PlannedTransactionEditor({ transaction, paymentMethods, candidates }: {
   if (transaction.status !== 'planned') return <span className="text-xs text-[var(--tds-grey-500)]">처리 완료</span>;
 
   return <div className="flex min-w-0 flex-col gap-1">
+    {candidates.length > 0 && <p className="rounded-lg bg-[var(--tds-yellow-100)] px-2 py-1 text-xs font-semibold text-[var(--tds-yellow-700)]">비슷한 실제 거래가 {candidates.length}건 있어요. 확정 전에 확인해 주세요.</p>}
     <form action={confirmAction} className="flex items-center gap-1 whitespace-nowrap">
       <input type="hidden" name="id" value={transaction.id} />
       <input type="date" name="transactionDate" defaultValue={transaction.transactionDate} required className="w-32 shrink-0 px-2 py-1 text-xs" />

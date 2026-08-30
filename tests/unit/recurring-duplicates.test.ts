@@ -23,13 +23,15 @@ describe('findRecurringDuplicateCandidates', () => {
     expect(result.planned.map((candidate) => candidate.id)).toEqual(['strong', 'weak']);
   });
 
-  it('ignores different amounts, dates beyond three days, and non-posted rows', () => {
+  it('matches close amounts, including a month boundary, but ignores distant amounts and dates', () => {
     const result = findRecurringDuplicateCandidates([
-      base,
-      { ...base, id: 'amount', status: 'posted', amount: 13000, recurringOccurrenceId: null },
+      { ...base, transactionDate: '2026-08-31' },
+      { ...base, id: 'amount', status: 'posted', transactionDate: '2026-08-31', amount: 13000, recurringOccurrenceId: null },
+      { ...base, id: 'boundary', status: 'posted', transactionDate: '2026-09-01', recurringOccurrenceId: null },
+      { ...base, id: 'far-amount', status: 'posted', amount: 15000, recurringOccurrenceId: null },
       { ...base, id: 'date', status: 'posted', transactionDate: '2026-08-14', recurringOccurrenceId: null },
       { ...base, id: 'skipped', status: 'skipped', recurringOccurrenceId: null },
     ]);
-    expect(result.planned).toEqual([]);
+    expect(result.planned.map((candidate) => candidate.id)).toEqual(['amount', 'boundary']);
   });
 });
