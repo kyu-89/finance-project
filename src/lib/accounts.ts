@@ -55,7 +55,13 @@ export async function closeAccount(id: string, closedAt: string): Promise<void> 
 
 export async function importAccounts(input: { householdId: string; accounts: ImportedAccount[] }): Promise<number> {
   const supabase = await createClient();
-  const { error } = await supabase.from('accounts').insert(input.accounts.map((account) => ({ household_id: input.householdId, bank_name: account.bankName, account_type: account.accountType, account_name: account.accountName, account_number: account.accountNumber, purpose: account.purpose, current_balance: account.currentBalance, owner_member_id: account.ownerMemberId, memo: account.memo })));
+  const { data: existing, error: existingError } = await supabase.from('accounts').select('bank_name, account_type, account_name, account_number').eq('household_id', input.householdId);
+  if (existingError) throw new Error(existingError.message);
+  const key = (account: Pick<ImportedAccount, 'bankName' | 'accountType' | 'accountName' | 'accountNumber'>) => `${account.bankName.trim().toLocaleLowerCase()}|${account.accountType}|${account.accountName.trim().toLocaleLowerCase()}|${account.accountNumber ?? ''}`;
+  const keys = new Set((existing ?? []).map((account) => key({ bankName: account.bank_name, accountType: account.account_type, accountName: account.account_name, accountNumber: account.account_number })));
+  const rows = input.accounts.filter((account) => { const accountKey = key(account); if (keys.has(accountKey)) return false; keys.add(accountKey); return true; });
+  if (rows.length === 0) return 0;
+  const { error } = await supabase.from('accounts').insert(rows.map((account) => ({ household_id: input.householdId, bank_name: account.bankName, account_type: account.accountType, account_name: account.accountName, account_number: account.accountNumber, purpose: account.purpose, current_balance: account.currentBalance, owner_member_id: account.ownerMemberId, memo: account.memo })));
   if (error) throw new Error(error.message);
-  return input.accounts.length;
+  return rows.length;
 }
