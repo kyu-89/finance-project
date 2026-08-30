@@ -8,12 +8,14 @@ import {
   skipPlannedTransaction,
   undoTransaction,
   updateTransactionCostBehavior,
+  restoreTransaction,
 } from '@/lib/transactions';
 import { getCurrentHouseholdId } from '@/lib/household';
 import { todayInSeoul } from '@/lib/date';
 import type { TransactionType } from '@/lib/cost-behavior';
 import { fail, ok, type ActionResult } from '@/lib/action-result';
 import { linkRecurringOccurrence } from '@/lib/recurring-rules';
+import { upsertEventDetail, upsertSupportDetail } from '@/lib/transaction-details';
 
 export async function createQuickTransactionAction(
   _prevState: ActionResult,
@@ -25,6 +27,8 @@ export async function createQuickTransactionAction(
     'fixed' | 'variable' | null;
   const subcategoryId = String(formData.get('subcategoryId') ?? '') || null;
   const paymentMethodId = String(formData.get('paymentMethodId') ?? '') || null;
+  const accountId = String(formData.get('accountId') ?? '') || null;
+  const incomeGroup = formData.get('incomeGroup') === 'fixed' || formData.get('incomeGroup') === 'additional' ? formData.get('incomeGroup') as 'fixed' | 'additional' : null;
   const description = String(formData.get('description') ?? '').trim();
   const memo = String(formData.get('memo') ?? '') || null;
   const transactionType = (formData.get('transactionType') as TransactionType) ?? 'expense';
@@ -38,14 +42,23 @@ export async function createQuickTransactionAction(
   if (!description) {
     return fail('내용을 입력해주세요.');
   }
+  if ((transactionType === 'income' || transactionType === 'expense') && !categoryId) {
+    return fail('대분류를 선택해주세요.');
+  }
+  if (transactionType === 'expense' && !paymentMethodId) {
+    return fail('결제수단을 선택해주세요.');
+  }
   // PRD §5.1: 대분류→소분류→결제수단 are required entry steps. Without this, tapping 저장
   // before touching the pickers silently saves an uncategorized row (category_id/cost_behavior
   // both null), invisible to all category and 고정비/변동비 analysis. 소분류 stays optional —
   // some categories (e.g. 협찬) have only one meaningful choice.
-  if (!categoryId) {
-    return fail('대분류를 선택해주세요.');
-  }
-  if (!paymentMethodId) {
+    // Categories are meaningful for income/expense analysis. Other quick-entry
+    // types (saving, investment, transfer, loan principal, finance cost) may be
+    // recorded without a category and are managed from their dedicated screens.
+    if ((transactionType === 'income' || transactionType === 'expense') && !categoryId) {
+      return fail('대분류를 선택해주세요.');
+    }
+  if (transactionType === 'expense' && !paymentMethodId) {
     return fail('결제수단을 선택해주세요.');
   }
 
@@ -61,10 +74,20 @@ export async function createQuickTransactionAction(
       costBehaviorOverride,
       subcategoryId,
       paymentMethodId,
+      accountId,
+      incomeGroup,
       amount,
       description,
       memo,
     });
+    const supportKind = String(formData.get('supportKind') ?? '').trim();
+    if (transactionType === 'income' && supportKind) {
+      await upsertSupportDetail(householdId, { transactionId: created.id, supportKind, eligibility: null, applicationPeriod: null, receivingPeriod: null, payoutCycle: 'one_time', expectedDate: null, amountPerOccurrence: amount, totalExpectedAmount: amount, status: 'planned', issuer: null, contact: null, sourceUrl: null, beneficiaryMemberId: null, memo: null });
+    }
+    const eventType = String(formData.get('eventType') ?? '');
+    if (transactionType === 'expense' && ['wedding', 'condolence', 'gift', 'other'].includes(eventType)) {
+      await upsertEventDetail(householdId, { transactionId: created.id, eventType: eventType as 'wedding' | 'condolence' | 'gift' | 'other', counterparty: String(formData.get('counterparty') ?? '').trim() || null, relationshipGroup: String(formData.get('relationshipGroup') ?? '').trim() || null, eventDescription: String(formData.get('eventDescription') ?? '').trim() || null, relatedMemberId: null, memo: null });
+    }
   } catch (error) {
     return fail(error instanceof Error ? error.message : '거래 저장에 실패했습니다.');
   }
@@ -121,7 +144,8 @@ export async function createMonthlyRowAction(
     return fail(error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.');
   }
 
-  revalidatePath('/monthly');
+    revalidatePath('/monthly');
+    revalidatePath('/dashboard');
   return ok('지출 내역을 추가했어요.');
 }
 
@@ -153,6 +177,15 @@ export async function deleteTransactionAction(_prevState: ActionResult, formData
   return ok('거래를 삭제했어요.');
 }
 
+export async function restoreTransactionAction(_prevState: ActionResult, formData: FormData): Promise<ActionResult> {
+  const id = String(formData.get('id') ?? '');
+  if (!id) return fail('복구할 거래 id가 없습니다.');
+  try { await getCurrentHouseholdId(); await restoreTransaction(id); }
+  catch (error) { return fail(error instanceof Error ? error.message : '거래 복구에 실패했어요.'); }
+  revalidatePath('/monthly'); revalidatePath('/dashboard'); revalidatePath('/settings/data');
+  return ok('거래를 복구했어요.');
+}
+
 export async function updateCostBehaviorAction(
   _prevState: ActionResult,
   formData: FormData,
@@ -172,7 +205,8 @@ export async function updateCostBehaviorAction(
     return fail(error instanceof Error ? error.message : '비용성격 수정에 실패했습니다.');
   }
 
-  revalidatePath('/monthly');
+    revalidatePath('/monthly');
+    revalidatePath('/dashboard');
   return ok();
 }
 
@@ -194,6 +228,7 @@ export async function confirmPlannedTransactionAction(
     return fail(error instanceof Error ? error.message : '예정 거래 확정에 실패했어요.');
   }
   revalidatePath('/monthly');
+  revalidatePath('/dashboard');
   return ok();
 }
 

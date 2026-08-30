@@ -10,6 +10,8 @@ export type Transaction = {
   flowClass: string;
   costBehavior: 'fixed' | 'variable' | null;
   paymentMethodId: string | null;
+  accountId?: string | null;
+  incomeGroup?: 'fixed' | 'additional' | null;
   categoryId: string | null;
   subcategoryId: string | null;
   payerMemberId: string | null;
@@ -41,7 +43,7 @@ export const FLOW_CLASS_BY_TRANSACTION_TYPE: Record<TransactionType, string> = {
 function mapRow(row: {
   id: string; household_id: string; transaction_date: string; transaction_type: string;
   flow_class: string; cost_behavior: string | null; payment_method_id: string | null;
-  category_id: string | null; subcategory_id: string | null; payer_member_id: string | null;
+  category_id: string | null; subcategory_id: string | null; account_id: string | null; income_group: string | null; payer_member_id: string | null;
   beneficiary_member_id: string | null; amount: number; description: string; memo: string | null;
   include_in_budget: boolean; needs_review: boolean; recurring_rule_id: string | null;
   recurring_occurrence_id: string | null; status: string;
@@ -54,6 +56,8 @@ function mapRow(row: {
     flowClass: row.flow_class,
     costBehavior: row.cost_behavior as 'fixed' | 'variable' | null,
     paymentMethodId: row.payment_method_id,
+    accountId: row.account_id,
+    incomeGroup: row.income_group as 'fixed' | 'additional' | null,
     categoryId: row.category_id,
     subcategoryId: row.subcategory_id,
     payerMemberId: row.payer_member_id,
@@ -73,7 +77,7 @@ function mapRow(row: {
 // this as a literal string type, not a widened `string` — Supabase's `.select()` overloads
 // parse the select-string type at compile time to produce the typed row shape, and a widened
 // `string` makes that parse fail with a generic, untyped `GenericStringError` result.
-const TRANSACTION_COLUMNS = `id, household_id, transaction_date, transaction_type, flow_class, cost_behavior, payment_method_id, category_id, subcategory_id, payer_member_id, beneficiary_member_id, amount, description, memo, include_in_budget, needs_review, recurring_rule_id, recurring_occurrence_id, status`;
+const TRANSACTION_COLUMNS = `id, household_id, transaction_date, transaction_type, flow_class, cost_behavior, payment_method_id, account_id, income_group, category_id, subcategory_id, payer_member_id, beneficiary_member_id, amount, description, memo, include_in_budget, needs_review, recurring_rule_id, recurring_occurrence_id, status`;
 
 export async function createTransaction(input: {
   householdId: string;
@@ -84,6 +88,8 @@ export async function createTransaction(input: {
   costBehaviorOverride?: 'fixed' | 'variable' | null;
   subcategoryId: string | null;
   paymentMethodId: string | null;
+  accountId?: string | null;
+  incomeGroup?: 'fixed' | 'additional' | null;
   amount: number;
   description: string;
   memo?: string | null;
@@ -113,6 +119,8 @@ export async function createTransaction(input: {
       category_id: input.categoryId,
       subcategory_id: input.subcategoryId,
       payment_method_id: input.paymentMethodId,
+      account_id: input.accountId ?? null,
+      income_group: input.incomeGroup ?? null,
       payer_member_id: input.payerMemberId ?? null,
       beneficiary_member_id: input.beneficiaryMemberId ?? null,
       amount: input.amount,
@@ -199,6 +207,10 @@ export async function listTransactions(filter: {
   householdId: string;
   fromDate?: string;
   toDate?: string;
+  categoryId?: string;
+  subcategoryId?: string;
+  recurringRuleId?: string;
+  recurringRuleIds?: string[];
 }): Promise<Transaction[]> {
   const supabase = await createClient();
   const pageSize = 1000;
@@ -210,6 +222,10 @@ export async function listTransactions(filter: {
       .range(from, from + pageSize - 1);
     if (filter.fromDate) query = query.gte('transaction_date', filter.fromDate);
     if (filter.toDate) query = query.lte('transaction_date', filter.toDate);
+    if (filter.categoryId) query = query.eq('category_id', filter.categoryId);
+    if (filter.subcategoryId) query = query.eq('subcategory_id', filter.subcategoryId);
+    if (filter.recurringRuleId) query = query.eq('recurring_rule_id', filter.recurringRuleId);
+    if (filter.recurringRuleIds?.length) query = query.in('recurring_rule_id', filter.recurringRuleIds);
     const { data, error } = await query;
     if (error) throw new Error(`거래 목록 조회 실패: ${error.message}`);
     rows.push(...(data ?? []));
@@ -229,6 +245,28 @@ export async function softDeleteTransaction(id: string): Promise<void> {
   if (error) {
     throw new Error(`거래 삭제 실패: ${error.message}`);
   }
+}
+
+export type DeletedTransaction = Pick<Transaction, 'id' | 'transactionDate' | 'amount' | 'description' | 'transactionType'> & { deletedAt: string };
+
+export async function listRecentlyDeletedTransactions(householdId: string): Promise<DeletedTransaction[]> {
+  const supabase = await createClient();
+  const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const { data, error } = await supabase.from('transactions')
+    .select('id, transaction_date, amount, description, transaction_type, deleted_at')
+    .eq('household_id', householdId).not('deleted_at', 'is', null).gte('deleted_at', cutoff)
+    .order('deleted_at', { ascending: false });
+  if (error) throw new Error(`삭제 거래 조회 실패: ${error.message}`);
+  return (data ?? []).map((row) => ({ id: row.id, transactionDate: row.transaction_date, amount: row.amount, description: row.description, transactionType: row.transaction_type as Transaction['transactionType'], deletedAt: row.deleted_at }));
+}
+
+export async function restoreTransaction(id: string): Promise<void> {
+  const supabase = await createClient();
+  const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const { data, error } = await supabase.from('transactions').update({ deleted_at: null })
+    .eq('id', id).not('deleted_at', 'is', null).gte('deleted_at', cutoff).select('id');
+  if (error) throw new Error(`거래 복구 실패: ${error.message}`);
+  if (data.length !== 1) throw new Error('30일 이내 삭제된 거래만 복구할 수 있어요.');
 }
 
 export type RecentUsage = {

@@ -10,10 +10,12 @@ import { FormMessage } from '@/components/FormMessage';
 import { INITIAL_ACTION_STATE } from '@/lib/action-result';
 import type { CategoryWithSubcategories } from '@/lib/categories';
 import type { PaymentMethod } from '@/lib/payment-methods';
+import type { Account } from '@/lib/accounts';
 
 export function QuickAddForm({
   categories,
   paymentMethods,
+  accounts,
   recentCategoryIds,
   recentSubcategoryIdsByCategory,
   saved,
@@ -22,6 +24,7 @@ export function QuickAddForm({
 }: {
   categories: CategoryWithSubcategories[];
   paymentMethods: PaymentMethod[];
+  accounts: Account[];
   recentCategoryIds: string[];
   recentSubcategoryIdsByCategory: Record<string, string[]>;
   saved?: string;
@@ -30,6 +33,8 @@ export function QuickAddForm({
 }) {
   const [amountDisplay, setAmountDisplay] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<CategoryWithSubcategories | null>(null);
+  const [transactionType, setTransactionType] = useState<'income' | 'expense' | 'saving' | 'investment' | 'debt_principal' | 'finance_cost' | 'transfer'>('expense');
+  const [incomeGroup, setIncomeGroup] = useState<'fixed' | 'additional'>('fixed');
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string | null>(null);
   const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string | null>(null);
   const [showMore, setShowMore] = useState(false);
@@ -57,6 +62,8 @@ export function QuickAddForm({
     setSelectedCategory(null);
     setSelectedSubcategoryId(null);
     setSelectedPaymentMethodId(null);
+    setTransactionType('expense');
+    setIncomeGroup('fixed');
   }
 
   // Auto-hide the confirmation banner after a few seconds. Unlike the reset above, this setState
@@ -112,7 +119,8 @@ export function QuickAddForm({
       )}
       <FormMessage result={state} />
       <FormMessage result={undoState} />
-      <input type="hidden" name="transactionType" value="expense" />
+      <input type="hidden" name="transactionType" value={transactionType} />
+      <input type="hidden" name="incomeGroup" value={transactionType === 'income' ? incomeGroup : ''} />
       <input type="hidden" name="categoryId" value={selectedCategory?.id ?? ''} />
       <input
         type="hidden"
@@ -136,36 +144,51 @@ export function QuickAddForm({
         <input type="hidden" name="amount" value={numericAmount} />
       </label>
 
-      <div>
-        <span className="mb-2 block text-[15px] font-semibold text-[var(--tds-grey-700)]">대분류 / 소분류</span>
-        <CategoryPicker
-          key={saved ?? 'initial'}
-          categories={categories}
-          recentCategoryIds={recentCategoryIds}
-          recentSubcategoryIdsByCategory={recentSubcategoryIdsByCategory}
-          onSelect={(category, subcategoryId) => {
-            setSelectedCategory(category);
-            setSelectedSubcategoryId(subcategoryId);
-          }}
-        />
-      </div>
+      <label className="flex flex-col gap-1">
+        <span className="text-[15px] font-semibold text-[var(--tds-grey-700)]">거래 유형</span>
+        <select value={transactionType} onChange={(e) => { const next = e.target.value as typeof transactionType; setTransactionType(next); setSelectedCategory(null); setSelectedSubcategoryId(null); setSelectedPaymentMethodId(null); }} className="px-4">
+          <option value="expense">지출</option><option value="income">수입</option><option value="saving">저축</option><option value="investment">투자</option><option value="debt_principal">대출 원금상환</option><option value="finance_cost">금융비용</option><option value="transfer">이체</option>
+        </select>
+      </label>
 
-      <div>
-        <span className="mb-2 block text-[15px] font-semibold text-[var(--tds-grey-700)]">결제수단</span>
-        <div className="flex flex-wrap gap-2">
-          {paymentMethods.map((method) => (
-            <button
-              key={method.id}
-              type="button"
-              onClick={() => setSelectedPaymentMethodId(method.id)}
-              data-selected={selectedPaymentMethodId === method.id}
-              className="tds-chip px-4"
-            >
-              {method.name}
-            </button>
-          ))}
+      {transactionType === 'income' && <><label className="flex flex-col gap-1"><span className="text-[15px] font-semibold text-[var(--tds-grey-700)]">수입 구분</span><select value={incomeGroup} onChange={(e) => setIncomeGroup(e.target.value as typeof incomeGroup)} className="px-4"><option value="fixed">고정수입</option><option value="additional">추가수입</option></select></label><label className="flex flex-col gap-1"><span className="text-[15px] font-semibold text-[var(--tds-grey-700)]">입금계좌</span><select name="accountId" className="px-4"><option value="">선택 안 함</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.bankName} {account.accountName}</option>)}</select></label></>}
+
+      {(transactionType === 'income' || transactionType === 'expense') && (
+        <div>
+          <span className="mb-2 block text-[15px] font-semibold text-[var(--tds-grey-700)]">
+            대분류 / 소분류 <span className="text-xs font-medium text-[var(--tds-blue-500)]">필수</span>
+          </span>
+          <CategoryPicker
+            key={`${saved ?? 'initial'}-${transactionType}`}
+            categories={categories.filter((category) => category.transactionType === transactionType)}
+            recentCategoryIds={recentCategoryIds}
+            recentSubcategoryIdsByCategory={recentSubcategoryIdsByCategory}
+            onSelect={(category, subcategoryId) => {
+              setSelectedCategory(category);
+              setSelectedSubcategoryId(subcategoryId);
+            }}
+          />
         </div>
-      </div>
+      )}
+
+      {transactionType === 'expense' && (
+        <div>
+          <span className="mb-2 block text-[15px] font-semibold text-[var(--tds-grey-700)]">결제수단 <span className="text-xs font-medium text-[var(--tds-blue-500)]">필수</span></span>
+          <div className="flex flex-wrap gap-2">
+            {paymentMethods.map((method) => (
+              <button
+                key={method.id}
+                type="button"
+                onClick={() => setSelectedPaymentMethodId(method.id)}
+                data-selected={selectedPaymentMethodId === method.id}
+                className="tds-chip px-4"
+              >
+                {method.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <label className="flex flex-col gap-1">
         <span className="text-[15px] font-semibold text-[var(--tds-grey-700)]">내용</span>
@@ -177,20 +200,25 @@ export function QuickAddForm({
       </button>
       {showMore && (
         <div className="flex flex-col gap-3">
-          <label className="flex flex-col gap-1">
-            <span className="text-sm font-semibold text-[var(--tds-grey-700)]">비용성격</span>
-            <select name="costBehaviorOverride" className="px-4 py-2">
-              <option value="">카테고리 기본값 사용</option>
-              <option value="fixed">고정비</option>
-              <option value="variable">변동비</option>
-            </select>
-          </label>
+          {transactionType === 'expense' && (
+            <label className="flex flex-col gap-1">
+              <span className="text-sm font-semibold text-[var(--tds-grey-700)]">비용성격</span>
+              <select name="costBehaviorOverride" className="px-4 py-2">
+                <option value="">카테고리 기본값 사용</option>
+                <option value="fixed">고정비</option>
+                <option value="variable">변동비</option>
+              </select>
+            </label>
+          )}
           <label className="flex flex-col gap-1">
             <span className="text-sm font-semibold text-[var(--tds-grey-700)]">비고</span>
             <input name="memo" className="px-4 py-2" />
           </label>
         </div>
       )}
+
+      {transactionType === 'income' && <details className="rounded-xl bg-[var(--tds-blue-50)] p-4"><summary className="cursor-pointer text-sm font-semibold">정부지원금 상세 (선택)</summary><div className="mt-3 grid gap-3"><label className="flex flex-col gap-1"><span className="text-sm font-semibold">지원금 종류</span><input name="supportKind" placeholder="예: 아동수당, 주거지원금" /></label></div></details>}
+      {transactionType === 'expense' && <details className="rounded-xl bg-[var(--tds-grey-100)] p-4"><summary className="cursor-pointer text-sm font-semibold">경조사 상세 (선택)</summary><div className="mt-3 grid gap-3"><label className="flex flex-col gap-1"><span className="text-sm font-semibold">행사 유형</span><select name="eventType" defaultValue=""><option value="">선택 안 함</option><option value="wedding">결혼</option><option value="condolence">조의</option><option value="gift">선물</option><option value="other">기타</option></select></label><label className="flex flex-col gap-1"><span className="text-sm font-semibold">상대방</span><input name="counterparty" placeholder="상대방 이름 (선택)" /></label><label className="flex flex-col gap-1"><span className="text-sm font-semibold">관계</span><input name="relationshipGroup" placeholder="예: 친척, 직장동료" /></label><label className="flex flex-col gap-1"><span className="text-sm font-semibold">행사 내용</span><input name="eventDescription" placeholder="행사 내용 (선택)" /></label></div></details>}
 
       <button
         type="submit"

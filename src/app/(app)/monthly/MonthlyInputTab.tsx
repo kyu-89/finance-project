@@ -77,12 +77,12 @@ function PlannedTransactionEditor({ transaction, paymentMethods, candidates }: {
   const [linkState, linkAction, linkPending] = useActionState(linkRecurringOccurrenceAction, INITIAL_ACTION_STATE);
   if (transaction.status !== 'planned') return <span className="text-xs text-[var(--tds-grey-500)]">처리 완료</span>;
 
-  return <div className="flex min-w-[280px] flex-col gap-1">
+  return <div className="flex min-w-[250px] flex-col gap-1">
     <form action={confirmAction} className="flex items-center gap-1">
       <input type="hidden" name="id" value={transaction.id} />
-      <input type="date" name="transactionDate" defaultValue={transaction.transactionDate} required className="w-36 px-2 py-1 text-xs" />
-      <input type="number" name="amount" defaultValue={transaction.amount} min="1" step="1" required className="w-28 px-2 py-1 text-xs" />
-      <select name="paymentMethodId" defaultValue={transaction.paymentMethodId ?? ''} className="w-28 px-2 py-1 text-xs">
+      <input type="date" name="transactionDate" defaultValue={transaction.transactionDate} required className="w-32 shrink-0 px-2 py-1 text-xs" />
+      <input type="number" name="amount" defaultValue={transaction.amount} min="1" step="1" required className="w-24 shrink-0 px-2 py-1 text-xs" />
+      <select name="paymentMethodId" defaultValue={transaction.paymentMethodId ?? ''} className="w-24 min-w-0 px-2 py-1 text-xs">
         <option value="">결제수단 없음</option>{paymentMethods.map((method) => <option key={method.id} value={method.id}>{method.name}</option>)}
       </select>
       <button type="submit" disabled={confirmPending} className="tds-primary-button min-h-11 px-3 text-xs">확정</button>
@@ -125,12 +125,12 @@ function makeColumns(paymentMethods: PaymentMethod[], duplicateCandidates: Recor
 }
 
 const COLUMN_WIDTHS: Record<string, string> = {
-  transactionDate: '112px',
-  status: '96px',
-  description: '240px',
-  amount: '140px',
-  costBehavior: '230px',
-  plannedAction: '620px',
+  transactionDate: '104px',
+  status: '84px',
+  description: 'minmax(160px, 1fr)',
+  amount: '116px',
+  costBehavior: '210px',
+  plannedAction: '440px',
 };
 
 function columnAlignment(columnId: string, header = false) {
@@ -158,7 +158,7 @@ export function MonthlyInputTab({
       <div className="flex justify-end"><AddDrawer title="지출 입력" description="이번 달 거래를 추가하세요. 저장하면 목록에 바로 반영됩니다." triggerLabel="지출 추가"><MonthlyRowForm categories={categories} paymentMethods={paymentMethods} /></AddDrawer></div>
 
       <div className="table-surface overflow-x-auto">
-        <table className="monthly-input-table w-full min-w-[1438px] table-fixed border-collapse text-sm">
+        <table className="monthly-input-table w-full min-w-[1080px] table-fixed border-collapse text-sm">
           <colgroup>
             {table.getAllLeafColumns().map((column) => (
               <col key={column.id} style={{ width: COLUMN_WIDTHS[column.id] ?? '160px' }} />
@@ -184,7 +184,7 @@ export function MonthlyInputTab({
                 {row.getAllCells().map((cell) => (
                   <td
                     key={cell.id}
-                    className={`px-4 py-4 align-middle ${columnAlignment(cell.column.id)} ${cell.column.id === 'amount' ? 'font-semibold tabular-nums' : ''}`}
+                    className={`px-3 py-3 align-middle ${columnAlignment(cell.column.id)} ${cell.column.id === 'transactionDate' ? 'whitespace-nowrap' : ''} ${cell.column.id === 'amount' ? 'font-semibold tabular-nums' : ''}`}
                   >
                     <table.FlexRender cell={cell} />
                   </td>
@@ -200,34 +200,36 @@ export function MonthlyInputTab({
 
 function MonthlyRowForm({ categories, paymentMethods }: { categories: CategoryWithSubcategories[]; paymentMethods: PaymentMethod[] }) {
   const [categoryId, setCategoryId] = useState('');
+  const [transactionType, setTransactionType] = useState<'income' | 'expense' | 'saving' | 'investment' | 'debt_principal' | 'finance_cost' | 'transfer'>('expense');
   const selectedCategory = categories.find((c) => c.id === categoryId);
   const [state, formAction, pending] = useActionState(createMonthlyRowAction, INITIAL_ACTION_STATE);
 
   return (
     <form action={formAction} className="tds-card grid grid-cols-2 gap-3 p-5 md:grid-cols-7">
       <div className="col-span-2 md:col-span-7"><FormMessage result={state} /></div>
-      <input type="hidden" name="transactionType" value="expense" />
+      <label className="col-span-2 flex flex-col gap-1 text-sm font-medium md:col-span-1"><span>거래 유형</span><select value={transactionType} onChange={(e) => { const next = e.target.value as typeof transactionType; setTransactionType(next); setCategoryId(''); }} className="rounded border px-2 py-1 text-sm"><option value="expense">지출</option><option value="income">수입</option><option value="saving">저축</option><option value="investment">투자</option><option value="debt_principal">대출 원금상환</option><option value="finance_cost">금융비용</option><option value="transfer">이체</option></select></label>
+      <input type="hidden" name="transactionType" value={transactionType} />
       <input type="hidden" name="categoryDefaultCostBehavior" value={selectedCategory?.defaultCostBehavior ?? ''} />
       <input type="date" name="transactionDate" required className="rounded border px-2 py-1 text-sm" />
-      <select name="categoryId" required value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="rounded border px-2 py-1 text-sm">
+      {(transactionType === 'income' || transactionType === 'expense') && <select name="categoryId" required value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="rounded border px-2 py-1 text-sm">
         <option value="">대분류</option>
-        {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-      </select>
-      <select name="subcategoryId" className="rounded border px-2 py-1 text-sm">
+        {categories.filter((c) => c.transactionType === transactionType && c.isActive).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+      </select>}
+      {(transactionType === 'income' || transactionType === 'expense') && <select name="subcategoryId" className="rounded border px-2 py-1 text-sm">
         <option value="">소분류</option>
         {selectedCategory?.subcategories.map((sub) => <option key={sub.id} value={sub.id}>{sub.name}</option>)}
-      </select>
-      <select name="paymentMethodId" className="rounded border px-2 py-1 text-sm">
+      </select>}
+      {transactionType === 'expense' && <select name="paymentMethodId" required className="rounded border px-2 py-1 text-sm">
         <option value="">결제수단</option>
         {paymentMethods.map((method) => <option key={method.id} value={method.id}>{method.name}</option>)}
-      </select>
-      <select name="costBehaviorOverride" className="rounded border px-2 py-1 text-sm">
+      </select>}
+      {transactionType === 'expense' && <select name="costBehaviorOverride" className="rounded border px-2 py-1 text-sm">
         <option value="">기본 비용성격</option><option value="fixed">고정비</option><option value="variable">변동비</option>
-      </select>
+      </select>}
       <input name="description" placeholder="내용" required className="rounded border px-2 py-1 text-sm" />
       <input name="amount" type="number" step="1" min="1" placeholder="금액" required className="rounded border px-2 py-1 text-sm" />
       <button type="submit" disabled={pending} className="monthly-add-button tds-primary-button col-span-2 px-4 text-[0px] md:col-span-1">
-        <span className="text-[15px]">{pending ? '추가 중…' : '지출 추가'}</span>
+        <span className="text-[15px]">{pending ? '추가 중…' : `${transactionType === 'expense' ? '지출' : transactionType === 'income' ? '수입' : '거래'} 추가`}</span>
       </button>
     </form>
   );

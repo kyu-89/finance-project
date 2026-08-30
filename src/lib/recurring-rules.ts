@@ -4,12 +4,14 @@ import { FLOW_CLASS_BY_TRANSACTION_TYPE } from '@/lib/transactions';
 import type { CostBehavior, TransactionType } from '@/lib/cost-behavior';
 import { excludePausedDates, listOccurrenceDates, type RecurrenceFrequency } from '@/lib/recurrence';
 import { buildLoanOccurrenceAmounts, type LoanOccurrenceAmounts } from '@/lib/product-recurring';
+import { upsertSupportDetail } from '@/lib/transaction-details';
 
 export type RecurringRuleStatus = 'active' | 'paused' | 'ended';
-export type RecurringSourceType = 'insurance' | 'saving' | 'loan' | 'subscription' | 'salary' | 'manual';
+export type RecurringSourceType = 'insurance' | 'saving' | 'loan' | 'subscription' | 'salary' | 'support' | 'manual';
 
 export type RecurringRule = {
   id: string;
+  sourceId: string | null;
   description: string;
   defaultAmount: number;
   transactionType: TransactionType;
@@ -29,8 +31,9 @@ export type RecurringPause = {
   endDate: string;
   reason: string | null;
 };
+export type RecurringRuleChange = { id: string; recurringRuleId: string; changedAt: string; oldAmount: number; newAmount: number; oldStatus: string; newStatus: string; oldFrequency: string; newFrequency: string; oldIntervalCount: number; newIntervalCount: number; oldDayOfMonth: number | null; newDayOfMonth: number | null };
 
-const RULE_COLUMNS = `id, description, default_amount, transaction_type, frequency, interval_count, day_of_month, start_date, end_date, status, source_type`;
+const RULE_COLUMNS = `id, source_id, description, default_amount, transaction_type, frequency, interval_count, day_of_month, start_date, end_date, status, source_type`;
 
 export async function listRecurringRules(householdId: string): Promise<RecurringRule[]> {
   const supabase = await createClient();
@@ -45,6 +48,7 @@ export async function listRecurringRules(householdId: string): Promise<Recurring
 
   return (data ?? []).map((row) => ({
     id: row.id,
+    sourceId: row.source_id,
     description: row.description,
     defaultAmount: row.default_amount,
     transactionType: row.transaction_type as TransactionType,
@@ -72,6 +76,14 @@ export async function listRecurringPauses(householdId: string): Promise<Recurrin
     endDate: row.end_date,
     reason: row.reason,
   }));
+}
+
+export async function listRecurringRuleChanges(householdId: string, ruleIds: string[]): Promise<RecurringRuleChange[]> {
+  if (ruleIds.length === 0) return [];
+  const supabase = await createClient();
+  const { data, error } = await supabase.from('recurring_rule_change_history').select('id, recurring_rule_id, changed_at, old_amount, new_amount, old_status, new_status, old_frequency, new_frequency, old_interval_count, new_interval_count, old_day_of_month, new_day_of_month').eq('household_id', householdId).in('recurring_rule_id', ruleIds).order('changed_at', { ascending: false });
+  if (error) throw new Error(`반복항목 변경이력 조회 실패: ${error.message}`);
+  return (data ?? []).map((row) => ({ id: row.id, recurringRuleId: row.recurring_rule_id, changedAt: row.changed_at, oldAmount: row.old_amount, newAmount: row.new_amount, oldStatus: row.old_status, newStatus: row.new_status, oldFrequency: row.old_frequency, newFrequency: row.new_frequency, oldIntervalCount: row.old_interval_count, newIntervalCount: row.new_interval_count, oldDayOfMonth: row.old_day_of_month, newDayOfMonth: row.new_day_of_month }));
 }
 
 export async function createRecurringRule(input: {
@@ -224,28 +236,30 @@ export async function materializeRecurringRulesForRange(
   const { data: preexistingOccurrences, error: preexistingError } = rules.length === 0
     ? { data: [], error: null }
     : await supabase.from('recurring_occurrences')
-      .select('recurring_rule_id')
+       .select('recurring_rule_id, occurrence_date')
       .eq('household_id', householdId)
       .in('recurring_rule_id', rules.map((rule) => rule.id))
       .gte('occurrence_date', fromDate)
       .lte('occurrence_date', toDate);
   if (preexistingError) throw new Error(`기존 반복 회차 조회 실패: ${preexistingError.message}`);
-  const materializedRuleIds = new Set((preexistingOccurrences ?? []).map((row) => row.recurring_rule_id));
+  const materializedOccurrenceKeys = new Set(
+    (preexistingOccurrences ?? []).map((row) => `${row.recurring_rule_id}:${row.occurrence_date}`),
+  );
   const ruleById = new Map(rules.map((rule) => [rule.id, rule]));
-  // Once any occurrence for a rule has been materialized in a range, that range's schedule is
-  // frozen. A settings change therefore applies to the next unmaterialized month and cannot
-  // create a second current-month row on a new payment day.
-  const occurrenceRows = rules.filter((rule) => !materializedRuleIds.has(rule.id)).flatMap((rule) => excludePausedDates(listOccurrenceDates({
+  const occurrenceRows = rules.flatMap((rule) => excludePausedDates(listOccurrenceDates({
     startDate: rule.start_date,
     endDate: rule.end_date,
     frequency: rule.frequency,
     intervalCount: rule.interval_count,
     dayOfMonth: rule.day_of_month,
-  }, fromDate, toDate), pausesByRule.get(rule.id) ?? []).filter((occurrenceDate) => amountFor(rule, occurrenceDate) > 0).map((occurrenceDate) => ({
-    household_id: householdId,
-    recurring_rule_id: rule.id,
-    occurrence_date: occurrenceDate,
-  })));
+  }, fromDate, toDate), pausesByRule.get(rule.id) ?? [])
+    .filter((occurrenceDate) => amountFor(rule, occurrenceDate) > 0)
+    .filter((occurrenceDate) => !materializedOccurrenceKeys.has(`${rule.id}:${occurrenceDate}`))
+    .map((occurrenceDate) => ({
+      household_id: householdId,
+      recurring_rule_id: rule.id,
+      occurrence_date: occurrenceDate,
+    })));
 
   if (occurrenceRows.length > 0) {
     const { error: occurrenceError } = await supabase.from('recurring_occurrences').upsert(
@@ -294,6 +308,39 @@ export async function materializeRecurringRulesForRange(
     .upsert(transactionRows, { onConflict: 'recurring_occurrence_id', ignoreDuplicates: true })
     .select('id');
   if (transactionError) throw new Error(`반복 예정거래 생성 실패: ${transactionError.message}`);
+  const supportRules = rules.filter((rule) => rule.source_type === 'support' && rule.transaction_type === 'income');
+  if (supportRules.length > 0) {
+    const supportRuleIds = supportRules.map((rule) => rule.id);
+    const { data: supportTransactions, error: supportTransactionError } = await supabase.from('transactions').select('id, recurring_rule_id, amount').eq('household_id', householdId).eq('status', 'planned').in('recurring_rule_id', supportRuleIds).is('deleted_at', null);
+    if (supportTransactionError) throw new Error(`지원금 예정 상세 연결 실패: ${supportTransactionError.message}`);
+    const supportNameByRule = new Map(supportRules.map((rule) => [rule.id, rule.description]));
+    const totalExpectedByRule = new Map<string, number>();
+    for (const transaction of supportTransactions ?? []) {
+      totalExpectedByRule.set(
+        transaction.recurring_rule_id,
+        (totalExpectedByRule.get(transaction.recurring_rule_id) ?? 0) + transaction.amount,
+      );
+    }
+    for (const transaction of supportTransactions ?? []) {
+      await upsertSupportDetail(householdId, {
+        transactionId: transaction.id,
+        supportKind: supportNameByRule.get(transaction.recurring_rule_id) ?? '정부지원금',
+        eligibility: null,
+        applicationPeriod: null,
+        receivingPeriod: null,
+        payoutCycle: 'monthly',
+        expectedDate: null,
+        amountPerOccurrence: transaction.amount,
+        totalExpectedAmount: totalExpectedByRule.get(transaction.recurring_rule_id) ?? transaction.amount,
+        status: 'planned',
+        issuer: null,
+        contact: null,
+        sourceUrl: null,
+        beneficiaryMemberId: null,
+        memo: null,
+      });
+    }
+  }
   return inserted?.length ?? 0;
 }
 

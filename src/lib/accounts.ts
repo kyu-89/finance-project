@@ -14,6 +14,8 @@ export type Account = {
   status: 'active' | 'closed';
 };
 
+export type ImportedAccount = Omit<Account, 'id' | 'status'>;
+
 export async function listAccounts(householdId: string): Promise<Account[]> {
   const supabase = await createClient();
   const { data, error } = await supabase.from('accounts')
@@ -49,4 +51,11 @@ export async function closeAccount(id: string, closedAt: string): Promise<void> 
   const supabase = await createClient();
   const { error } = await supabase.from('accounts').update({ status: 'closed', closed_at: closedAt }).eq('id', id).eq('status', 'active').select('id').single();
   if (error) throw new Error(`계좌 해지 실패: ${error.message}`);
+}
+
+export async function importAccounts(input: { householdId: string; accounts: ImportedAccount[] }): Promise<number> {
+  const supabase = await createClient();
+  const { error } = await supabase.from('accounts').insert(input.accounts.map((account) => ({ household_id: input.householdId, bank_name: account.bankName, account_type: account.accountType, account_name: account.accountName, account_number: account.accountNumber, purpose: account.purpose, current_balance: account.currentBalance, owner_member_id: account.ownerMemberId, memo: account.memo })));
+  if (error) throw new Error(error.message);
+  return input.accounts.length;
 }

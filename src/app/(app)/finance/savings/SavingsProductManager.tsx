@@ -5,6 +5,7 @@ import {
   createDepositAction, createSavingsAccountAction, endDepositAction, endSavingsAccountAction,
   updateCurrentSavingsAction,
 } from '@/actions/savings-product-actions';
+import { AddDrawer } from '@/components/Drawer';
 import { FormMessage } from '@/components/FormMessage';
 import type { Account } from '@/lib/accounts';
 import { INITIAL_ACTION_STATE } from '@/lib/action-result';
@@ -26,7 +27,7 @@ export function SavingsProductManager({ deposits, savings, accounts, members, to
   return <div className="flex flex-col gap-10">
     <section className="flex flex-col gap-4">
       <Heading title="예금" description="거치식 예금의 세전·세후 이자와 만기 수령액을 계산해요." />
-      <form action={depositAction} className="tds-card grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-4">
+      <AddDrawer title="예금 추가" description="예금 정보를 등록하면 만기 예상 금액을 계산해 보여드립니다." triggerLabel="예금 추가"><form action={depositAction} className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Message result={depositState} />
         <Field label="은행"><input name="bankName" required className="px-3" /></Field>
         <Field label="예금명"><input name="productName" required className="px-3" /></Field>
@@ -39,13 +40,13 @@ export function SavingsProductManager({ deposits, savings, accounts, members, to
         <AccountSelect accounts={accounts} />
         <Field label="비고"><input name="memo" className="px-3" /></Field>
         <button disabled={depositPending} className="tds-primary-button md:col-span-2 xl:col-span-4">{depositPending ? '저장 중...' : '예금 추가'}</button>
-      </form>
+      </form></AddDrawer>
       <div className="grid gap-4 xl:grid-cols-2">{deposits.length === 0 && <Empty text="등록한 예금이 없어요." />}{deposits.map((item) => <DepositCard key={item.id} item={item} today={today} />)}</div>
     </section>
 
     <section className="flex flex-col gap-4">
       <Heading title="적금" description="단리·월복리 계산과 현재 저축액을 함께 관리해요." />
-      <form action={savingsAction} className="tds-card grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-4">
+      <AddDrawer title="적금 추가" description="적금 정보를 등록하면 납입 현황과 만기 예상 금액을 관리할 수 있습니다." triggerLabel="적금 추가"><form action={savingsAction} className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Message result={savingsState} />
         <Field label="은행"><input name="bankName" required className="px-3" /></Field>
         <Field label="적금명"><input name="productName" required className="px-3" /></Field>
@@ -63,7 +64,7 @@ export function SavingsProductManager({ deposits, savings, accounts, members, to
         <label className="flex min-h-12 items-center gap-3 rounded-xl bg-[var(--tds-grey-100)] px-4 text-sm font-medium"><input name="autoRecurring" type="checkbox" className="h-5 w-5" />월간 반복납입 사용</label>
         <p className="md:col-span-2 xl:col-span-4 text-xs text-[var(--tds-grey-500)]">반복납입을 켜면 만기 전까지 월간관리에 저축 예정거래가 자동 생성돼요.</p>
         <button disabled={savingsPending} className="tds-primary-button md:col-span-2 xl:col-span-4">{savingsPending ? '저장 중...' : '적금 추가'}</button>
-      </form>
+      </form></AddDrawer>
       <div className="grid gap-4 xl:grid-cols-2">{savings.length === 0 && <Empty text="등록한 적금이 없어요." />}{savings.map((item) => <SavingsCard key={item.id} item={item} today={today} />)}</div>
     </section>
   </div>;

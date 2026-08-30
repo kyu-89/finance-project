@@ -1,0 +1,24 @@
+import { describe, expect, it } from 'vitest';
+import * as XLSX from 'xlsx';
+import { parseAccountRows } from '@/lib/excel-account-import';
+import { parseInvestmentTradeRows } from '@/lib/excel-investment-import';
+import { parseDepositRows, parseSavingsRows } from '@/lib/excel-savings-import';
+import { parseInsuranceRows, parseLoanRows } from '@/lib/excel-loan-insurance-import';
+import { parseEventRows, parseSupportRows } from '@/lib/excel-support-event-import';
+
+const workbookPath = 'C:/Users/미니쉬테크놀로지-김규남/Desktop/dev/personal-finance/2026년 (1).xlsm';
+const rows = (workbook: XLSX.WorkBook, name: string) => XLSX.utils.sheet_to_json(workbook.Sheets[name], { header: 1, raw: true, defval: '' }) as unknown[][];
+
+describe('2026 workbook parser audit', () => {
+  it('extracts every supported structured sheet without parser crashes', () => {
+    const workbook = XLSX.readFile(workbookPath, { cellDates: true });
+    expect(parseAccountRows(rows(workbook, '계좌현황')).length).toBeGreaterThan(0);
+    expect(parseDepositRows(rows(workbook, '예금관리')).length).toBeGreaterThan(0);
+    expect(parseSavingsRows(rows(workbook, '적금관리')).length).toBeGreaterThan(0);
+    expect(parseLoanRows(rows(workbook, '대출')).length).toBeGreaterThan(0);
+    expect(parseInsuranceRows(rows(workbook, '보험')).length).toBeGreaterThan(0);
+    expect(parseInvestmentTradeRows(rows(workbook, '업비트수익')).length + parseInvestmentTradeRows(rows(workbook, '업비트2')).length).toBeGreaterThan(0);
+    expect(parseSupportRows(rows(workbook, '정부지원금')).length).toBeGreaterThan(0);
+    expect(parseEventRows(rows(workbook, '축의금&부조금')).length).toBeGreaterThan(0);
+  });
+});

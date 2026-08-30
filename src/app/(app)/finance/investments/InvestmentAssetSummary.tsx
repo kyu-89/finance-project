@@ -1,0 +1,8 @@
+import type { InvestmentTrade } from '@/lib/excel-extended-data';
+import { summarizeInvestmentByAsset } from '@/lib/investment-calculations';
+const won = new Intl.NumberFormat('ko-KR');
+
+export function InvestmentAssetSummary({ trades }: { trades: InvestmentTrade[] }) {
+  const rows = summarizeInvestmentByAsset(trades);
+  return <section className="tds-card mt-5 p-5"><h2 className="text-lg font-bold">종목별 투자 흐름</h2><p className="mt-1 text-sm text-[var(--tds-grey-700)]">매수·매도 정산액 기준의 누적 현금흐름입니다. 평가손익과는 구분됩니다.</p>{rows.length === 0 ? <p className="mt-4 text-sm text-[var(--tds-grey-500)]">종목별 거래가 없습니다.</p> : <div className="mt-4 overflow-x-auto"><table className="w-full min-w-[640px] text-sm"><thead><tr className="border-b text-left text-xs text-[var(--tds-grey-500)]"><th className="py-3">종목</th><th className="text-right">거래</th><th className="text-right">매수</th><th className="text-right">매도</th><th className="text-right">수수료</th><th className="text-right">순현금흐름</th></tr></thead><tbody>{rows.map((row) => <tr key={row.assetName} className="border-b border-[var(--tds-grey-100)]"><td className="py-3 font-semibold">{row.assetName}</td><td className="text-right">{row.tradeCount}건</td><td className="text-right tabular-nums">{won.format(Math.round(row.buyAmount))}원</td><td className="text-right tabular-nums">{won.format(Math.round(row.sellAmount))}원</td><td className="text-right tabular-nums">{won.format(Math.round(row.fees))}원</td><td className={`text-right font-semibold tabular-nums ${row.netCashFlow >= 0 ? 'text-[var(--tds-blue-600)]' : 'text-[var(--tds-red-500)]'}`}>{row.netCashFlow >= 0 ? '+' : ''}{won.format(Math.round(row.netCashFlow))}원</td></tr>)}</tbody></table></div>}</section>;
+}

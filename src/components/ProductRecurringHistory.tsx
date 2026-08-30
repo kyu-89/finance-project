@@ -1,0 +1,8 @@
+import { listRecurringRuleChanges, type RecurringRule, type RecurringSourceType } from '@/lib/recurring-rules';
+
+export async function ProductRecurringHistory({ householdId, rules, sourceType, sourceIds }: { householdId: string; rules: RecurringRule[]; sourceType: RecurringSourceType; sourceIds: string[] }) {
+  const ruleIds = rules.filter((rule) => rule.sourceType === sourceType && rule.sourceId && sourceIds.includes(rule.sourceId)).map((rule) => rule.id);
+  const changes = await listRecurringRuleChanges(householdId, ruleIds);
+  const ruleNames = new Map(rules.map((rule) => [rule.id, rule.description]));
+  return <section className="tds-card p-5"><h2 className="text-lg font-bold">최근 변경이력</h2><p className="mt-1 text-sm text-[var(--tds-grey-700)]">반복 금액·일정·상태 변경은 과거 확정 거래와 분리해 기록됩니다.</p>{changes.length === 0 ? <p className="mt-4 text-sm text-[var(--tds-grey-500)]">기록된 변경이력이 없습니다.</p> : <div className="mt-4 grid gap-2">{changes.slice(0, 20).map((change) => <div key={change.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-[var(--tds-grey-100)] px-4 py-3"><div><p className="font-semibold">{ruleNames.get(change.recurringRuleId) ?? '반복항목'}</p><p className="text-xs text-[var(--tds-grey-500)]">{new Date(change.changedAt).toLocaleString('ko-KR')} · 금액 {change.oldAmount.toLocaleString('ko-KR')}원 → {change.newAmount.toLocaleString('ko-KR')}원</p><p className="mt-1 text-xs text-[var(--tds-grey-500)]">주기 {change.oldFrequency}/{change.oldIntervalCount} → {change.newFrequency}/{change.newIntervalCount} · 지급일 {change.oldDayOfMonth ?? '-'}일 → {change.newDayOfMonth ?? '-'}일</p></div><span className="text-xs text-[var(--tds-grey-500)]">{change.oldStatus} → {change.newStatus}</span></div>)}</div>}</section>;
+}

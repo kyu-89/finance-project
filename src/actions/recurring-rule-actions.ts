@@ -22,7 +22,7 @@ const TRANSACTION_TYPES = new Set<TransactionType>([
 ]);
 const FREQUENCIES = new Set<RecurrenceFrequency>(['monthly', 'weekly', 'yearly', 'custom']);
 const SOURCE_TYPES = new Set<RecurringSourceType>([
-  'insurance', 'saving', 'loan', 'subscription', 'salary', 'manual',
+  'insurance', 'saving', 'loan', 'subscription', 'salary', 'support', 'manual',
 ]);
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 

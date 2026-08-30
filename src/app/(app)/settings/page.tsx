@@ -14,6 +14,7 @@ export default async function SettingsPage() {
       <p className="mb-6 text-sm text-[var(--tds-grey-700)]">우리 집의 분류·결제 기준과 데이터를 관리해요. 예산과 반복항목은 월간관리에서 조정해요.</p>
       <HouseholdPlanning members={members} goals={goals} tasks={tasks} />
       <nav className="list-surface flex flex-col divide-y divide-[var(--tds-grey-200)]">
+        <Link href="/reports/income" className="flex min-h-16 items-center justify-between px-5 text-[15px] font-semibold"><span>연간 항목별 수입</span><span className="text-[var(--tds-grey-400)]">›</span></Link>
         <Link href="/settings/categories" className="flex min-h-16 items-center justify-between px-5 text-[15px] font-semibold">
           <span>카테고리 관리</span><span className="text-[var(--tds-grey-400)]">›</span>
         </Link>

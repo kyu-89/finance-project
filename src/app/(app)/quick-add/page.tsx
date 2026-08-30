@@ -3,6 +3,7 @@ import { listCategoriesWithSubcategories } from '@/lib/categories';
 import { listPaymentMethods } from '@/lib/payment-methods';
 import { listRecentUsage } from '@/lib/transactions';
 import { QuickAddForm } from './QuickAddForm';
+import { listAccounts } from '@/lib/accounts';
 
 export default async function QuickAddPage({
   searchParams,
@@ -10,14 +11,14 @@ export default async function QuickAddPage({
   searchParams: Promise<{ saved?: string; undo?: string; undone?: string }>;
 }) {
   const household = await ensureHouseholdForCurrentUser();
-  const [categories, paymentMethods, recentUsage, { saved, undo, undone }] = await Promise.all([
+  const [categories, paymentMethods, accounts, recentUsage, { saved, undo, undone }] = await Promise.all([
     listCategoriesWithSubcategories(household.id),
     listPaymentMethods(household.id),
+    listAccounts(household.id),
     listRecentUsage(household.id),
     searchParams,
   ]);
 
-  const expenseCategories = categories.filter((c) => c.transactionType === 'expense' && c.isActive);
   const activePaymentMethods = paymentMethods.filter((m) => m.isActive).sort((a, b) => {
     const aRank = recentUsage.paymentMethodIds.indexOf(a.id);
     const bRank = recentUsage.paymentMethodIds.indexOf(b.id);
@@ -32,8 +33,9 @@ export default async function QuickAddPage({
       <h1 className="tds-title mb-2">거래를 기록해요</h1>
       <p className="mb-6 text-[15px] text-[var(--tds-grey-700)]">금액부터 입력하면 빠르게 저장할 수 있어요.</p>
       <QuickAddForm
-        categories={expenseCategories}
+        categories={categories.filter((c) => c.isActive)}
         paymentMethods={activePaymentMethods}
+        accounts={accounts.filter((account) => account.status === 'active')}
         recentCategoryIds={recentUsage.categoryIds}
         recentSubcategoryIdsByCategory={recentUsage.subcategoryIdsByCategory}
         saved={saved}

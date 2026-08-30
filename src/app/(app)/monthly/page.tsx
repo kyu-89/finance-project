@@ -22,18 +22,21 @@ function monthLabel(month: string) {
   return `${Number(month.slice(0, 4))}년 ${Number(month.slice(5, 7))}월`;
 }
 
-export default async function MonthlyPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
+export default async function MonthlyPage({ searchParams }: { searchParams: Promise<{ month?: string; category?: string; subcategory?: string; recurringRule?: string }> }) {
   const household = await ensureHouseholdForCurrentUser();
   const currentMonth = todayInSeoul().slice(0, 7);
   const params = await searchParams;
   const selectedMonth = params.month && MONTH_PATTERN.test(params.month) ? params.month : currentMonth;
+  const selectedCategory = params.category && /^[0-9a-f-]{36}$/i.test(params.category) ? params.category : undefined;
+  const selectedSubcategory = params.subcategory && /^[0-9a-f-]{36}$/i.test(params.subcategory) ? params.subcategory : undefined;
+  const selectedRecurringRule = params.recurringRule && /^[0-9a-f-]{36}$/i.test(params.recurringRule) ? params.recurringRule : undefined;
   const { fromDate, toDate } = monthRangeFromSeoulDateString(`${selectedMonth}-01`);
   await materializeRecurringRulesForRange(household.id, fromDate, toDate);
 
   const year = Number(fromDate.slice(0, 4));
   const monthNumber = Number(fromDate.slice(5, 7));
   const [transactions, categories, paymentMethods, annualBudgets, supportDetails, eventDetails, members] = await Promise.all([
-    listTransactions({ householdId: household.id, fromDate, toDate }),
+    listTransactions({ householdId: household.id, fromDate, toDate, categoryId: selectedCategory, subcategoryId: selectedSubcategory, recurringRuleId: selectedRecurringRule }),
     listCategoriesWithSubcategories(household.id),
     listPaymentMethods(household.id),
     listBudgets(household.id, year),
@@ -42,8 +45,9 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
     listHouseholdMembers(household.id),
   ]);
 
-  const expenseCategories = categories.filter((c) => c.transactionType === 'expense' && c.isActive);
   const budgetCategories = categories.filter((c) => c.transactionType === 'expense');
+  const categoryFilterName = selectedCategory ? categories.find((category) => category.id === selectedCategory)?.name : null;
+  const subcategoryFilterName = selectedSubcategory ? categories.flatMap((category) => category.subcategories).find((subcategory) => subcategory.id === selectedSubcategory)?.name : null;
   const activePaymentMethods = paymentMethods.filter((m) => m.isActive);
   const duplicateCandidates = findRecurringDuplicateCandidates(transactions);
   const budgets = annualBudgets.filter((budget) => budget.month === monthNumber);
@@ -55,6 +59,7 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div><h1 className="tds-title mb-2">월간 내역을 관리해요</h1>
           <p className="text-sm text-[var(--tds-grey-700)]">{fromDate} ~ {toDate} · 활성 반복항목은 예정 거래로 자동 채워져요.</p>
+          {(categoryFilterName || subcategoryFilterName || selectedRecurringRule) && <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-[var(--tds-blue-50)] px-3 py-1.5 text-xs font-semibold text-[var(--tds-blue-600)]">{selectedRecurringRule ? '연결된 예정거래만 보는 중' : `${subcategoryFilterName ?? categoryFilterName} 거래만 보는 중`} <Link href={`/monthly?month=${selectedMonth}`} className="underline underline-offset-2">필터 해제</Link></p>}
         </div>
         <nav aria-label="월 선택" className="flex items-center gap-2">
           <Link href={`/monthly?month=${shiftMonth(selectedMonth, -1)}`} className="home-arrow" aria-label="이전 달">←</Link>
@@ -64,7 +69,7 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
       </div>
       <MonthlyPageTabs
         transactions={transactions}
-        categories={expenseCategories}
+        categories={categories}
         paymentMethods={activePaymentMethods}
         duplicateCandidates={duplicateCandidates}
         budgets={budgets}

@@ -1,8 +1,9 @@
 'use server';
+export async function importCardsAction(_: ActionResult, form: FormData): Promise<ActionResult> { try { const rows = JSON.parse(String(form.get('cards') ?? '[]')) as Array<Record<string, unknown>>; if (!rows.length || rows.length > 1000) return fail('가져올 카드가 없습니다.'); const householdId = await getCurrentHouseholdId(); for (const row of rows) await createCard({ householdId, issuer: String(row.issuer), cardType: row.cardType as Card['cardType'], issuedBy: row.issuedBy ? String(row.issuedBy) : null, cardName: String(row.cardName), annualFee: Number(row.annualFee), cancellableFrom: row.cancellableFrom ? String(row.cancellableFrom) : null, benefitSummary: row.benefitSummary ? String(row.benefitSummary) : null, ownerMemberId: null, paymentMethodId: null, memo: row.memo ? String(row.memo) : 'Excel 가져오기' }); refreshFinance(); return ok(`${rows.length}건의 카드를 가져왔습니다.`); } catch (e) { return fail(e instanceof Error ? e.message : '카드 가져오기에 실패했습니다.'); } }
 
 import { revalidatePath } from 'next/cache';
 import { fail, ok, type ActionResult } from '@/lib/action-result';
-import { closeAccount, createAccount, updateAccountBalance, type Account } from '@/lib/accounts';
+import { closeAccount, createAccount, importAccounts, updateAccountBalance, type Account } from '@/lib/accounts';
 import { closeCard, createCard, type Card } from '@/lib/cards';
 import { todayInSeoul } from '@/lib/date';
 import { getCurrentHouseholdId } from '@/lib/household';
@@ -64,6 +65,20 @@ export async function closeAccountAction(_previous: ActionResult, formData: Form
   catch (error) { return fail(error instanceof Error ? error.message : '계좌 해지에 실패했어요.'); }
   refreshFinance();
   return ok();
+}
+
+export async function importAccountsAction(_previous: ActionResult, formData: FormData): Promise<ActionResult> {
+  const raw = String(formData.get('accounts') ?? '');
+  if (!raw) return fail('가져올 계좌가 없습니다.');
+  try {
+    const rows = JSON.parse(raw) as unknown;
+    if (!Array.isArray(rows) || rows.length === 0 || rows.length > 10_000) return fail('계좌는 한 번에 1~10,000건까지 가져올 수 있습니다.');
+    const accounts = rows.filter((row): row is Record<string, unknown> => typeof row === 'object' && row !== null).map((row) => ({ bankName: String(row.bankName ?? '').trim(), accountType: row.accountType as Account['accountType'], accountName: String(row.accountName ?? '').trim(), accountNumber: row.accountNumber ? String(row.accountNumber) : null, purpose: row.purpose ? String(row.purpose) : null, currentBalance: Number(row.currentBalance), ownerMemberId: null, memo: row.memo ? String(row.memo) : null })).filter((account) => account.bankName && account.accountName && ['checking', 'savings', 'cma', 'other'].includes(account.accountType) && Number.isSafeInteger(account.currentBalance));
+    if (accounts.length !== rows.length) return fail('유효하지 않은 계좌 행이 포함되어 있습니다.');
+    await importAccounts({ householdId: await getCurrentHouseholdId(), accounts });
+    refreshFinance();
+    return ok(`${accounts.length}건의 계좌를 가져왔습니다.`);
+  } catch (error) { return fail(error instanceof Error ? error.message : '계좌 가져오기에 실패했습니다.'); }
 }
 
 export async function createCardAction(_previous: ActionResult, formData: FormData): Promise<ActionResult> {
