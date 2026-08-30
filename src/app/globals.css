@@ -353,7 +353,8 @@ input:active {
 }
 
 .monthly-input-table { display: block; width: 100%; min-width: 1040px; }
-.monthly-input-table thead, .monthly-input-table tbody, .monthly-input-table tr { display: grid; grid-template-columns: 104px 84px minmax(240px, 1fr) 116px 240px 360px; }
+.monthly-input-table thead, .monthly-input-table tbody > tr { display: grid; grid-template-columns: 104px 84px minmax(240px, 1fr) 116px 220px 160px; }
+.monthly-input-table tbody { display: block; }
 .monthly-input-table th, .monthly-input-table td { min-width: 0; }
 .monthly-input-table thead { background: var(--tds-white); }
 .monthly-input-table tbody { min-width: 0; }
