@@ -16,6 +16,7 @@ import type { Transaction } from '@/lib/transactions';
 import type { CategoryWithSubcategories } from '@/lib/categories';
 import type { PaymentMethod } from '@/lib/payment-methods';
 import type { DuplicateCandidate } from '@/lib/recurring-duplicates';
+import { MonthlyDrawerForm as MonthlyRowForm } from './MonthlyDrawerForm';
 
 // No optional row models (sorting/filtering/etc.) are needed for this first-pass read-only
 // table, so the feature registry is empty — the core row model is automatic in v9.
@@ -124,15 +125,6 @@ function makeColumns(paymentMethods: PaymentMethod[], duplicateCandidates: Recor
   ]);
 }
 
-const COLUMN_WIDTHS: Record<string, string> = {
-  transactionDate: '104px',
-  status: '84px',
-  description: 'minmax(240px, 1fr)',
-  amount: '116px',
-  costBehavior: '240px',
-  plannedAction: '360px',
-};
-
 function columnAlignment(columnId: string, header = false) {
   if (columnId === 'amount') return 'text-right';
   if (columnId === 'transactionDate' || columnId === 'status') return 'text-center';
@@ -158,12 +150,7 @@ export function MonthlyInputTab({
       <div className="flex justify-end"><AddDrawer title="지출 입력" description="이번 달 거래를 추가하세요. 저장하면 목록에 바로 반영됩니다." triggerLabel="지출 추가"><MonthlyRowForm categories={categories} paymentMethods={paymentMethods} /></AddDrawer></div>
 
       <div className="table-surface overflow-x-auto">
-        <table className="monthly-input-table w-full min-w-[1040px] table-fixed border-collapse text-sm">
-          <colgroup>
-            {table.getAllLeafColumns().map((column) => (
-              <col key={column.id} style={{ width: COLUMN_WIDTHS[column.id] ?? '160px' }} />
-            ))}
-          </colgroup>
+        <table className="monthly-input-table w-full min-w-[1040px] border-collapse text-sm">
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="border-b text-left">
@@ -198,7 +185,7 @@ export function MonthlyInputTab({
   );
 }
 
-function MonthlyRowForm({ categories, paymentMethods }: { categories: CategoryWithSubcategories[]; paymentMethods: PaymentMethod[] }) {
+function LegacyMonthlyRowForm({ categories, paymentMethods }: { categories: CategoryWithSubcategories[]; paymentMethods: PaymentMethod[] }) {
   const [categoryId, setCategoryId] = useState('');
   const [transactionType, setTransactionType] = useState<'income' | 'expense' | 'saving' | 'investment' | 'debt_principal' | 'finance_cost' | 'transfer'>('expense');
   const selectedCategory = categories.find((c) => c.id === categoryId);
