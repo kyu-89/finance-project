@@ -139,22 +139,36 @@ export async function createMonthlyRowAction(
     if (transactionType === 'refund') {
       if (!parentTransactionId) return fail('환불할 원거래를 선택해 주세요.');
       const supabase = await createClient();
-      const { data: parent, error: parentError } = await supabase.from('transactions').select('id, amount, transaction_type, flow_class').eq('id', parentTransactionId).eq('household_id', householdId).is('deleted_at', null).single();
+      const { data: parent, error: parentError } = await supabase.from('transactions').select('id, amount, transaction_type, flow_class, category_id, subcategory_id, payment_method_id, cost_behavior').eq('id', parentTransactionId).eq('household_id', householdId).is('deleted_at', null).single();
       if (parentError || !parent || parent.transaction_type !== 'expense' || parent.flow_class !== 'consumption') return fail('환불 원거래를 찾을 수 없어요.');
       const { data: refunds, error: refundsError } = await supabase.from('transactions').select('amount').eq('parent_transaction_id', parentTransactionId).eq('transaction_type', 'refund').eq('status', 'posted').is('deleted_at', null);
       if (refundsError) return fail('기존 환불 내역을 확인하지 못했어요.');
       const refunded = (refunds ?? []).reduce((sum, refund) => sum + Number(refund.amount), 0);
       if (refunded + amount > Number(parent.amount)) return fail(`환불 가능 금액은 ${(Number(parent.amount) - refunded).toLocaleString('ko-KR')}원이에요.`);
     }
+    let inheritedCategoryId = categoryId;
+    let inheritedSubcategoryId = subcategoryId;
+    let inheritedPaymentMethodId = paymentMethodId;
+    let inheritedCostBehavior = categoryDefaultCostBehavior;
+    if (transactionType === 'refund' && parentTransactionId) {
+      const supabase = await createClient();
+      const { data: parentFields } = await supabase.from('transactions').select('category_id, subcategory_id, payment_method_id, cost_behavior').eq('id', parentTransactionId).eq('household_id', householdId).is('deleted_at', null).single();
+      if (parentFields) {
+        inheritedCategoryId = parentFields.category_id;
+        inheritedSubcategoryId = parentFields.subcategory_id;
+        inheritedPaymentMethodId = parentFields.payment_method_id;
+        inheritedCostBehavior = parentFields.cost_behavior;
+      }
+    }
     await createTransaction({
       householdId,
       transactionDate,
       transactionType,
-      categoryId,
-      categoryDefaultCostBehavior,
+      categoryId: inheritedCategoryId,
+      categoryDefaultCostBehavior: inheritedCostBehavior,
       costBehaviorOverride,
-      subcategoryId,
-      paymentMethodId,
+      subcategoryId: inheritedSubcategoryId,
+      paymentMethodId: inheritedPaymentMethodId,
       amount,
       description,
       parentTransactionId,
