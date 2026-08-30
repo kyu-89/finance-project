@@ -9,6 +9,7 @@ import type { HouseholdMember } from '@/lib/household';
 import type { CategoryWithSubcategories } from '@/lib/categories';
 import type { PaymentMethod } from '@/lib/payment-methods';
 import type { DuplicateCandidate } from '@/lib/recurring-duplicates';
+import { RefundParentLinkPanel } from './RefundParentLinkPanel';
 
 const STATUS_LABEL: Record<Transaction['status'], string> = {
   planned: '예정',
@@ -98,6 +99,7 @@ export function AllTransactionsTab({ initialTransactions, supportDetails, eventD
       </div>
 
       {selected && <TransactionDetailDrawer transaction={selected} support={supportDetails[selected.id]} event={eventDetails[selected.id]} members={members} candidates={duplicateCandidates[selected.id]} onClose={() => setSelected(null)} />}
+      {selected?.transactionType === 'refund' && <RefundParentLinkPanel transaction={selected} transactions={initialTransactions} onClose={() => setSelected(null)} />}
 
       <div className="tds-card flex flex-col items-end gap-1 p-4 text-sm">
         <p className="font-medium">
