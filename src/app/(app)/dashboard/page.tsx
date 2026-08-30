@@ -6,6 +6,7 @@ import { getDashboardHomeSummary, type HomeMonth, type HomeRecent, type HomeRank
 import { computeCurrentNetWorth, listAssetValueHistory } from '@/lib/snapshots';
 import { listFinancialGoals, listFinancialTasks } from '@/lib/excel-extended-data';
 import { DashboardPeriodFilters } from './DashboardPeriodFilters';
+import { materializeRecurringRulesForRange } from '@/lib/recurring-rules';
 
 const won = new Intl.NumberFormat('ko-KR');
 const monthPattern = /^\d{4}-(0[1-9]|1[0-2])$/;
@@ -21,6 +22,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const members = await listHouseholdMembers(household.id);
   const validMemberForQuery = requestedMember === UNASSIGNED_DASHBOARD_MEMBER || members.some((item) => item.id === requestedMember);
   const memberForQuery = validMemberForQuery ? requestedMember : undefined;
+  await materializeRecurringRulesForRange(household.id, `${trendStart}-01`, bounds.to);
   const [summary, netWorth, assetHistory, goals, tasks] = await Promise.all([
     getDashboardHomeSummary({ householdId: household.id, from: dashboardRange.from < `${trendStart}-01` ? dashboardRange.from : `${trendStart}-01`, to: bounds.to, monthStart: dashboardRange.from, monthEnd: dashboardRange.to, memberId: memberForQuery }), computeCurrentNetWorth(household.id, today, memberForQuery), listAssetValueHistory(household.id, 36), listFinancialGoals(household.id), listFinancialTasks(household.id, today, `${currentMonth}-31`),
   ]);
