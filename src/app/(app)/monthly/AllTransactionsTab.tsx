@@ -98,7 +98,7 @@ export function AllTransactionsTab({ initialTransactions, supportDetails, eventD
         </table>
       </div>
 
-      {selected && <TransactionDetailDrawer transaction={selected} support={supportDetails[selected.id]} event={eventDetails[selected.id]} members={members} candidates={duplicateCandidates[selected.id]} onClose={() => setSelected(null)} />}
+      {selected && selected.transactionType !== 'refund' && <TransactionDetailDrawer transaction={selected} support={supportDetails[selected.id]} event={eventDetails[selected.id]} members={members} candidates={duplicateCandidates[selected.id]} onClose={() => setSelected(null)} />}
       {selected?.transactionType === 'refund' && <RefundParentLinkPanel transaction={selected} transactions={initialTransactions} onClose={() => setSelected(null)} />}
 
       <div className="tds-card flex flex-col items-end gap-1 p-4 text-sm">
