@@ -9,7 +9,7 @@ export default async function IncomeReportPage() {
   const household = await ensureHouseholdForCurrentUser();
   const year = Number(todayInSeoul().slice(0, 4));
   const [transactions, categories] = await Promise.all([listTransactions({ householdId: household.id, fromDate: `${year}-01-01`, toDate: `${year}-12-31` }), listCategoriesWithSubcategories(household.id)]);
-  const income = transactions.filter((t) => t.status === 'posted' && (t.transactionType === 'income' || t.transactionType === 'refund'));
+  const income = transactions.filter((t) => t.status === 'posted' && t.transactionType === 'income');
   const nameById = new Map(categories.flatMap((c) => [{ id: c.id, name: c.name }, ...c.subcategories.map((s) => ({ id: s.id, name: s.name }))]).map((item) => [item.id, item.name]));
   const rows = new Map<string, { name: string; total: number; fixed: number; additional: number; months: number[] }>();
   for (const transaction of income) { const key = transaction.subcategoryId ?? transaction.categoryId ?? 'unassigned'; const row = rows.get(key) ?? { name: nameById.get(key) ?? '미분류', total: 0, fixed: 0, additional: 0, months: Array(12).fill(0) }; row.total += transaction.amount; if (transaction.incomeGroup === 'additional') row.additional += transaction.amount; else row.fixed += transaction.amount; row.months[Number(transaction.transactionDate.slice(5, 7)) - 1] += transaction.amount; rows.set(key, row); }
