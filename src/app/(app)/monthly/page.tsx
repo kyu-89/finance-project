@@ -18,6 +18,12 @@ function shiftMonth(month: string, offset: number) {
   return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
 }
 
+function shiftDate(dateString: string, days: number) {
+  const date = new Date(`${dateString}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
 function monthLabel(month: string) {
   return `${Number(month.slice(0, 4))}년 ${Number(month.slice(5, 7))}월`;
 }
@@ -35,8 +41,9 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
 
   const year = Number(fromDate.slice(0, 4));
   const monthNumber = Number(fromDate.slice(5, 7));
-  const [transactions, categories, paymentMethods, annualBudgets, supportDetails, eventDetails, members] = await Promise.all([
+  const [transactions, duplicateScanTransactions, categories, paymentMethods, annualBudgets, supportDetails, eventDetails, members] = await Promise.all([
     listTransactions({ householdId: household.id, fromDate, toDate, categoryId: selectedCategory, subcategoryId: selectedSubcategory, recurringRuleId: selectedRecurringRule }),
+    listTransactions({ householdId: household.id, fromDate: shiftDate(fromDate, -3), toDate: shiftDate(toDate, 3) }),
     listCategoriesWithSubcategories(household.id),
     listPaymentMethods(household.id),
     listBudgets(household.id, year),
@@ -49,7 +56,7 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
   const categoryFilterName = selectedCategory ? categories.find((category) => category.id === selectedCategory)?.name : null;
   const subcategoryFilterName = selectedSubcategory ? categories.flatMap((category) => category.subcategories).find((subcategory) => subcategory.id === selectedSubcategory)?.name : null;
   const activePaymentMethods = paymentMethods.filter((m) => m.isActive);
-  const duplicateCandidates = findRecurringDuplicateCandidates(transactions);
+  const duplicateCandidates = findRecurringDuplicateCandidates(duplicateScanTransactions);
   const budgets = annualBudgets.filter((budget) => budget.month === monthNumber);
   const supportByTransaction = Object.fromEntries(supportDetails.map((detail) => [detail.transactionId, detail]));
   const eventByTransaction = Object.fromEntries(eventDetails.map((detail) => [detail.transactionId, detail]));
