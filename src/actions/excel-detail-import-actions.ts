@@ -3,7 +3,7 @@ import { revalidatePath } from 'next/cache';
 import { getCurrentHouseholdId } from '@/lib/household';
 import { todayInSeoul } from '@/lib/date';
 import { createTransaction } from '@/lib/transactions';
-import { createRecurringRule } from '@/lib/recurring-rules';
+import { createRecurringRule, materializeRecurringRulesForRange } from '@/lib/recurring-rules';
 import { upsertEventDetail, upsertSupportDetail } from '@/lib/transaction-details';
 import { fail, ok, type ActionResult } from '@/lib/action-result';
 
@@ -25,6 +25,7 @@ export async function importSupportEventsAction(_: ActionResult, form: FormData)
       count += 1;
     }
     for (const row of events) { const amount = Number(row.amount); const date = String(row.eventDate ?? ''); if (!String(row.description ?? '').trim() || !Number.isSafeInteger(amount) || amount <= 0 || !datePattern.test(date)) return fail('유효하지 않은 경조사 행이 포함되어 있습니다.'); const transaction = await createTransaction({ householdId, transactionDate: date, transactionType: 'expense', categoryId: null, subcategoryId: null, paymentMethodId: null, amount, description: String(row.description), memo: 'Excel 가져오기', categoryDefaultCostBehavior: null, needsReview: true }); await upsertEventDetail(householdId, { transactionId: transaction.id, eventType: ['wedding', 'condolence', 'gift', 'other'].includes(String(row.eventType)) ? String(row.eventType) as 'wedding' | 'condolence' | 'gift' | 'other' : 'other', counterparty: null, relationshipGroup: null, eventDescription: String(row.description), relatedMemberId: null, memo: 'Excel 가져오기' }); count += 1; }
-    revalidatePath('/monthly'); revalidatePath('/dashboard'); return ok(`${count}건을 가져왔습니다${recurringCount ? ` · 지원금 반복규칙 ${recurringCount}건 생성` : ''}.`);
+    if (recurringCount > 0) { const start = todayInSeoul(); const date = new Date(`${start}T00:00:00Z`); date.setUTCFullYear(date.getUTCFullYear() + 1); const end = date.toISOString().slice(0, 10); await materializeRecurringRulesForRange(householdId, start, end); }
+    revalidatePath('/monthly'); revalidatePath('/dashboard'); return ok(`${count}건을 가져왔습니다${recurringCount ? ` · 지원금 반복규칙 ${recurringCount}건 및 예정수입 생성` : ''}.`);
   } catch (error) { return fail(error instanceof Error ? error.message : '상세 데이터 가져오기에 실패했습니다.'); }
 }
