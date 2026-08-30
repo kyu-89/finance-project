@@ -11,10 +11,11 @@ export async function listLoans(householdId: string): Promise<Loan[]> {
   return (data ?? []).map((row) => ({ id: row.id, institutionName: row.institution_name, loanName: row.loan_name, originalAmount: row.original_amount, annualRate: Number(row.annual_rate), repaymentMethod: row.repayment_method as LoanRepaymentMethod, loanDate: row.loan_date, firstPaymentDate: row.first_payment_date, maturityDate: row.maturity_date, graceMonths: row.grace_months, ownerMemberId: row.owner_member_id, memo: row.memo, status: row.status as Loan['status'] }));
 }
 
-export async function createLoan(input: Omit<Loan, 'id' | 'status'> & { householdId: string }): Promise<void> {
+export async function createLoan(input: Omit<Loan, 'id' | 'status'> & { householdId: string }): Promise<string> {
   const supabase = await createClient();
-  const { error } = await supabase.from('loans').insert({ household_id: input.householdId, institution_name: input.institutionName, loan_name: input.loanName, original_amount: input.originalAmount, annual_rate: input.annualRate, repayment_method: input.repaymentMethod, loan_date: input.loanDate, first_payment_date: input.firstPaymentDate, maturity_date: input.maturityDate, grace_months: input.graceMonths, owner_member_id: input.ownerMemberId, memo: input.memo });
+  const { data, error } = await supabase.from('loans').insert({ household_id: input.householdId, institution_name: input.institutionName, loan_name: input.loanName, original_amount: input.originalAmount, annual_rate: input.annualRate, repayment_method: input.repaymentMethod, loan_date: input.loanDate, first_payment_date: input.firstPaymentDate, maturity_date: input.maturityDate, grace_months: input.graceMonths, owner_member_id: input.ownerMemberId, memo: input.memo }).select('id').single();
   if (error) throw new Error(`대출 추가 실패: ${error.message}`);
+  return data.id;
 }
 
 export async function endLoan(id: string, status: 'paid_off' | 'refinanced', endedAt: string): Promise<void> {
