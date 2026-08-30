@@ -16,6 +16,7 @@ import type { TransactionType } from '@/lib/cost-behavior';
 import { fail, ok, type ActionResult } from '@/lib/action-result';
 import { linkRecurringOccurrence } from '@/lib/recurring-rules';
 import { upsertEventDetail, upsertSupportDetail } from '@/lib/transaction-details';
+import { createClient } from '@/lib/supabase/server';
 
 export async function createQuickTransactionAction(
   _prevState: ActionResult,
@@ -118,6 +119,7 @@ export async function createMonthlyRowAction(
   const subcategoryId = String(formData.get('subcategoryId') ?? '') || null;
   const paymentMethodId = String(formData.get('paymentMethodId') ?? '') || null;
   const transactionType = (formData.get('transactionType') as TransactionType) ?? 'expense';
+  const parentTransactionId = String(formData.get('parentTransactionId') ?? '') || null;
   const rawCostBehavior = formData.get('costBehaviorOverride');
   const costBehaviorOverride =
     rawCostBehavior === 'fixed' || rawCostBehavior === 'variable' ? rawCostBehavior : null;
@@ -134,6 +136,16 @@ export async function createMonthlyRowAction(
 
   try {
     const householdId = await getCurrentHouseholdId();
+    if (transactionType === 'refund') {
+      if (!parentTransactionId) return fail('환불할 원거래를 선택해 주세요.');
+      const supabase = await createClient();
+      const { data: parent, error: parentError } = await supabase.from('transactions').select('id, amount, transaction_type, flow_class').eq('id', parentTransactionId).eq('household_id', householdId).is('deleted_at', null).single();
+      if (parentError || !parent || parent.transaction_type !== 'expense' || parent.flow_class !== 'consumption') return fail('환불 원거래를 찾을 수 없어요.');
+      const { data: refunds, error: refundsError } = await supabase.from('transactions').select('amount').eq('parent_transaction_id', parentTransactionId).eq('transaction_type', 'refund').eq('status', 'posted').is('deleted_at', null);
+      if (refundsError) return fail('기존 환불 내역을 확인하지 못했어요.');
+      const refunded = (refunds ?? []).reduce((sum, refund) => sum + Number(refund.amount), 0);
+      if (refunded + amount > Number(parent.amount)) return fail(`환불 가능 금액은 ${(Number(parent.amount) - refunded).toLocaleString('ko-KR')}원이에요.`);
+    }
     await createTransaction({
       householdId,
       transactionDate,
@@ -145,6 +157,7 @@ export async function createMonthlyRowAction(
       paymentMethodId,
       amount,
       description,
+      parentTransactionId,
     });
   } catch (error) {
     return fail(error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.');

@@ -7,9 +7,9 @@ import { INITIAL_ACTION_STATE } from '@/lib/action-result';
 import type { CategoryWithSubcategories } from '@/lib/categories';
 import type { PaymentMethod } from '@/lib/payment-methods';
 
-type TransactionType = 'income' | 'expense' | 'saving' | 'investment' | 'debt_principal' | 'finance_cost' | 'transfer';
+type TransactionType = 'income' | 'expense' | 'refund' | 'saving' | 'investment' | 'debt_principal' | 'finance_cost' | 'transfer';
 
-export function MonthlyDrawerForm({ categories, paymentMethods }: { categories: CategoryWithSubcategories[]; paymentMethods: PaymentMethod[] }) {
+export function MonthlyDrawerForm({ categories, paymentMethods, transactions }: { categories: CategoryWithSubcategories[]; paymentMethods: PaymentMethod[]; transactions: { id: string; transactionDate: string; description: string; amount: number; transactionType: string; flowClass: string; status: string }[] }) {
   const [categoryId, setCategoryId] = useState('');
   const [transactionType, setTransactionType] = useState<TransactionType>('expense');
   const [state, formAction, pending] = useActionState(createMonthlyRowAction, INITIAL_ACTION_STATE);
@@ -22,7 +22,8 @@ export function MonthlyDrawerForm({ categories, paymentMethods }: { categories: 
       <div className="monthly-drawer-section">
         <h3>기본 정보</h3>
         <div className="monthly-drawer-grid">
-          <label className="form-field"><span>거래 유형</span><select value={transactionType} onChange={(event) => { setTransactionType(event.target.value as TransactionType); setCategoryId(''); }}><option value="expense">지출</option><option value="income">수입</option><option value="saving">저축</option><option value="investment">투자</option><option value="debt_principal">대출 원금 상환</option><option value="finance_cost">금융 비용</option><option value="transfer">이체</option></select></label>
+          <label className="form-field"><span>거래 유형</span><select value={transactionType} onChange={(event) => { setTransactionType(event.target.value as TransactionType); setCategoryId(''); }}><option value="expense">지출</option><option value="income">수입</option><option value="refund">환불</option><option value="saving">저축</option><option value="investment">투자</option><option value="debt_principal">대출 원금 상환</option><option value="finance_cost">금융 비용</option><option value="transfer">이체</option></select></label>
+          {transactionType === 'refund' && <label className="form-field"><span>원거래</span><select name="parentTransactionId" required><option value="">환불할 지출을 선택하세요</option>{transactions.filter((transaction) => transaction.transactionType === 'expense' && transaction.flowClass === 'consumption' && transaction.status === 'posted').map((transaction) => <option key={transaction.id} value={transaction.id}>{transaction.transactionDate} · {transaction.description} · {transaction.amount.toLocaleString('ko-KR')}원</option>)}</select></label>}
           <label className="form-field"><span>거래일</span><input type="date" name="transactionDate" required /></label>
           {isCategorized && <label className="form-field"><span>분류</span><select name="categoryId" required value={categoryId} onChange={(event) => setCategoryId(event.target.value)}><option value="">분류를 선택하세요</option>{categories.filter((category) => category.transactionType === transactionType && category.isActive).map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>}
           {isCategorized && <label className="form-field"><span>세부 분류 <em>선택</em></span><select name="subcategoryId"><option value="">세부 분류 없음</option>{selectedCategory?.subcategories.map((subcategory) => <option key={subcategory.id} value={subcategory.id}>{subcategory.name}</option>)}</select></label>}

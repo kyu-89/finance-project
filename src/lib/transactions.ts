@@ -12,6 +12,7 @@ export type Transaction = {
   paymentMethodId: string | null;
   accountId?: string | null;
   incomeGroup?: 'fixed' | 'additional' | null;
+  parentTransactionId?: string | null;
   categoryId: string | null;
   subcategoryId: string | null;
   payerMemberId: string | null;
@@ -92,6 +93,7 @@ export async function createTransaction(input: {
   paymentMethodId: string | null;
   accountId?: string | null;
   incomeGroup?: 'fixed' | 'additional' | null;
+  parentTransactionId?: string | null;
   amount: number;
   description: string;
   memo?: string | null;
@@ -124,6 +126,7 @@ export async function createTransaction(input: {
       payment_method_id: input.paymentMethodId,
       account_id: input.accountId ?? null,
       income_group: input.incomeGroup ?? null,
+      parent_transaction_id: input.parentTransactionId ?? null,
       payer_member_id: input.payerMemberId ?? null,
       beneficiary_member_id: input.beneficiaryMemberId ?? null,
       amount: input.amount,
