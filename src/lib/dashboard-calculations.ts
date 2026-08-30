@@ -33,8 +33,9 @@ export function buildDashboardPeriod(transactions: Transaction[], budgets: Month
   const closing = calculateMonthlyClosing(transactions, budgets);
   const spendingByPaymentMethod: Record<string, number> = {};
   for (const transaction of transactions) {
-    if (transaction.status !== 'posted' || transaction.flowClass !== 'consumption' || !transaction.paymentMethodId) continue;
-    spendingByPaymentMethod[transaction.paymentMethodId] = (spendingByPaymentMethod[transaction.paymentMethodId] ?? 0) + transaction.amount;
+    if (transaction.status !== 'posted' || (transaction.flowClass !== 'consumption' && transaction.transactionType !== 'refund') || !transaction.paymentMethodId) continue;
+    const signedAmount = transaction.transactionType === 'refund' ? -transaction.amount : transaction.amount;
+    spendingByPaymentMethod[transaction.paymentMethodId] = (spendingByPaymentMethod[transaction.paymentMethodId] ?? 0) + signedAmount;
   }
   return { ...closing, spendingByPaymentMethod };
 }
@@ -59,19 +60,20 @@ export function filterDashboardTransactionsByMember(
 export function buildDashboardMemberSpending(transactions: Transaction[]): Record<string, number> {
   const spending: Record<string, number> = {};
   for (const transaction of transactions) {
-    if (transaction.status !== 'posted' || transaction.flowClass !== 'consumption') continue;
+    if (transaction.status !== 'posted' || (transaction.flowClass !== 'consumption' && transaction.transactionType !== 'refund')) continue;
     const memberId = resolveDashboardMemberId(transaction);
-    spending[memberId] = (spending[memberId] ?? 0) + transaction.amount;
+    const signedAmount = transaction.transactionType === 'refund' ? -transaction.amount : transaction.amount;
+    spending[memberId] = (spending[memberId] ?? 0) + signedAmount;
   }
   return spending;
 }
 
 export function filterDashboardTransactions(transactions: Transaction[], drilldown: string | undefined): Transaction[] {
   if (!drilldown) return [];
-  if (drilldown.startsWith('category:')) return transactions.filter((t) => t.status === 'posted' && t.categoryId === drilldown.slice(9));
-  if (drilldown.startsWith('payment:')) return transactions.filter((t) => t.status === 'posted' && t.paymentMethodId === drilldown.slice(8) && t.flowClass === 'consumption');
+  if (drilldown.startsWith('category:')) return transactions.filter((t) => t.status === 'posted' && (t.flowClass === 'consumption' || t.transactionType === 'refund') && t.categoryId === drilldown.slice(9));
+  if (drilldown.startsWith('payment:')) return transactions.filter((t) => t.status === 'posted' && t.paymentMethodId === drilldown.slice(8) && (t.flowClass === 'consumption' || t.transactionType === 'refund'));
   const predicate: Record<string, (t: Transaction) => boolean> = {
-    income: (t) => t.transactionType === 'income', consumption: (t) => t.flowClass === 'consumption',
+    income: (t) => t.transactionType === 'income', consumption: (t) => t.flowClass === 'consumption' || t.transactionType === 'refund',
     saving: (t) => t.flowClass === 'saving', cash: (t) => !['transfer', 'adjustment'].includes(t.flowClass),
   };
   return transactions.filter((t) => t.status === 'posted' && (predicate[drilldown]?.(t) ?? false));
