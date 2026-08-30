@@ -16,7 +16,12 @@ export function AnnualBudgetEditor({ year, categories, budgets }: { year: number
     { categoryId: null, transactionType: 'saving' as const, label: '저축 목표' },
     ...expenseCategories.map((category) => ({ categoryId: category.id, transactionType: 'expense' as const, label: category.name })),
   ];
-  return <form action={action} className="flex min-w-0 flex-col gap-4">
+  return <form action={action} onSubmit={(event) => {
+    const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+    if (submitter?.value === 'copy-previous' || submitter?.value === 'draft-actuals') {
+      if (budgets.length > 0 && !window.confirm(`현재 ${year}년 예산 ${budgets.length}건이 있습니다. 기존 금액이 덮어써질 수 있습니다. 계속할까요?`)) event.preventDefault();
+    }
+  }} className="flex min-w-0 flex-col gap-4">
     <input type="hidden" name="year" value={year} />
     <FormMessage result={state} />
     <div className="flex flex-wrap gap-2">
