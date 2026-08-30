@@ -5,6 +5,7 @@ import {
   closeAccountAction, closeCardAction, createAccountAction, createCardAction, updateAccountBalanceAction,
 } from '@/actions/account-actions';
 import { FormMessage } from '@/components/FormMessage';
+import { AddDrawer } from '@/components/Drawer';
 import { INITIAL_ACTION_STATE } from '@/lib/action-result';
 import type { Account } from '@/lib/accounts';
 import type { Card } from '@/lib/cards';
@@ -24,7 +25,7 @@ export function AccountCardManager({ accounts, cards, members, paymentMethods }:
   return <div className="flex flex-col gap-8">
     <section className="flex flex-col gap-4">
 <div><h2 className="text-xl font-bold">계좌</h2><p className="mt-1 text-sm text-[var(--tds-grey-700)]">잔액은 실제 통장·카드 앱에서 확인한 금액을 직접 기록해요.</p></div>
-      <form action={createAccountForm} className="tds-card grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-4">
+      <div className="flex justify-end"><AddDrawer title="계좌 추가" description="보유 중인 계좌의 현재 잔액과 명의자를 등록하세요." triggerLabel="계좌 추가"><form action={createAccountForm} className="grid gap-4 md:grid-cols-2">
         <div className="md:col-span-2 xl:col-span-4"><FormMessage result={accountState} /></div>
         <Field label="은행"><input name="bankName" required className="px-3" placeholder="예: 토스뱅크" /></Field>
         <Field label="계좌명"><input name="accountName" required className="px-3" placeholder="월급 계좌" /></Field>
@@ -35,7 +36,7 @@ export function AccountCardManager({ accounts, cards, members, paymentMethods }:
         <MemberSelect members={members} />
         <Field label="비고"><input name="memo" className="px-3" /></Field>
         <button disabled={accountPending} className="tds-primary-button md:col-span-2 xl:col-span-4">{accountPending ? '저장 중...' : '계좌 추가'}</button>
-      </form>
+      </form></AddDrawer></div>
       <div className="grid gap-3">
         {accounts.length === 0 && <Empty text="등록한 계좌가 없어요." />}
         {accounts.map((account) => <AccountRow key={account.id} account={account} />)}
@@ -44,7 +45,7 @@ export function AccountCardManager({ accounts, cards, members, paymentMethods }:
 
     <section className="flex flex-col gap-4">
       <div><h2 className="text-xl font-bold">카드</h2><p className="mt-1 text-sm text-[var(--tds-grey-700)]">연회비와 혜택, 해지 가능일을 함께 관리해요.</p></div>
-      <form action={createCardForm} className="tds-card grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-4">
+      <div className="flex justify-end"><AddDrawer title="카드 추가" description="카드 정보를 등록하면 결제수단과 연결할 수 있어요." triggerLabel="카드 추가"><form action={createCardForm} className="grid gap-4 md:grid-cols-2">
         <div className="md:col-span-2 xl:col-span-4"><FormMessage result={cardState} /></div>
         <Field label="카드사"><input name="issuer" required className="px-3" /></Field>
         <Field label="카드명"><input name="cardName" required className="px-3" /></Field>
@@ -57,7 +58,7 @@ export function AccountCardManager({ accounts, cards, members, paymentMethods }:
         <Field label="실질 혜택"><input name="benefitSummary" className="px-3" placeholder="예: 교통비 10%" /></Field>
         <Field label="비고"><input name="memo" className="px-3" /></Field>
         <button disabled={cardPending} className="tds-primary-button md:col-span-2 xl:col-span-4">{cardPending ? '저장 중...' : '카드 추가'}</button>
-      </form>
+      </form></AddDrawer></div>
       <div className="grid gap-3 md:grid-cols-2">
         {cards.length === 0 && <Empty text="등록한 카드가 없어요." />}
         {cards.map((card) => <CardRow key={card.id} card={card} />)}

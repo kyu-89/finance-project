@@ -10,6 +10,7 @@ import {
   updateCostBehaviorAction,
 } from '@/actions/transaction-actions';
 import { FormMessage } from '@/components/FormMessage';
+import { AddDrawer } from '@/components/Drawer';
 import { INITIAL_ACTION_STATE } from '@/lib/action-result';
 import type { Transaction } from '@/lib/transactions';
 import type { CategoryWithSubcategories } from '@/lib/categories';
@@ -154,7 +155,7 @@ export function MonthlyInputTab({
 
   return (
     <div className="flex flex-col gap-4">
-      <MonthlyRowForm categories={categories} paymentMethods={paymentMethods} />
+      <div className="flex justify-end"><AddDrawer title="지출 입력" description="이번 달 거래를 추가하세요. 저장하면 목록에 바로 반영됩니다." triggerLabel="지출 추가"><MonthlyRowForm categories={categories} paymentMethods={paymentMethods} /></AddDrawer></div>
 
       <div className="table-surface overflow-x-auto">
         <table className="monthly-input-table w-full min-w-[1438px] table-fixed border-collapse text-sm">

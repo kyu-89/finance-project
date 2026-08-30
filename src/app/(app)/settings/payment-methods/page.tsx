@@ -2,6 +2,7 @@ import { ensureHouseholdForCurrentUser, listHouseholdMembers } from '@/lib/house
 import { listPaymentMethods } from '@/lib/payment-methods';
 import { PaymentMethodForm } from './PaymentMethodForm';
 import { DeactivatePaymentMethodButton } from './DeactivatePaymentMethodButton';
+import { AddDrawer } from '@/components/Drawer';
 
 export default async function PaymentMethodsSettingsPage() {
   const household = await ensureHouseholdForCurrentUser();
@@ -11,7 +12,7 @@ export default async function PaymentMethodsSettingsPage() {
     <div className="tds-page flex max-w-3xl flex-col gap-6">
       <div><h1 className="tds-title mb-2">결제수단을 관리해요</h1><p className="text-sm text-[var(--tds-grey-700)]">자주 쓰는 카드와 계좌를 추가할 수 있어요.</p></div>
 
-      <PaymentMethodForm members={members} />
+      <div className="flex justify-end"><AddDrawer title="결제수단 추가" description="카드·계좌·현금 등 자주 쓰는 결제수단을 등록하세요." triggerLabel="결제수단 추가"><PaymentMethodForm members={members} /></AddDrawer></div>
 
       <ul className="list-surface flex flex-col divide-y divide-[var(--tds-grey-200)]">
         {paymentMethods.map((method) => (
