@@ -26,6 +26,7 @@ export function AllTransactionsTab({ initialTransactions, supportDetails, eventD
   const [paymentFilter, setPaymentFilter] = useState('all');
   const [memberFilter, setMemberFilter] = useState('all');
   const [query, setQuery] = useState('');
+  const [tagQuery, setTagQuery] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [minAmount, setMinAmount] = useState('');
@@ -35,10 +36,11 @@ export function AllTransactionsTab({ initialTransactions, supportDetails, eventD
   const filtered = useMemo(
     () => initialTransactions.filter((t) => {
       const text = query.trim().toLowerCase();
+      const tag = tagQuery.trim().toLowerCase();
       const memberMatch = memberFilter === 'all' || (memberFilter === 'unassigned' ? !t.payerMemberId && !t.beneficiaryMemberId : t.payerMemberId === memberFilter || t.beneficiaryMemberId === memberFilter);
-      return (statusFilter === 'all' || t.status === statusFilter) && (typeFilter === 'all' || t.transactionType === typeFilter) && (costFilter === 'all' || t.costBehavior === costFilter) && (categoryFilter === 'all' || t.categoryId === categoryFilter || t.subcategoryId === categoryFilter) && (paymentFilter === 'all' || t.paymentMethodId === paymentFilter) && memberMatch && (!text || `${t.description} ${t.memo ?? ''}`.toLowerCase().includes(text)) && (!fromDate || t.transactionDate >= fromDate) && (!toDate || t.transactionDate <= toDate) && (!minAmount || t.amount >= Number(minAmount)) && (!maxAmount || t.amount <= Number(maxAmount));
+      return (statusFilter === 'all' || t.status === statusFilter) && (typeFilter === 'all' || t.transactionType === typeFilter) && (costFilter === 'all' || t.costBehavior === costFilter) && (categoryFilter === 'all' || t.categoryId === categoryFilter || t.subcategoryId === categoryFilter) && (paymentFilter === 'all' || t.paymentMethodId === paymentFilter) && memberMatch && (!text || `${t.description} ${t.memo ?? ''}`.toLowerCase().includes(text)) && (!tag || (t.tags ?? []).some((value) => value.toLowerCase().includes(tag))) && (!fromDate || t.transactionDate >= fromDate) && (!toDate || t.transactionDate <= toDate) && (!minAmount || t.amount >= Number(minAmount)) && (!maxAmount || t.amount <= Number(maxAmount));
     }),
-    [initialTransactions, statusFilter, typeFilter, costFilter, categoryFilter, paymentFilter, memberFilter, query, fromDate, toDate, minAmount, maxAmount],
+    [initialTransactions, statusFilter, typeFilter, costFilter, categoryFilter, paymentFilter, memberFilter, query, tagQuery, fromDate, toDate, minAmount, maxAmount],
   );
 
   const { consumptionTotal, plannedTotal } = calculateTransactionTotals(filtered);
@@ -47,6 +49,7 @@ export function AllTransactionsTab({ initialTransactions, supportDetails, eventD
     <div className="flex flex-col gap-3">
       <div className="grid gap-2 rounded-2xl bg-[var(--tds-grey-100)] p-3 sm:grid-cols-2 lg:grid-cols-4">
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="내용·메모 검색" className="px-3" />
+        <input value={tagQuery} onChange={(e) => setTagQuery(e.target.value)} placeholder="태그 검색" className="px-3" />
         <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} aria-label="시작일" className="px-3" />
         <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} aria-label="종료일" className="px-3" />
         <div className="grid grid-cols-2 gap-2"><input type="number" min="0" value={minAmount} onChange={(e) => setMinAmount(e.target.value)} placeholder="최소 금액" className="px-3 text-right" /><input type="number" min="0" value={maxAmount} onChange={(e) => setMaxAmount(e.target.value)} placeholder="최대 금액" className="px-3 text-right" /></div>
@@ -85,7 +88,7 @@ export function AllTransactionsTab({ initialTransactions, supportDetails, eventD
               <tr key={transaction.id} className="border-b last:border-b-0">
                 <td className="px-4 py-3">{transaction.transactionDate}</td>
                 <td className="px-4 py-3">{STATUS_LABEL[transaction.status]}</td>
-                <td className="px-4 py-3"><button type="button" onClick={() => setSelected(transaction)} className="text-left font-semibold text-[var(--tds-blue-600)] hover:underline">{transaction.description}</button><p className="text-xs text-[var(--tds-grey-500)]">{categories.flatMap((category) => [category, ...category.subcategories]).find((item) => item.id === (transaction.subcategoryId ?? transaction.categoryId))?.name ?? '미분류'}</p></td>
+                <td className="px-4 py-3"><button type="button" onClick={() => setSelected(transaction)} className="text-left font-semibold text-[var(--tds-blue-600)] hover:underline">{transaction.description}</button><p className="text-xs text-[var(--tds-grey-500)]">{categories.flatMap((category) => [category, ...category.subcategories]).find((item) => item.id === (transaction.subcategoryId ?? transaction.categoryId))?.name ?? '미분류'}</p>{transaction.tags?.length ? <p className="mt-1 text-xs text-[var(--tds-blue-600)]">{transaction.tags.map((tag) => `#${tag}`).join(' ')}</p> : null}</td>
                 <td className="px-4 py-3">{TYPE_LABEL[transaction.transactionType]}</td>
                 <td className="px-4 py-3 text-right font-semibold tabular-nums">{transaction.amount.toLocaleString('ko-KR')}원</td>
               </tr>
