@@ -16,6 +16,7 @@ export type ClosingTransaction = {
   status: 'planned' | 'posted' | 'skipped' | 'cancelled';
   includeInBudget: boolean;
   categoryId: string | null;
+  parentCategoryId?: string | null;
 };
 
 export type MonthlyBudget = { transactionType: 'income' | 'expense' | 'saving'; categoryId: string | null; amount: number };
@@ -41,8 +42,9 @@ export function calculateMonthlyClosing(transactions: ClosingTransaction[], budg
     if (transaction.flowClass === 'finance_cost') financeCost += transaction.amount;
     if (transaction.transactionType === 'refund') {
       consumption -= transaction.amount;
-      if (transaction.includeInBudget && transaction.categoryId) {
-        spentByCategory[transaction.categoryId] = (spentByCategory[transaction.categoryId] ?? 0) - transaction.amount;
+      const categoryId = transaction.categoryId ?? transaction.parentCategoryId;
+      if (transaction.includeInBudget && categoryId) {
+        spentByCategory[categoryId] = (spentByCategory[categoryId] ?? 0) - transaction.amount;
       }
     }
     if (transaction.flowClass === 'consumption') {

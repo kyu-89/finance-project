@@ -45,7 +45,7 @@ export const FLOW_CLASS_BY_TRANSACTION_TYPE: Record<TransactionType, string> = {
 function mapRow(row: {
   id: string; household_id: string; transaction_date: string; transaction_type: string;
   flow_class: string; cost_behavior: string | null; payment_method_id: string | null;
-  category_id: string | null; subcategory_id: string | null; account_id: string | null; income_group: string | null; payer_member_id: string | null;
+  category_id: string | null; subcategory_id: string | null; account_id: string | null; income_group: string | null; parent_transaction_id: string | null; payer_member_id: string | null;
   beneficiary_member_id: string | null; amount: number; description: string; memo: string | null; tags: string[] | null;
   include_in_budget: boolean; needs_review: boolean; recurring_rule_id: string | null;
   recurring_occurrence_id: string | null; status: string;
@@ -60,6 +60,7 @@ function mapRow(row: {
     paymentMethodId: row.payment_method_id,
     accountId: row.account_id,
     incomeGroup: row.income_group as 'fixed' | 'additional' | null,
+    parentTransactionId: row.parent_transaction_id,
     categoryId: row.category_id,
     subcategoryId: row.subcategory_id,
     payerMemberId: row.payer_member_id,
@@ -80,7 +81,7 @@ function mapRow(row: {
 // this as a literal string type, not a widened `string` — Supabase's `.select()` overloads
 // parse the select-string type at compile time to produce the typed row shape, and a widened
 // `string` makes that parse fail with a generic, untyped `GenericStringError` result.
-const TRANSACTION_COLUMNS = `id, household_id, transaction_date, transaction_type, flow_class, cost_behavior, payment_method_id, account_id, income_group, category_id, subcategory_id, payer_member_id, beneficiary_member_id, amount, description, memo, tags, include_in_budget, needs_review, recurring_rule_id, recurring_occurrence_id, status`;
+const TRANSACTION_COLUMNS = `id, household_id, transaction_date, transaction_type, flow_class, cost_behavior, payment_method_id, account_id, income_group, parent_transaction_id, category_id, subcategory_id, payer_member_id, beneficiary_member_id, amount, description, memo, tags, include_in_budget, needs_review, recurring_rule_id, recurring_occurrence_id, status`;
 
 export async function createTransaction(input: {
   householdId: string;

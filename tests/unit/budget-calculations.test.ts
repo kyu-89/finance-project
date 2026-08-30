@@ -41,6 +41,15 @@ describe('calculateMonthlyClosing', () => {
     expect(result.consumptionRate).toBeNull();
     expect(result.budgetUsageRate).toBeNull();
   });
+  it('subtracts linked refunds from consumption and the original budget category', () => {
+    const result = calculateMonthlyClosing([
+      { amount: 500000, transactionType: 'expense', flowClass: 'consumption', status: 'posted', includeInBudget: true, categoryId: 'food' },
+      { amount: 120000, transactionType: 'refund', flowClass: 'cash_in', status: 'posted', includeInBudget: true, categoryId: null, parentCategoryId: 'food' },
+    ], []);
+    expect(result.consumption).toBe(380000);
+    expect(result.spentByCategory.food).toBe(380000);
+    expect(result.budgetedConsumption).toBe(380000);
+  });
 });
 
 describe('calculateMonthlyClosing — 대출·투자·금융비용 (PRD §1.4, §36)', () => {
