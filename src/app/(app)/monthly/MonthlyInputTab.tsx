@@ -36,7 +36,7 @@ function CostBehaviorEditor({ transaction }: { transaction: Transaction }) {
   );
 
   return (
-    <form action={formAction} className="flex min-w-[145px] flex-col gap-1">
+    <form action={formAction} className="flex min-w-[220px] flex-col gap-1">
       <input type="hidden" name="id" value={transaction.id} />
       <div className="flex gap-1">
         <select
@@ -52,7 +52,7 @@ function CostBehaviorEditor({ transaction }: { transaction: Transaction }) {
         <button
           type="submit"
           disabled={pending}
-          className="secondary-button w-20 shrink-0 whitespace-nowrap px-2 text-xs"
+          className="secondary-button w-[76px] shrink-0 whitespace-nowrap px-2 text-xs"
         >
           {pending ? '저장 중…' : '변경'}
         </button>
@@ -77,8 +77,8 @@ function PlannedTransactionEditor({ transaction, paymentMethods, candidates }: {
   const [linkState, linkAction, linkPending] = useActionState(linkRecurringOccurrenceAction, INITIAL_ACTION_STATE);
   if (transaction.status !== 'planned') return <span className="text-xs text-[var(--tds-grey-500)]">처리 완료</span>;
 
-  return <div className="flex min-w-[250px] flex-col gap-1">
-    <form action={confirmAction} className="flex items-center gap-1">
+  return <div className="flex min-w-0 flex-col gap-1">
+    <form action={confirmAction} className="flex items-center gap-1 whitespace-nowrap">
       <input type="hidden" name="id" value={transaction.id} />
       <input type="date" name="transactionDate" defaultValue={transaction.transactionDate} required className="w-32 shrink-0 px-2 py-1 text-xs" />
       <input type="number" name="amount" defaultValue={transaction.amount} min="1" step="1" required className="w-24 shrink-0 px-2 py-1 text-xs" />
@@ -127,10 +127,10 @@ function makeColumns(paymentMethods: PaymentMethod[], duplicateCandidates: Recor
 const COLUMN_WIDTHS: Record<string, string> = {
   transactionDate: '104px',
   status: '84px',
-  description: 'minmax(160px, 1fr)',
+  description: 'minmax(240px, 1fr)',
   amount: '116px',
-  costBehavior: '210px',
-  plannedAction: '440px',
+  costBehavior: '240px',
+  plannedAction: '360px',
 };
 
 function columnAlignment(columnId: string, header = false) {
@@ -158,7 +158,7 @@ export function MonthlyInputTab({
       <div className="flex justify-end"><AddDrawer title="지출 입력" description="이번 달 거래를 추가하세요. 저장하면 목록에 바로 반영됩니다." triggerLabel="지출 추가"><MonthlyRowForm categories={categories} paymentMethods={paymentMethods} /></AddDrawer></div>
 
       <div className="table-surface overflow-x-auto">
-        <table className="monthly-input-table w-full min-w-[1080px] table-fixed border-collapse text-sm">
+        <table className="monthly-input-table w-full min-w-[1040px] table-fixed border-collapse text-sm">
           <colgroup>
             {table.getAllLeafColumns().map((column) => (
               <col key={column.id} style={{ width: COLUMN_WIDTHS[column.id] ?? '160px' }} />

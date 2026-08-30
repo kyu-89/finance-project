@@ -367,10 +367,14 @@ input:active {
 }
 .monthly-input-table td:first-child,
 .monthly-input-table th:first-child { white-space: nowrap; }
-.monthly-input-table td:nth-child(3) { padding-right: 10px; }
-.monthly-input-table td:nth-child(4) { padding-left: 10px; }
-.monthly-input-table td:last-child { padding-left: 10px; padding-right: 10px; }
-.monthly-input-table .min-w-\[250px\] { min-width: 0; }
+.monthly-input-table td:nth-child(3) { padding-right: 8px; }
+.monthly-input-table td:nth-child(4) { padding-left: 8px; }
+.monthly-input-table td:nth-child(5) { padding-inline: 12px; }
+.monthly-input-table td:last-child { padding-left: 8px; padding-right: 8px; }
+.monthly-input-table td:last-child > div { width: 100%; }
+.monthly-input-table td:last-child form { max-width: 100%; }
+.monthly-input-table td:last-child form:first-child { overflow-x: auto; scrollbar-width: none; }
+.monthly-input-table td:last-child form:first-child::-webkit-scrollbar { display: none; }
 
 .annual-budget-scroll {
   overflow-x: auto !important;
@@ -579,6 +583,12 @@ button:disabled { cursor: wait; transform: none !important; }
     overscroll-behavior-x: contain;
     -webkit-overflow-scrolling: touch;
   }
+
+  .monthly-input-table { min-width: 1040px; }
+  .monthly-input-table th, .monthly-input-table td { padding-block: 10px; }
+  .monthly-input-table td:nth-child(3) { padding-right: 6px; }
+  .monthly-input-table td:nth-child(4) { padding-left: 6px; }
+  .monthly-input-table td:nth-child(5), .monthly-input-table td:last-child { padding-inline: 6px; }
 
   .home-page { gap: 20px; padding-inline: 16px; }
   .home-header { align-items: flex-start; }
