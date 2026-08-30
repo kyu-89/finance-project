@@ -157,7 +157,7 @@ export function MonthlyInputTab({
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className={`px-4 py-3.5 align-middle ${columnAlignment(header.column.id, true)} whitespace-nowrap`}
+                    className={`px-3 py-3 align-middle ${columnAlignment(header.column.id, true)} whitespace-nowrap`}
                   >
                     {header.isPlaceholder ? null : <table.FlexRender header={header} />}
                   </th>
