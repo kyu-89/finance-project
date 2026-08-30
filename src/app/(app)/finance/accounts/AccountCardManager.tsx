@@ -23,7 +23,7 @@ export function AccountCardManager({ accounts, cards, members, paymentMethods }:
 
   return <div className="flex flex-col gap-8">
     <section className="flex flex-col gap-4">
-      <div><h2 className="text-xl font-bold">계좌</h2><p className="mt-1 text-sm text-[var(--tds-grey-700)]">잔액은 원장과 분리해 수동 스냅샷으로 관리해요.</p></div>
+<div><h2 className="text-xl font-bold">계좌</h2><p className="mt-1 text-sm text-[var(--tds-grey-700)]">잔액은 실제 통장·카드 앱에서 확인한 금액을 직접 기록해요.</p></div>
       <form action={createAccountForm} className="tds-card grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-4">
         <div className="md:col-span-2 xl:col-span-4"><FormMessage result={accountState} /></div>
         <Field label="은행"><input name="bankName" required className="px-3" placeholder="예: 토스뱅크" /></Field>

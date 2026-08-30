@@ -32,6 +32,9 @@ function dates(formData: FormData): { joinedAt: string; maturityDate: string } |
 function refresh(): void {
   revalidatePath('/finance');
   revalidatePath('/finance/savings');
+  revalidatePath('/monthly');
+  revalidatePath('/monthly/month-end');
+  revalidatePath('/dashboard');
 }
 
 export async function createDepositAction(_previous: ActionResult, formData: FormData): Promise<ActionResult> {

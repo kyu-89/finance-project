@@ -1,0 +1,36 @@
+import { describe, expect, it } from 'vitest';
+import { detectMapping, findHeaderRow, mapImportRows, normalizeImportAmount, normalizeImportDate } from '@/lib/transaction-import';
+
+describe('transaction import normalization', () => {
+  it('detects common Korean card headers with variations', () => {
+    expect(detectMapping(['승인 일시', '이용금액(원)', '가맹점명', '취소구분'])).toMatchObject({ date: '승인 일시', amount: '이용금액(원)', description: '가맹점명', status: '취소구분' });
+  });
+
+  it('finds a header below issuer title rows', () => {
+    const found = findHeaderRow([['신한카드 이용내역'], ['조회기간', '2026'], ['이용일', '가맹점', '이용금액']]);
+    expect(found?.rowIndex).toBe(2);
+  });
+
+  it('normalizes Excel serial and Korean date strings without local timezone drift', () => {
+    expect(normalizeImportDate(46000)).toBe('2025-12-09');
+    expect(normalizeImportDate('2026. 8. 29.')).toBe('2026-08-29');
+    expect(normalizeImportDate('20260829')).toBe('2026-08-29');
+    expect(normalizeImportDate('2026-02-30')).toBeNull();
+  });
+
+  it('parses currency signs, commas, and negative refunds', () => {
+    expect(normalizeImportAmount('₩-12,345')).toEqual({ amount: 12345, negative: true });
+    expect(normalizeImportAmount('(8,000원)')).toEqual({ amount: 8000, negative: true });
+    expect(normalizeImportAmount('8,000-')).toEqual({ amount: 8000, negative: true });
+  });
+
+  it('maps rows and marks cancellation as refund while preserving row errors', () => {
+    const rows = mapImportRows([
+      ['이용일', '가맹점', '승인금액', '승인상태'],
+      ['2026-08-29', '카페', '12,000', '정상'],
+      ['2026-08-30', '', '-3,000', '승인취소'],
+    ], ['이용일', '가맹점', '승인금액', '승인상태'], { date: '이용일', amount: '승인금액', description: '가맹점', status: '승인상태' });
+    expect(rows[0]).toMatchObject({ transactionDate: '2026-08-29', amount: 12000, transactionType: 'expense', errors: [] });
+    expect(rows[1]).toMatchObject({ amount: 3000, transactionType: 'refund', errors: ['가맹점/내용이 비어 있어요.'] });
+  });
+});

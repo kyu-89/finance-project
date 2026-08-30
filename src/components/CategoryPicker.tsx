@@ -40,8 +40,10 @@ export function CategoryPicker({
     : [];
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap gap-2">
+    <div className="flex flex-col gap-3">
+      <div>
+        <p className="mb-2 text-xs font-semibold text-[var(--tds-grey-500)]">1. 대분류를 선택하세요</p>
+        <div className="flex flex-wrap gap-2">
         {orderedCategories.map((category) => (
           <button
             key={category.id}
@@ -58,9 +60,12 @@ export function CategoryPicker({
             {category.name}
           </button>
         ))}
+        </div>
       </div>
       {selectedCategory && orderedSubcategories.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <div className="rounded-2xl border border-[var(--tds-blue-100)] bg-[var(--tds-blue-50)] p-3">
+          <p className="mb-2 text-xs font-semibold text-[var(--tds-blue-600)]">2. {selectedCategory.name} 안에서 소분류를 선택하세요 <span className="font-normal">(선택사항)</span></p>
+          <div className="flex flex-wrap gap-2">
           {orderedSubcategories.map((sub) => (
             <button
               key={sub.id}
@@ -72,11 +77,12 @@ export function CategoryPicker({
               // Without a selected state these buttons registered the click but showed no
               // change at all, so the pick read as "not working" to the user.
               data-selected={selectedSubcategoryId === sub.id}
-              className="tds-chip px-4"
+              className="tds-chip min-h-10 px-3"
             >
               {sub.name}
             </button>
           ))}
+          </div>
         </div>
       )}
     </div>

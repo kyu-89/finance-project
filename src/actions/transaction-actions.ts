@@ -122,7 +122,7 @@ export async function createMonthlyRowAction(
   }
 
   revalidatePath('/monthly');
-  return ok();
+  return ok('지출 내역을 추가했어요.');
 }
 
 export async function undoTransactionAction(
@@ -142,6 +142,15 @@ export async function undoTransactionAction(
   }
 
   redirect('/quick-add?undone=1');
+}
+
+export async function deleteTransactionAction(_prevState: ActionResult, formData: FormData): Promise<ActionResult> {
+  const id = String(formData.get('id') ?? '');
+  if (!id) return fail('삭제할 거래 id가 없습니다.');
+  try { await getCurrentHouseholdId(); await undoTransaction(id); }
+  catch (error) { return fail(error instanceof Error ? error.message : '거래 삭제에 실패했어요.'); }
+  revalidatePath('/monthly'); revalidatePath('/dashboard');
+  return ok('거래를 삭제했어요.');
 }
 
 export async function updateCostBehaviorAction(

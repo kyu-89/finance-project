@@ -1,11 +1,18 @@
 import Link from 'next/link';
 import { SignOutButton } from '@/components/SignOutButton';
+import { ensureHouseholdForCurrentUser, listHouseholdMembers } from '@/lib/household';
+import { listFinancialGoals, listFinancialTasks } from '@/lib/excel-extended-data';
+import { todayInSeoul } from '@/lib/date';
+import { HouseholdPlanning } from './HouseholdPlanning';
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const household = await ensureHouseholdForCurrentUser();
+  const [members, goals, tasks] = await Promise.all([listHouseholdMembers(household.id), listFinancialGoals(household.id), listFinancialTasks(household.id, todayInSeoul(), `${todayInSeoul().slice(0, 7)}-31`)]);
   return (
-    <div className="tds-page max-w-3xl">
+    <div className="tds-page">
       <h1 className="tds-title mb-2">설정을 관리해요</h1>
-      <p className="mb-6 text-sm text-[var(--tds-grey-700)]">분류와 결제수단을 우리 집에 맞게 바꿀 수 있어요.</p>
+      <p className="mb-6 text-sm text-[var(--tds-grey-700)]">우리 집의 분류·결제 기준과 데이터를 관리해요. 예산과 반복항목은 월간관리에서 조정해요.</p>
+      <HouseholdPlanning members={members} goals={goals} tasks={tasks} />
       <nav className="list-surface flex flex-col divide-y divide-[var(--tds-grey-200)]">
         <Link href="/settings/categories" className="flex min-h-16 items-center justify-between px-5 text-[15px] font-semibold">
           <span>카테고리 관리</span><span className="text-[var(--tds-grey-400)]">›</span>
@@ -13,11 +20,8 @@ export default function SettingsPage() {
         <Link href="/settings/payment-methods" className="flex min-h-16 items-center justify-between px-5 text-[15px] font-semibold">
           <span>결제수단 관리</span><span className="text-[var(--tds-grey-400)]">›</span>
         </Link>
-        <Link href="/settings/recurring" className="flex min-h-16 items-center justify-between px-5 text-[15px] font-semibold">
-          <span>반복항목 관리</span><span className="text-[var(--tds-grey-400)]">›</span>
-        </Link>
-        <Link href="/settings/budgets" className="flex min-h-16 items-center justify-between px-5 text-[15px] font-semibold">
-          <span>연간 예산 관리</span><span className="text-[var(--tds-grey-400)]">›</span>
+        <Link href="/settings/data" className="flex min-h-16 items-center justify-between px-5 text-[15px] font-semibold">
+          <span>거래 내역 가져오기</span><span className="text-[var(--tds-grey-400)]">›</span>
         </Link>
       </nav>
       <div className="mt-8">

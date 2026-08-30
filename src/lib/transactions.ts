@@ -131,6 +131,70 @@ export async function createTransaction(input: {
   return mapRow(data);
 }
 
+export type ImportedTransactionInput = {
+  transactionDate: string;
+  transactionType: 'expense' | 'refund';
+  amount: number;
+  description: string;
+  categoryId?: string | null;
+  paymentMethodId: string;
+  memo?: string | null;
+  needsReview?: boolean;
+};
+
+export type ImportTransactionsResult = { insertedCount: number; duplicateCount: number };
+
+function importDuplicateKey(row: { transactionDate: string; amount: number; description: string; paymentMethodId: string | null }): string {
+  return `${row.transactionDate}|${row.amount}|${row.description.trim().toLocaleLowerCase()}|${row.paymentMethodId ?? ''}`;
+}
+
+// Imports are intentionally a single transaction-like insert from the authenticated user's
+// Supabase client. Exact duplicates in the same household/card/date/amount/description are
+// skipped, both against existing rows and within the uploaded file, so retrying an import is safe.
+export async function importTransactions(input: { householdId: string; rows: ImportedTransactionInput[] }): Promise<ImportTransactionsResult> {
+  if (input.rows.length === 0) return { insertedCount: 0, duplicateCount: 0 };
+  for (const row of input.rows) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(row.transactionDate) || !Number.isSafeInteger(row.amount) || row.amount <= 0 || !row.description.trim() || !row.paymentMethodId) {
+      throw new Error('가져올 거래에 날짜·금액·내용·결제수단이 모두 필요해요.');
+    }
+  }
+  const dates = input.rows.map((row) => row.transactionDate).sort();
+  const supabase = await createClient();
+  const { data: existing, error: existingError } = await supabase.from('transactions')
+    .select('transaction_date, amount, description, payment_method_id')
+    .eq('household_id', input.householdId).is('deleted_at', null)
+    .gte('transaction_date', dates[0]).lte('transaction_date', dates[dates.length - 1]);
+  if (existingError) throw new Error(`기존 거래 확인 실패: ${existingError.message}`);
+  const keys = new Set((existing ?? []).map((row) => importDuplicateKey({ transactionDate: row.transaction_date, amount: row.amount, description: row.description, paymentMethodId: row.payment_method_id })));
+  const rowsToInsert: Record<string, unknown>[] = [];
+  let duplicateCount = 0;
+  for (const row of input.rows) {
+    const key = importDuplicateKey({ transactionDate: row.transactionDate, amount: row.amount, description: row.description, paymentMethodId: row.paymentMethodId });
+    if (keys.has(key)) { duplicateCount += 1; continue; }
+    keys.add(key);
+    const costBehavior = row.transactionType === 'expense' ? 'variable' : null;
+    rowsToInsert.push({
+      household_id: input.householdId,
+      transaction_date: row.transactionDate,
+      transaction_type: row.transactionType,
+      flow_class: FLOW_CLASS_BY_TRANSACTION_TYPE[row.transactionType],
+      cost_behavior: costBehavior,
+      payment_method_id: row.paymentMethodId,
+      category_id: row.categoryId ?? null,
+      amount: row.amount,
+      description: row.description.trim(),
+      memo: row.memo ?? null,
+      include_in_budget: row.transactionType === 'expense',
+      needs_review: row.needsReview ?? false,
+      status: 'posted',
+    });
+  }
+  if (rowsToInsert.length === 0) return { insertedCount: 0, duplicateCount };
+  const { error: insertError } = await supabase.from('transactions').insert(rowsToInsert);
+  if (insertError) throw new Error(`거래 가져오기 실패: ${insertError.message}`);
+  return { insertedCount: rowsToInsert.length, duplicateCount };
+}
+
 export async function listTransactions(filter: {
   householdId: string;
   fromDate?: string;
@@ -232,6 +296,12 @@ export async function updateTransactionCostBehavior(
   if (error) {
     throw new Error(`비용성격 수정 실패: ${error.message}`);
   }
+}
+
+export async function updateTransactionBasics(input: { id: string; transactionDate: string; amount: number; description: string; memo: string | null }): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase.from('transactions').update({ transaction_date: input.transactionDate, amount: input.amount, description: input.description, memo: input.memo }).eq('id', input.id).is('deleted_at', null).select('id').single();
+  if (error) throw new Error(`거래 수정 실패: ${error.message}`);
 }
 
 export async function confirmPlannedTransaction(input: {

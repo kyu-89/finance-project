@@ -39,6 +39,33 @@ export function buildDashboardPeriod(transactions: Transaction[], budgets: Month
   return { ...closing, spendingByPaymentMethod };
 }
 
+export const UNASSIGNED_DASHBOARD_MEMBER = 'unassigned';
+
+// A transaction has two member relations with different meanings. For a household view,
+// "who this money was for" is the more useful primary axis; the payer is the fallback when
+// no beneficiary was recorded. Resolving to exactly one member keeps member totals additive
+// even when payer and beneficiary are different people.
+export function resolveDashboardMemberId(transaction: Transaction): string {
+  return transaction.beneficiaryMemberId ?? transaction.payerMemberId ?? UNASSIGNED_DASHBOARD_MEMBER;
+}
+
+export function filterDashboardTransactionsByMember(
+  transactions: Transaction[],
+  memberId: string | undefined,
+): Transaction[] {
+  return memberId ? transactions.filter((transaction) => resolveDashboardMemberId(transaction) === memberId) : transactions;
+}
+
+export function buildDashboardMemberSpending(transactions: Transaction[]): Record<string, number> {
+  const spending: Record<string, number> = {};
+  for (const transaction of transactions) {
+    if (transaction.status !== 'posted' || transaction.flowClass !== 'consumption') continue;
+    const memberId = resolveDashboardMemberId(transaction);
+    spending[memberId] = (spending[memberId] ?? 0) + transaction.amount;
+  }
+  return spending;
+}
+
 export function filterDashboardTransactions(transactions: Transaction[], drilldown: string | undefined): Transaction[] {
   if (!drilldown) return [];
   if (drilldown.startsWith('category:')) return transactions.filter((t) => t.status === 'posted' && t.categoryId === drilldown.slice(9));

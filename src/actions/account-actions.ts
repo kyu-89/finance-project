@@ -18,6 +18,9 @@ function validWon(value: number, allowNegative = false): boolean {
 function refreshFinance(): void {
   revalidatePath('/finance');
   revalidatePath('/finance/accounts');
+  revalidatePath('/monthly');
+  revalidatePath('/monthly/month-end');
+  revalidatePath('/dashboard');
 }
 
 export async function createAccountAction(_previous: ActionResult, formData: FormData): Promise<ActionResult> {

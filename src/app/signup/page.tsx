@@ -38,7 +38,7 @@ export default function SignupPage() {
   return (
     <main className="auth-shell">
       <section className="auth-card">
-      <div><p className="mb-2 text-sm font-semibold text-[var(--tds-blue-500)]">우리집 가계부</p><h1 className="tds-title">가계부를 시작해요</h1></div>
+      <div><p className="mb-2 text-sm font-semibold text-[var(--tds-blue-500)]">우리집 재무</p><h1 className="tds-title">우리 집 재무를 시작해요</h1><p className="mt-2 text-sm text-[var(--tds-grey-700)]">수입·지출부터 자산 변화까지 한 흐름으로 관리해요.</p></div>
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <input
           type="email"

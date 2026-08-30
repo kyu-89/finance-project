@@ -23,7 +23,7 @@ export async function budgetEditorAction(_previous: ActionResult, formData: Form
         const [, transactionType, categoryToken, monthText] = key.split(':');
         const categoryId = categoryToken === '_total' ? null : categoryToken;
         const month = Number(monthText);
-        const amount = Number(rawValue || 0);
+          const amount = Number(String(rawValue || 0).replace(/,/g, ''));
         if (!['income', 'expense', 'saving'].includes(transactionType) || (transactionType === 'expense' && !categoryId) || !Number.isInteger(month) || month < 1 || month > 12 || !Number.isSafeInteger(amount) || amount < 0) {
           return fail('예산은 0 이상의 원 단위 정수로 입력해 주세요.');
         }

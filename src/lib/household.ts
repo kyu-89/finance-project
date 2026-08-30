@@ -9,21 +9,36 @@ export type Household = {
   id: string;
   ownerUserId: string;
   name: string;
+  initializedAt: string | null;
 };
 
 export type HouseholdMember = {
   id: string;
   displayName: string;
+  memberType: 'self' | 'spouse' | 'child' | 'other';
+  isActive: boolean;
 };
 
 export async function listHouseholdMembers(householdId: string): Promise<HouseholdMember[]> {
   const supabase = await createClient();
   const { data, error } = await supabase.from('household_members')
-    .select('id, display_name')
+    .select('id, display_name, member_type, is_active')
     .eq('household_id', householdId)
     .order('created_at');
   if (error) throw new Error(`구성원 조회 실패: ${error.message}`);
-  return (data ?? []).map((row) => ({ id: row.id, displayName: row.display_name }));
+  return (data ?? []).map((row) => ({ id: row.id, displayName: row.display_name, memberType: row.member_type as HouseholdMember['memberType'], isActive: row.is_active }));
+}
+
+export async function createHouseholdMember(input: { householdId: string; displayName: string; memberType: HouseholdMember['memberType'] }): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase.from('household_members').insert({ household_id: input.householdId, display_name: input.displayName, member_type: input.memberType });
+  if (error) throw new Error(`구성원 추가 실패: ${error.message}`);
+}
+
+export async function updateHouseholdMember(input: { id: string; displayName: string; memberType: HouseholdMember['memberType']; isActive: boolean }): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase.from('household_members').update({ display_name: input.displayName, member_type: input.memberType, is_active: input.isActive }).eq('id', input.id).select('id').single();
+  if (error) throw new Error(`구성원 수정 실패: ${error.message}`);
 }
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
@@ -57,7 +72,7 @@ export const ensureHouseholdForCurrentUser = cache(async (): Promise<Household> 
     const { data: inserted, error: insertError } = await supabase
       .from('households')
       .insert({ owner_user_id: user.id, name: '우리집' })
-      .select('id, owner_user_id, name')
+      .select('id, owner_user_id, name, initialized_at')
       .single();
 
     if (insertError) {
@@ -74,18 +89,22 @@ export const ensureHouseholdForCurrentUser = cache(async (): Promise<Household> 
         throw new Error(`가구 생성 실패: ${insertError.message}`);
       }
     } else {
-      household = { id: inserted.id, ownerUserId: inserted.owner_user_id, name: inserted.name };
+      household = { id: inserted.id, ownerUserId: inserted.owner_user_id, name: inserted.name, initializedAt: inserted.initialized_at };
     }
   }
 
   // These three are independent of each other and, on an already-bootstrapped household,
   // are all no-op existence checks. Awaiting them in sequence made every single request pay
   // three serial Supabase round trips for nothing; running them together pays one.
-  await Promise.all([
-    ensureSelfMember(supabase, household.id),
-    ensureDefaultCategoriesSeeded(household.id),
-    ensureDefaultPaymentMethodsSeeded(household.id),
-  ]);
+  if (!household.initializedAt) {
+    await Promise.all([
+      ensureSelfMember(supabase, household.id),
+      ensureDefaultCategoriesSeeded(household.id),
+      ensureDefaultPaymentMethodsSeeded(household.id),
+    ]);
+    const { error: initializedError } = await supabase.from('households').update({ initialized_at: new Date().toISOString() }).eq('id', household.id);
+    if (initializedError) throw new Error(`가구 초기화 완료 처리 실패: ${initializedError.message}`);
+  }
 
   return household;
 });
@@ -122,7 +141,7 @@ async function selectHousehold(
 ): Promise<Household | null> {
   const { data, error } = await supabase
     .from('households')
-    .select('id, owner_user_id, name')
+    .select('id, owner_user_id, name, initialized_at')
     .eq('owner_user_id', userId)
     .maybeSingle();
 
@@ -130,7 +149,7 @@ async function selectHousehold(
     throw new Error(`가구 조회 실패: ${error.message}`);
   }
 
-  return data ? { id: data.id, ownerUserId: data.owner_user_id, name: data.name } : null;
+  return data ? { id: data.id, ownerUserId: data.owner_user_id, name: data.name, initializedAt: data.initialized_at } : null;
 }
 
 async function ensureSelfMember(supabase: SupabaseServerClient, householdId: string): Promise<void> {

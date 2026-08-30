@@ -35,7 +35,7 @@ function CostBehaviorEditor({ transaction }: { transaction: Transaction }) {
   );
 
   return (
-    <form action={formAction} className="flex min-w-[190px] flex-col gap-1">
+    <form action={formAction} className="flex min-w-[145px] flex-col gap-1">
       <input type="hidden" name="id" value={transaction.id} />
       <div className="flex gap-1">
         <select
@@ -51,9 +51,9 @@ function CostBehaviorEditor({ transaction }: { transaction: Transaction }) {
         <button
           type="submit"
           disabled={pending}
-          className="secondary-button px-3 text-xs"
+          className="secondary-button w-20 shrink-0 whitespace-nowrap px-2 text-xs"
         >
-          {pending ? '저장 중' : '변경'}
+          {pending ? '저장 중…' : '변경'}
         </button>
       </div>
       {state.ok === false && (
@@ -76,7 +76,7 @@ function PlannedTransactionEditor({ transaction, paymentMethods, candidates }: {
   const [linkState, linkAction, linkPending] = useActionState(linkRecurringOccurrenceAction, INITIAL_ACTION_STATE);
   if (transaction.status !== 'planned') return <span className="text-xs text-[var(--tds-grey-500)]">처리 완료</span>;
 
-  return <div className="flex min-w-[420px] flex-col gap-1">
+  return <div className="flex min-w-[280px] flex-col gap-1">
     <form action={confirmAction} className="flex items-center gap-1">
       <input type="hidden" name="id" value={transaction.id} />
       <input type="date" name="transactionDate" defaultValue={transaction.transactionDate} required className="w-36 px-2 py-1 text-xs" />
@@ -106,14 +106,14 @@ function makeColumns(paymentMethods: PaymentMethod[], duplicateCandidates: Recor
   return columnHelper.columns([
   columnHelper.accessor('transactionDate', { header: '날짜' }),
   columnHelper.accessor('status', { header: '상태', cell: (info) => <span className="tds-chip">{STATUS_LABEL[info.getValue()]}</span> }),
-  columnHelper.accessor('costBehavior', {
-    header: '비용성격',
-    cell: (info) => <CostBehaviorEditor transaction={info.row.original} />,
-  }),
   columnHelper.accessor('description', { header: '내용' }),
   columnHelper.accessor('amount', {
     header: '금액',
     cell: (info) => `${info.getValue().toLocaleString('ko-KR')}원`,
+  }),
+  columnHelper.accessor('costBehavior', {
+    header: '비용성격',
+    cell: (info) => <CostBehaviorEditor transaction={info.row.original} />,
   }),
   columnHelper.display({
     id: 'plannedAction',
@@ -121,6 +121,21 @@ function makeColumns(paymentMethods: PaymentMethod[], duplicateCandidates: Recor
     cell: (info) => <PlannedTransactionEditor transaction={info.row.original} paymentMethods={paymentMethods} candidates={duplicateCandidates[info.row.original.id] ?? []} />,
   }),
   ]);
+}
+
+const COLUMN_WIDTHS: Record<string, string> = {
+  transactionDate: '112px',
+  status: '96px',
+  description: '240px',
+  amount: '140px',
+  costBehavior: '230px',
+  plannedAction: '620px',
+};
+
+function columnAlignment(columnId: string, header = false) {
+  if (columnId === 'amount') return 'text-right';
+  if (columnId === 'transactionDate' || columnId === 'status') return 'text-center';
+  return header ? 'text-left' : 'text-left';
 }
 
 export function MonthlyInputTab({
@@ -137,89 +152,24 @@ export function MonthlyInputTab({
   const columns = useMemo(() => makeColumns(paymentMethods, duplicateCandidates), [paymentMethods, duplicateCandidates]);
   const table = useTable({ features, columns, data: initialTransactions });
 
-  const [categoryId, setCategoryId] = useState('');
-  const selectedCategory = categories.find((c) => c.id === categoryId);
-  const [state, formAction, pending] = useActionState(createMonthlyRowAction, INITIAL_ACTION_STATE);
-
   return (
     <div className="flex flex-col gap-4">
-      <form
-        action={formAction}
-        className="tds-card grid grid-cols-2 gap-3 p-5 md:grid-cols-7"
-      >
-        <div className="col-span-2 md:col-span-7">
-          <FormMessage result={state} />
-        </div>
-        <input type="hidden" name="transactionType" value="expense" />
-        <input
-          type="hidden"
-          name="categoryDefaultCostBehavior"
-          value={selectedCategory?.defaultCostBehavior ?? ''}
-        />
-        <input type="date" name="transactionDate" required className="rounded border px-2 py-1 text-sm" />
-        <select
-          name="categoryId"
-          required
-          value={categoryId}
-          onChange={(e) => setCategoryId(e.target.value)}
-          className="rounded border px-2 py-1 text-sm"
-        >
-          <option value="">대분류</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-        <select name="subcategoryId" className="rounded border px-2 py-1 text-sm">
-          <option value="">소분류</option>
-          {selectedCategory?.subcategories.map((sub) => (
-            <option key={sub.id} value={sub.id}>
-              {sub.name}
-            </option>
-          ))}
-        </select>
-        <select name="paymentMethodId" className="rounded border px-2 py-1 text-sm">
-          <option value="">결제수단</option>
-          {paymentMethods.map((method) => (
-            <option key={method.id} value={method.id}>
-              {method.name}
-            </option>
-          ))}
-        </select>
-        <select name="costBehaviorOverride" className="rounded border px-2 py-1 text-sm">
-          <option value="">기본 비용성격</option>
-          <option value="fixed">고정비</option>
-          <option value="variable">변동비</option>
-        </select>
-        <input name="description" placeholder="내용" required className="rounded border px-2 py-1 text-sm" />
-        <input
-          name="amount"
-          type="number"
-          step="1"
-          min="1"
-          placeholder="금액"
-          required
-          className="rounded border px-2 py-1 text-sm"
-        />
-        <button
-          type="submit"
-          disabled={pending}
-          className="tds-primary-button col-span-2 px-4 text-[15px] md:col-span-1"
-        >
-          {pending ? '추가 중...' : '행 추가'}
-        </button>
-      </form>
+      <MonthlyRowForm categories={categories} paymentMethods={paymentMethods} />
 
       <div className="table-surface overflow-x-auto">
-        <table className="w-full min-w-[1080px] border-collapse text-sm">
+        <table className="monthly-input-table w-full min-w-[1438px] table-fixed border-collapse text-sm">
+          <colgroup>
+            {table.getAllLeafColumns().map((column) => (
+              <col key={column.id} style={{ width: COLUMN_WIDTHS[column.id] ?? '160px' }} />
+            ))}
+          </colgroup>
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="border-b text-left">
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className={`px-4 py-3 ${header.column.id === 'amount' ? 'text-right' : ''}`}
+                    className={`px-4 py-3.5 align-middle ${columnAlignment(header.column.id, true)} whitespace-nowrap`}
                   >
                     {header.isPlaceholder ? null : <table.FlexRender header={header} />}
                   </th>
@@ -229,11 +179,11 @@ export function MonthlyInputTab({
           </thead>
           <tbody>
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="border-b last:border-b-0">
+              <tr key={row.id} className="monthly-input-row border-b last:border-b-0">
                 {row.getAllCells().map((cell) => (
                   <td
                     key={cell.id}
-                    className={`px-4 py-3 ${cell.column.id === 'amount' ? 'text-right font-semibold tabular-nums' : ''}`}
+                    className={`px-4 py-4 align-middle ${columnAlignment(cell.column.id)} ${cell.column.id === 'amount' ? 'font-semibold tabular-nums' : ''}`}
                   >
                     <table.FlexRender cell={cell} />
                   </td>
@@ -244,5 +194,40 @@ export function MonthlyInputTab({
         </table>
       </div>
     </div>
+  );
+}
+
+function MonthlyRowForm({ categories, paymentMethods }: { categories: CategoryWithSubcategories[]; paymentMethods: PaymentMethod[] }) {
+  const [categoryId, setCategoryId] = useState('');
+  const selectedCategory = categories.find((c) => c.id === categoryId);
+  const [state, formAction, pending] = useActionState(createMonthlyRowAction, INITIAL_ACTION_STATE);
+
+  return (
+    <form action={formAction} className="tds-card grid grid-cols-2 gap-3 p-5 md:grid-cols-7">
+      <div className="col-span-2 md:col-span-7"><FormMessage result={state} /></div>
+      <input type="hidden" name="transactionType" value="expense" />
+      <input type="hidden" name="categoryDefaultCostBehavior" value={selectedCategory?.defaultCostBehavior ?? ''} />
+      <input type="date" name="transactionDate" required className="rounded border px-2 py-1 text-sm" />
+      <select name="categoryId" required value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="rounded border px-2 py-1 text-sm">
+        <option value="">대분류</option>
+        {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+      </select>
+      <select name="subcategoryId" className="rounded border px-2 py-1 text-sm">
+        <option value="">소분류</option>
+        {selectedCategory?.subcategories.map((sub) => <option key={sub.id} value={sub.id}>{sub.name}</option>)}
+      </select>
+      <select name="paymentMethodId" className="rounded border px-2 py-1 text-sm">
+        <option value="">결제수단</option>
+        {paymentMethods.map((method) => <option key={method.id} value={method.id}>{method.name}</option>)}
+      </select>
+      <select name="costBehaviorOverride" className="rounded border px-2 py-1 text-sm">
+        <option value="">기본 비용성격</option><option value="fixed">고정비</option><option value="variable">변동비</option>
+      </select>
+      <input name="description" placeholder="내용" required className="rounded border px-2 py-1 text-sm" />
+      <input name="amount" type="number" step="1" min="1" placeholder="금액" required className="rounded border px-2 py-1 text-sm" />
+      <button type="submit" disabled={pending} className="monthly-add-button tds-primary-button col-span-2 px-4 text-[0px] md:col-span-1">
+        <span className="text-[15px]">{pending ? '추가 중…' : '지출 추가'}</span>
+      </button>
+    </form>
   );
 }

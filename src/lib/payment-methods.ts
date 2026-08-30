@@ -7,6 +7,11 @@ export type PaymentMethod = {
   name: string;
   methodType: 'account_transfer' | 'cash' | 'credit_card' | 'check_card' | 'other';
   isActive: boolean;
+  providerName: string | null;
+  accountNumber: string | null;
+  cardNumberLast4: string | null;
+  expiresAt: string | null;
+  ownerMemberId: string | null;
 };
 
 // PRD §4.3 — only 계좌이체/현금 are universal enough to seed by default; the user's actual
@@ -56,7 +61,7 @@ export async function listPaymentMethods(householdId: string): Promise<PaymentMe
 
   const { data, error } = await supabase
     .from('payment_methods')
-    .select('id, household_id, name, method_type, is_active')
+    .select('id, household_id, name, method_type, is_active, provider_name, account_number, card_number_last4, expires_at, owner_member_id')
     .eq('household_id', householdId)
     .order('display_order', { ascending: true });
 
@@ -69,7 +74,8 @@ export async function listPaymentMethods(householdId: string): Promise<PaymentMe
     householdId: row.household_id,
     name: row.name,
     methodType: row.method_type,
-    isActive: row.is_active,
+    isActive: row.is_active, providerName: row.provider_name, accountNumber: row.account_number,
+    cardNumberLast4: row.card_number_last4, expiresAt: row.expires_at, ownerMemberId: row.owner_member_id,
   }));
 }
 
@@ -77,13 +83,15 @@ export async function createPaymentMethod(input: {
   householdId: string;
   name: string;
   methodType: PaymentMethod['methodType'];
+  providerName?: string | null; accountNumber?: string | null; cardNumberLast4?: string | null;
+  expiresAt?: string | null; ownerMemberId?: string | null;
 }): Promise<PaymentMethod> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('payment_methods')
-    .insert({ household_id: input.householdId, name: input.name, method_type: input.methodType })
-    .select('id, household_id, name, method_type, is_active')
+    .insert({ household_id: input.householdId, name: input.name, method_type: input.methodType, provider_name: input.providerName ?? null, account_number: input.accountNumber ?? null, card_number_last4: input.cardNumberLast4 ?? null, expires_at: input.expiresAt ?? null, owner_member_id: input.ownerMemberId ?? null })
+    .select('id, household_id, name, method_type, is_active, provider_name, account_number, card_number_last4, expires_at, owner_member_id')
     .single();
 
   if (error) {
@@ -95,13 +103,16 @@ export async function createPaymentMethod(input: {
     householdId: data.household_id,
     name: data.name,
     methodType: data.method_type,
-    isActive: data.is_active,
+    isActive: data.is_active, providerName: data.provider_name, accountNumber: data.account_number,
+    cardNumberLast4: data.card_number_last4, expiresAt: data.expires_at, ownerMemberId: data.owner_member_id,
   };
 }
 
-export async function deactivatePaymentMethod(id: string): Promise<void> {
+export async function deactivatePaymentMethod(id: string, householdId?: string): Promise<void> {
   const supabase = await createClient();
-  const { error } = await supabase.from('payment_methods').update({ is_active: false }).eq('id', id);
+  let query = supabase.from('payment_methods').update({ is_active: false }).eq('id', id);
+  if (householdId) query = query.eq('household_id', householdId);
+  const { error } = await query;
   if (error) {
     throw new Error(`결제수단 비활성화 실패: ${error.message}`);
   }
