@@ -527,10 +527,9 @@ input:active {
 .recurring-rule-edit-body form { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; }
 .recurring-rule-edit-body form > input:not([type='hidden']), .recurring-rule-edit-body form > select { min-height: 40px; }
 .recurring-rule-edit-body form button { min-height: 40px; white-space: nowrap; }
-label:has(> input[required])::after, label:has(> select[required])::after, label:has(> textarea[required])::after { content: '필수'; margin-left: 6px; color: var(--tds-red-500); font-size: 11px; font-weight: 700; }
-input[type='date'], input[type='month'] { color-scheme: light; }
-input[type='date']::after, input[type='month']::after { color: var(--tds-grey-500); }
-input[type='date']:invalid, input[type='month']:invalid { border-color: var(--tds-red-500); }
+input[type='date'], input[type='month'] { color-scheme: light; padding-right: 40px; }
+input[type='date']::-webkit-calendar-picker-indicator, input[type='month']::-webkit-calendar-picker-indicator { cursor: pointer; opacity: .62; }
+input[type='date']:user-invalid, input[type='month']:user-invalid { border-color: var(--tds-red-500); background: oklch(0.98 0.01 22); }
 button:disabled { cursor: wait; transform: none !important; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes drawer-in { from { opacity: .5; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }
@@ -560,8 +559,8 @@ button:disabled { cursor: wait; transform: none !important; }
 .home-goal-track span { background: var(--tds-green-500); }
 
 
- label:has(> input[required]), label:has(> select[required]), label:has(> textarea[required]) { position: relative; }
- label:has(> input[required])::after, label:has(> select[required])::after, label:has(> textarea[required])::after { content: '필수'; position: absolute; top: 0; right: 0; margin: 0; color: var(--tds-red-500); font-size: 11px; font-weight: 700; }
+label:has(> input[required]), label:has(> select[required]), label:has(> textarea[required]) { position: relative; }
+label:has(> input[required])::after, label:has(> select[required])::after, label:has(> textarea[required])::after { content: '필수'; position: absolute; top: 0; right: 0; margin: 0; color: var(--tds-red-500); font-size: 11px; font-weight: 700; }
 
 @media (max-width: 640px) {
   .tds-page {
