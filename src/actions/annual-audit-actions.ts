@@ -17,7 +17,8 @@ export async function getAnnualAuditActuals(year: number): Promise<Array<[string
   const totals = new Map<string, number>();
   for (const transaction of transactions ?? []) {
     const name = transaction.category_id ? nameById.get(transaction.category_id) : null;
-    if (name) totals.set(name, (totals.get(name) ?? 0) + Number(transaction.amount));
+    const label = name ?? '미분류';
+    totals.set(label, (totals.get(label) ?? 0) + Number(transaction.amount));
   }
   return [...totals.entries()];
 }
