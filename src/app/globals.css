@@ -377,7 +377,7 @@ input:active {
 .monthly-input-table td:nth-child(3) { padding-right: 8px; }
 .monthly-input-table td:nth-child(4) { padding-left: 8px; }
 .monthly-input-table td:nth-child(5) { padding-inline: 12px; }
-.monthly-input-table td:last-child { padding-left: 8px; padding-right: 8px; }
+.monthly-input-table td:last-child { padding-left: 8px; padding-right: 8px; display: flex; justify-content: flex-end; }
 .monthly-input-table td:last-child > div { width: 100%; }
 .monthly-input-table td:last-child form { max-width: 100%; }
 .monthly-input-table td:last-child form:first-child { overflow-x: auto; scrollbar-width: none; }
@@ -595,7 +595,19 @@ label:has(> input[required])::after, label:has(> select[required])::after, label
     -webkit-overflow-scrolling: touch;
   }
 
-  .monthly-input-table { min-width: 1040px; }
+  .monthly-input-table { min-width: 0; }
+  .monthly-input-table thead { display: none; }
+  .monthly-input-table tbody { display: grid; gap: 10px; padding: 10px; }
+  .monthly-input-table .monthly-input-row { content-visibility: visible; contain-intrinsic-size: auto; }
+  .monthly-input-table tbody > tr { display: grid; grid-template-areas: "date status" "description amount" "cost cost" "action action"; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; padding: 12px; border: 1px solid var(--tds-grey-200); border-radius: 16px; background: var(--tds-white); }
+  .monthly-input-table tbody > tr > td { min-width: 0; min-height: 0; border: 0; padding: 4px 0; }
+  .monthly-input-table tbody > tr > td:nth-child(1) { grid-area: date; justify-content: flex-start; }
+  .monthly-input-table tbody > tr > td:nth-child(2) { grid-area: status; justify-content: flex-end; }
+  .monthly-input-table tbody > tr > td:nth-child(3) { grid-area: description; padding-right: 0; overflow: hidden; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+  .monthly-input-table tbody > tr > td:nth-child(4) { grid-area: amount; justify-content: flex-end; padding-left: 0; }
+  .monthly-input-table tbody > tr > td:nth-child(5) { grid-area: cost; padding-inline: 0; }
+  .monthly-input-table tbody > tr > td:nth-child(6) { grid-area: action; justify-content: flex-end; padding-inline: 0; }
+  .monthly-input-table td:last-child form { max-width: 100%; }
   .monthly-input-table th, .monthly-input-table td { padding-block: 10px; }
   .monthly-input-table td:nth-child(3) { padding-right: 6px; }
   .monthly-input-table td:nth-child(4) { padding-left: 6px; }
