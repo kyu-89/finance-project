@@ -160,8 +160,8 @@ export type ImportedTransactionInput = {
 
 export type ImportTransactionsResult = { insertedCount: number; duplicateCount: number };
 
-function importDuplicateKey(row: { transactionDate: string; amount: number; description: string; paymentMethodId: string | null }): string {
-  return `${row.transactionDate}|${row.amount}|${row.description.trim().toLocaleLowerCase()}|${row.paymentMethodId ?? ''}`;
+function importDuplicateKey(row: { transactionDate: string; transactionType: ImportedTransactionInput['transactionType']; amount: number; description: string; paymentMethodId: string | null }): string {
+  return `${row.transactionDate}|${row.transactionType}|${row.amount}|${row.description.trim().toLocaleLowerCase()}|${row.paymentMethodId ?? ''}`;
 }
 
 // Imports are intentionally a single transaction-like insert from the authenticated user's
@@ -177,15 +177,15 @@ export async function importTransactions(input: { householdId: string; rows: Imp
   const dates = input.rows.map((row) => row.transactionDate).sort();
   const supabase = await createClient();
   const { data: existing, error: existingError } = await supabase.from('transactions')
-    .select('transaction_date, amount, description, payment_method_id')
+    .select('transaction_date, transaction_type, amount, description, payment_method_id')
     .eq('household_id', input.householdId).is('deleted_at', null)
     .gte('transaction_date', dates[0]).lte('transaction_date', dates[dates.length - 1]);
   if (existingError) throw new Error(`기존 거래 확인 실패: ${existingError.message}`);
-  const keys = new Set((existing ?? []).map((row) => importDuplicateKey({ transactionDate: row.transaction_date, amount: row.amount, description: row.description, paymentMethodId: row.payment_method_id })));
+  const keys = new Set((existing ?? []).map((row) => importDuplicateKey({ transactionDate: row.transaction_date, transactionType: row.transaction_type as ImportedTransactionInput['transactionType'], amount: row.amount, description: row.description, paymentMethodId: row.payment_method_id })));
   const rowsToInsert: Record<string, unknown>[] = [];
   let duplicateCount = 0;
   for (const row of input.rows) {
-    const key = importDuplicateKey({ transactionDate: row.transactionDate, amount: row.amount, description: row.description, paymentMethodId: row.paymentMethodId });
+    const key = importDuplicateKey({ transactionDate: row.transactionDate, transactionType: row.transactionType, amount: row.amount, description: row.description, paymentMethodId: row.paymentMethodId });
     if (keys.has(key)) { duplicateCount += 1; continue; }
     keys.add(key);
     const costBehavior = row.transactionType === 'expense' ? 'variable' : null;

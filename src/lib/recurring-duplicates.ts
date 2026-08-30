@@ -1,6 +1,7 @@
 export type DuplicateCandidateTransaction = {
   id: string;
   transactionDate: string;
+  transactionType: 'income' | 'expense' | 'refund' | 'saving' | 'investment' | 'debt_principal' | 'finance_cost' | 'transfer' | 'asset_adjustment';
   amount: number;
   description: string;
   status: 'planned' | 'posted' | 'skipped' | 'cancelled';
@@ -33,6 +34,7 @@ export function findRecurringDuplicateCandidates(
     .filter((transaction) => transaction.status === 'planned' && transaction.recurringOccurrenceId)
     .map((planned) => {
       const candidates = posted
+        .filter((candidate) => candidate.transactionType === planned.transactionType)
         .filter((candidate) => amountDistance(candidate.amount, planned.amount) <= Math.max(1_000, Math.round(planned.amount * 0.05)))
         .map((candidate) => ({
           candidate,

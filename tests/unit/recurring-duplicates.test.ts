@@ -2,17 +2,25 @@ import { describe, expect, it } from 'vitest';
 import { findRecurringDuplicateCandidates, type DuplicateCandidateTransaction } from '@/lib/recurring-duplicates';
 
 const base: DuplicateCandidateTransaction = {
-  id: 'planned', transactionDate: '2026-08-10', amount: 12900, description: '구독료', status: 'planned',
+  id: 'planned', transactionDate: '2026-08-10', transactionType: 'expense', amount: 12900, description: '구독료', status: 'planned',
   categoryId: 'category', subcategoryId: 'subcategory', paymentMethodId: 'card', recurringOccurrenceId: 'occurrence',
 };
 
 describe('findRecurringDuplicateCandidates', () => {
   it('also matches planned income occurrences without requiring expense semantics', () => {
     const result = findRecurringDuplicateCandidates([
-      { ...base, id: 'support-planned', description: '지원금', transactionDate: '2026-08-20', amount: 300000, categoryId: null, paymentMethodId: null },
-      { ...base, id: 'support-posted', status: 'posted', description: '지원금 입금', transactionDate: '2026-08-21', amount: 300000, categoryId: null, paymentMethodId: null },
+      { ...base, id: 'support-planned', transactionType: 'income', description: '지원금', transactionDate: '2026-08-20', amount: 300000, categoryId: null, paymentMethodId: null },
+      { ...base, id: 'support-posted', transactionType: 'income', status: 'posted', description: '지원금 입금', transactionDate: '2026-08-21', amount: 300000, categoryId: null, paymentMethodId: null },
     ]);
     expect(result['support-planned']).toEqual([{ id: 'support-posted', transactionDate: '2026-08-21', description: '지원금 입금', amount: 300000 }]);
+  });
+
+  it('does not match a posted expense to a planned income with the same amount and date', () => {
+    const result = findRecurringDuplicateCandidates([
+      { ...base, id: 'income-planned', transactionType: 'income', amount: 300000 },
+      { ...base, id: 'expense-posted', transactionType: 'expense', status: 'posted', amount: 300000, recurringOccurrenceId: null },
+    ]);
+    expect(result['income-planned']).toEqual([]);
   });
   it('finds exact-amount posted rows within three days and ranks matching axes first', () => {
     const result = findRecurringDuplicateCandidates([
