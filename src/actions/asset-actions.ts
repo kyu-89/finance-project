@@ -1,9 +1,40 @@
 'use server';
-export async function importAssetsAction(_: ActionResult, f: FormData): Promise<ActionResult> { try { const rows = JSON.parse(String(f.get('assets') ?? '[]')) as Array<Record<string, unknown>>; if (!rows.length || rows.length > 1000) return fail('가져올 자산이 없습니다.'); const householdId = await getCurrentHouseholdId(); for (const row of rows) await createAsset({ householdId, assetName: String(row.assetName), assetType: row.assetType as Asset['assetType'], acquisitionCost: Number(row.acquisitionCost), currentValue: Number(row.currentValue), valuationDate: String(row.valuationDate ?? todayInSeoul()), ownerMemberId: null, memo: 'Excel 가져오기' }); refresh(); return ok(`${rows.length}건의 자산을 가져왔습니다.`); } catch (e) { return fail(e instanceof Error ? e.message : '자산 가져오기에 실패했습니다.'); } }
-import { revalidatePath } from 'next/cache'; import { fail, ok, type ActionResult } from '@/lib/action-result'; import { createAsset, disposeAsset, updateAssetValue, type Asset } from '@/lib/assets'; import { todayInSeoul } from '@/lib/date'; import { getCurrentHouseholdId } from '@/lib/household'; import { saveMonthlySnapshot } from '@/lib/snapshots';
+
+import { revalidatePath } from 'next/cache';
+import { fail, ok, type ActionResult } from '@/lib/action-result';
+import { createAsset, disposeAsset, updateAssetValue, type Asset } from '@/lib/assets';
+import { todayInSeoul } from '@/lib/date';
+import { getCurrentHouseholdId } from '@/lib/household';
+import { saveMonthlySnapshot } from '@/lib/snapshots';
+
 const refresh = () => { revalidatePath('/finance'); revalidatePath('/finance/assets'); revalidatePath('/monthly'); revalidatePath('/monthly/month-end'); revalidatePath('/dashboard'); };
 const validWon = (value: number) => Number.isSafeInteger(value) && value >= 0;
-export async function createAssetAction(_p: ActionResult, f: FormData): Promise<ActionResult> { const assetName = String(f.get('assetName') ?? '').trim(); const assetType = String(f.get('assetType') ?? '') as Asset['assetType']; const acquisitionCost = Number(f.get('acquisitionCost')); const currentValue = Number(f.get('currentValue')); const valuationDate = String(f.get('valuationDate') ?? ''); if (!assetName || !['real_estate', 'car', 'precious_metal', 'other'].includes(assetType) || !validWon(acquisitionCost) || !validWon(currentValue) || !/^\d{4}-\d{2}-\d{2}$/.test(valuationDate)) return fail('자산 정보와 원 단위 금액을 확인해 주세요.'); try { await createAsset({ householdId: await getCurrentHouseholdId(), assetName, assetType, acquisitionCost, currentValue, valuationDate, ownerMemberId: String(f.get('ownerMemberId') ?? '') || null, memo: String(f.get('memo') ?? '').trim() || null }); } catch (e) { return fail(e instanceof Error ? e.message : '자산 추가에 실패했어요.'); } refresh(); return ok(); }
-export async function updateAssetValueAction(_p: ActionResult, f: FormData): Promise<ActionResult> { const id = String(f.get('id') ?? ''); const value = Number(f.get('value')); if (!id || !validWon(value)) return fail('평가액을 확인해 주세요.'); try { await updateAssetValue(id, value, todayInSeoul()); } catch (e) { return fail(e instanceof Error ? e.message : '평가액 수정에 실패했어요.'); } refresh(); return ok(); }
-export async function disposeAssetAction(_p: ActionResult, f: FormData): Promise<ActionResult> { const id = String(f.get('id') ?? ''); if (!id) return fail('자산을 확인해 주세요.'); try { await disposeAsset(id, todayInSeoul()); } catch (e) { return fail(e instanceof Error ? e.message : '자산 처분에 실패했어요.'); } refresh(); return ok(); }
-export async function saveSnapshotAction(previous: ActionResult): Promise<ActionResult> { void previous; try { await saveMonthlySnapshot(await getCurrentHouseholdId(), todayInSeoul()); } catch (e) { return fail(e instanceof Error ? e.message : '스냅샷 저장에 실패했어요.'); } refresh(); return ok(); }
+const validDate = (value: unknown) => /^\d{4}-\d{2}-\d{2}$/.test(String(value ?? ''));
+const assetTypes: Asset['assetType'][] = ['real_estate', 'car', 'precious_metal', 'other'];
+
+export async function importAssetsAction(_: ActionResult, form: FormData): Promise<ActionResult> {
+  try {
+    const rows = JSON.parse(String(form.get('assets') ?? '[]')) as unknown;
+    if (!Array.isArray(rows) || rows.length === 0 || rows.length > 1000) return fail('자산은 한 번에 1~1,000건까지 가져올 수 있어요.');
+    const assets = rows.map((row) => {
+      const value = (typeof row === 'object' && row !== null ? row : {}) as Record<string, unknown>;
+      return { assetName: String(value.assetName ?? '').trim(), assetType: value.assetType as Asset['assetType'], acquisitionCost: Number(value.acquisitionCost), currentValue: Number(value.currentValue), valuationDate: String(value.valuationDate ?? todayInSeoul()), ownerMemberId: null, memo: 'Excel 가져오기' };
+    });
+    if (assets.some((asset) => !asset.assetName || !assetTypes.includes(asset.assetType) || !validWon(asset.acquisitionCost) || !validWon(asset.currentValue) || !validDate(asset.valuationDate))) return fail('유효하지 않은 자산 행이 포함되어 있어요.');
+    const householdId = await getCurrentHouseholdId();
+    for (const asset of assets) await createAsset({ householdId, ...asset });
+    refresh();
+    return ok(`${assets.length}건의 자산을 가져왔어요.`);
+  } catch (error) { return fail(error instanceof Error ? error.message : '자산 가져오기에 실패했어요.'); }
+}
+
+export async function createAssetAction(_previous: ActionResult, form: FormData): Promise<ActionResult> {
+  const assetName = String(form.get('assetName') ?? '').trim(); const assetType = String(form.get('assetType') ?? '') as Asset['assetType']; const acquisitionCost = Number(form.get('acquisitionCost')); const currentValue = Number(form.get('currentValue')); const valuationDate = String(form.get('valuationDate') ?? '');
+  if (!assetName || !assetTypes.includes(assetType) || !validWon(acquisitionCost) || !validWon(currentValue) || !validDate(valuationDate)) return fail('자산 정보와 원 단위 금액을 확인해 주세요.');
+  try { await createAsset({ householdId: await getCurrentHouseholdId(), assetName, assetType, acquisitionCost, currentValue, valuationDate, ownerMemberId: String(form.get('ownerMemberId') ?? '') || null, memo: String(form.get('memo') ?? '').trim() || null }); } catch (error) { return fail(error instanceof Error ? error.message : '자산 추가에 실패했어요.'); }
+  refresh(); return ok();
+}
+
+export async function updateAssetValueAction(_previous: ActionResult, form: FormData): Promise<ActionResult> { const id = String(form.get('id') ?? ''); const value = Number(form.get('value')); if (!id || !validWon(value)) return fail('평가액을 확인해 주세요.'); try { await updateAssetValue(id, value, todayInSeoul()); } catch (error) { return fail(error instanceof Error ? error.message : '평가액 수정에 실패했어요.'); } refresh(); return ok(); }
+export async function disposeAssetAction(_previous: ActionResult, form: FormData): Promise<ActionResult> { const id = String(form.get('id') ?? ''); if (!id) return fail('자산을 확인해 주세요.'); try { await disposeAsset(id, todayInSeoul()); } catch (error) { return fail(error instanceof Error ? error.message : '자산 처분에 실패했어요.'); } refresh(); return ok(); }
+export async function saveSnapshotAction(previous: ActionResult): Promise<ActionResult> { void previous; try { await saveMonthlySnapshot(await getCurrentHouseholdId(), todayInSeoul()); } catch (error) { return fail(error instanceof Error ? error.message : '스냅샷 저장에 실패했어요.'); } refresh(); return ok(); }
