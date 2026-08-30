@@ -23,6 +23,7 @@ export async function listCards(householdId: string): Promise<Card[]> {
 }
 
 export async function createCard(input: Omit<Card, 'id' | 'status' | 'closedAt'> & { householdId: string }): Promise<void> {
+  if (!input.issuer.trim() || !input.cardName.trim() || !['credit', 'check'].includes(input.cardType) || !Number.isSafeInteger(input.annualFee) || input.annualFee < 0) throw new Error('카드 정보와 연회비를 확인해 주세요.');
   const supabase = await createClient();
   const { data: existing, error: existingError } = await supabase.from('cards').select('id').eq('household_id', input.householdId).eq('issuer', input.issuer).eq('card_type', input.cardType).eq('card_name', input.cardName).limit(1);
   if (existingError) throw new Error(existingError.message);

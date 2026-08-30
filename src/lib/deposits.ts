@@ -22,6 +22,7 @@ export async function listDeposits(householdId: string): Promise<Deposit[]> {
 }
 
 export async function createDeposit(input: Omit<Deposit, 'id' | 'status'> & { householdId: string }): Promise<void> {
+  if (!input.bankName.trim() || !input.productName.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(input.joinedAt) || !/^\d{4}-\d{2}-\d{2}$/.test(input.maturityDate) || input.maturityDate < input.joinedAt || !Number.isSafeInteger(input.principal) || input.principal <= 0 || !Number.isFinite(input.annualRate) || input.annualRate < 0) throw new Error('예금 정보와 금액·기간을 확인해 주세요.');
   const supabase = await createClient();
   const { error } = await supabase.from('deposits').insert({
     household_id: input.householdId, bank_name: input.bankName, product_name: input.productName,

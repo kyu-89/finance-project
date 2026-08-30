@@ -27,6 +27,7 @@ export async function listSavingsAccounts(householdId: string): Promise<SavingsA
 }
 
 export async function createSavingsAccount(input: Omit<SavingsAccount, 'id' | 'status'> & { householdId: string }): Promise<void> {
+  if (!input.bankName.trim() || !input.productName.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(input.joinedAt) || !/^\d{4}-\d{2}-\d{2}$/.test(input.maturityDate) || input.maturityDate < input.joinedAt || !Number.isSafeInteger(input.monthlyAmount) || input.monthlyAmount <= 0 || !Number.isSafeInteger(input.currentSavings) || input.currentSavings < 0 || !Number.isFinite(input.annualRate) || input.annualRate < 0) throw new Error('적금 정보와 금액·기간을 확인해 주세요.');
   const supabase = await createClient();
   const { error } = await supabase.from('savings_accounts').insert({
     household_id: input.householdId, bank_name: input.bankName, product_name: input.productName,

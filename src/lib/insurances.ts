@@ -11,6 +11,7 @@ export async function listInsurances(householdId: string): Promise<Insurance[]> 
 }
 
 export async function createInsurance(input: Omit<Insurance, 'id' | 'status'> & { householdId: string }): Promise<void> {
+  if (!input.insurerName.trim() || !input.insuranceType.trim() || !input.productName.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(input.joinedAt) || !Number.isSafeInteger(input.monthlyPremium) || input.monthlyPremium < 0 || (input.paymentDay !== null && (!Number.isInteger(input.paymentDay) || input.paymentDay < 1 || input.paymentDay > 31))) throw new Error('보험 정보와 보험료를 확인해 주세요.');
   const supabase = await createClient();
   const { data: existing, error: existingError } = await supabase.from('insurances').select('id').eq('household_id', input.householdId).eq('insurer_name', input.insurerName).eq('insurance_type', input.insuranceType).eq('product_name', input.productName).eq('joined_at', input.joinedAt).limit(1);
   if (existingError) throw new Error(existingError.message);
