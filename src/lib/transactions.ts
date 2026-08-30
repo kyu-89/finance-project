@@ -201,7 +201,7 @@ export async function importTransactions(input: { householdId: string; rows: Imp
       description: row.description.trim(),
       memo: row.memo ?? null,
       include_in_budget: row.transactionType === 'expense',
-      needs_review: row.needsReview ?? false,
+      needs_review: row.needsReview ?? row.transactionType === 'refund',
       status: 'posted',
     });
   }
