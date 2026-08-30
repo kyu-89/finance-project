@@ -5,6 +5,7 @@ import { parseInvestmentTradeRows } from '@/lib/excel-investment-import';
 import { parseDepositRows, parseSavingsRows } from '@/lib/excel-savings-import';
 import { parseInsuranceRows, parseLoanRows } from '@/lib/excel-loan-insurance-import';
 import { parseEventRows, parseSupportRows } from '@/lib/excel-support-event-import';
+import { parsePlanningRows } from '@/lib/excel-planning-import';
 
 const workbookPath = 'C:/Users/미니쉬테크놀로지-김규남/Desktop/dev/personal-finance/2026년 (1).xlsm';
 const rows = (workbook: XLSX.WorkBook, name: string) => XLSX.utils.sheet_to_json(workbook.Sheets[name], { header: 1, raw: true, defval: '' }) as unknown[][];
@@ -20,5 +21,11 @@ describe('2026 workbook parser audit', () => {
     expect(parseInvestmentTradeRows(rows(workbook, '업비트수익')).length + parseInvestmentTradeRows(rows(workbook, '업비트2')).length).toBeGreaterThan(0);
     expect(parseSupportRows(rows(workbook, '정부지원금')).length).toBeGreaterThan(0);
     expect(parseEventRows(rows(workbook, '축의금&부조금')).length).toBeGreaterThan(0);
+  });
+
+  it('keeps the source workbook year for planning dates', () => {
+    const result = parsePlanningRows([['', '', '', '2026년 주택자금', '', '', '', '', '', '2026년 6월 점검']], 2026);
+    expect(result.goals[0]?.goalYear).toBe(2026);
+    expect(result.tasks[0]?.taskDate).toBe('2026-06-30');
   });
 });
