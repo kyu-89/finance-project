@@ -19,6 +19,7 @@ export type Transaction = {
   amount: number;
   description: string;
   memo: string | null;
+  tags?: string[];
   includeInBudget: boolean;
   needsReview: boolean;
   recurringRuleId: string | null;
@@ -44,7 +45,7 @@ function mapRow(row: {
   id: string; household_id: string; transaction_date: string; transaction_type: string;
   flow_class: string; cost_behavior: string | null; payment_method_id: string | null;
   category_id: string | null; subcategory_id: string | null; account_id: string | null; income_group: string | null; payer_member_id: string | null;
-  beneficiary_member_id: string | null; amount: number; description: string; memo: string | null;
+  beneficiary_member_id: string | null; amount: number; description: string; memo: string | null; tags: string[] | null;
   include_in_budget: boolean; needs_review: boolean; recurring_rule_id: string | null;
   recurring_occurrence_id: string | null; status: string;
 }): Transaction {
@@ -65,6 +66,7 @@ function mapRow(row: {
     amount: row.amount,
     description: row.description,
     memo: row.memo,
+    tags: row.tags ?? [],
     includeInBudget: row.include_in_budget,
     needsReview: row.needs_review,
     recurringRuleId: row.recurring_rule_id,
@@ -77,7 +79,7 @@ function mapRow(row: {
 // this as a literal string type, not a widened `string` — Supabase's `.select()` overloads
 // parse the select-string type at compile time to produce the typed row shape, and a widened
 // `string` makes that parse fail with a generic, untyped `GenericStringError` result.
-const TRANSACTION_COLUMNS = `id, household_id, transaction_date, transaction_type, flow_class, cost_behavior, payment_method_id, account_id, income_group, category_id, subcategory_id, payer_member_id, beneficiary_member_id, amount, description, memo, include_in_budget, needs_review, recurring_rule_id, recurring_occurrence_id, status`;
+const TRANSACTION_COLUMNS = `id, household_id, transaction_date, transaction_type, flow_class, cost_behavior, payment_method_id, account_id, income_group, category_id, subcategory_id, payer_member_id, beneficiary_member_id, amount, description, memo, tags, include_in_budget, needs_review, recurring_rule_id, recurring_occurrence_id, status`;
 
 export async function createTransaction(input: {
   householdId: string;
@@ -93,6 +95,7 @@ export async function createTransaction(input: {
   amount: number;
   description: string;
   memo?: string | null;
+  tags?: string[];
   payerMemberId?: string | null;
   beneficiaryMemberId?: string | null;
   needsReview?: boolean;
@@ -126,6 +129,7 @@ export async function createTransaction(input: {
       amount: input.amount,
       description: input.description,
       memo: input.memo ?? null,
+      tags: input.tags ?? [],
       needs_review: input.needsReview ?? false,
       status: 'posted',
     })
@@ -336,9 +340,9 @@ export async function updateTransactionCostBehavior(
   }
 }
 
-export async function updateTransactionBasics(input: { id: string; transactionDate: string; amount: number; description: string; memo: string | null }): Promise<void> {
+export async function updateTransactionBasics(input: { id: string; transactionDate: string; amount: number; description: string; memo: string | null; tags?: string[] }): Promise<void> {
   const supabase = await createClient();
-  const { error } = await supabase.from('transactions').update({ transaction_date: input.transactionDate, amount: input.amount, description: input.description, memo: input.memo }).eq('id', input.id).is('deleted_at', null).select('id').single();
+  const { error } = await supabase.from('transactions').update({ transaction_date: input.transactionDate, amount: input.amount, description: input.description, memo: input.memo, tags: input.tags ?? [] }).eq('id', input.id).is('deleted_at', null).select('id').single();
   if (error) throw new Error(`거래 수정 실패: ${error.message}`);
 }
 

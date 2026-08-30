@@ -30,6 +30,7 @@ export async function createQuickTransactionAction(
   const accountId = String(formData.get('accountId') ?? '') || null;
   const payerMemberId = String(formData.get('payerMemberId') ?? '') || null;
   const beneficiaryMemberId = String(formData.get('beneficiaryMemberId') ?? '') || null;
+  const tags = String(formData.get('tags') ?? '').split(',').map((tag) => tag.trim()).filter(Boolean).slice(0, 10);
   const incomeGroup = formData.get('incomeGroup') === 'fixed' || formData.get('incomeGroup') === 'additional' ? formData.get('incomeGroup') as 'fixed' | 'additional' : null;
   const description = String(formData.get('description') ?? '').trim();
   const memo = String(formData.get('memo') ?? '') || null;
@@ -79,6 +80,7 @@ export async function createQuickTransactionAction(
       accountId,
       payerMemberId,
       beneficiaryMemberId,
+      tags,
       incomeGroup,
       amount,
       description,

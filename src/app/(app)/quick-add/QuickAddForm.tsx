@@ -231,6 +231,10 @@ export function QuickAddForm({
             <span className="text-sm font-semibold text-[var(--tds-grey-700)]">비고</span>
             <input name="memo" className="px-4 py-2" />
           </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-semibold text-[var(--tds-grey-700)]">태그</span>
+            <input name="tags" className="px-4 py-2" placeholder="예: 여행, 교육 (쉼표로 구분)" />
+          </label>
         </div>
       )}
 
