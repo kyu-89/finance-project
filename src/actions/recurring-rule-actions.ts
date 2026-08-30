@@ -7,6 +7,7 @@ import {
   createRecurringRule,
   updateRecurringRuleStatus,
   updateRecurringRuleAmount,
+  updateRecurringRuleAmountOnce,
   addRecurringPausePeriod,
   updateRecurringRuleSchedule,
   type RecurringRuleStatus,
@@ -121,13 +122,15 @@ export async function updateRecurringRuleAmountAction(
   }
   try {
     await ensureHouseholdForCurrentUser();
-    await updateRecurringRuleAmount({ ruleId, amount, effectiveDate: todayInSeoul() });
+    const effectiveDate = todayInSeoul();
+    if (formData.get('scope') === 'once') await updateRecurringRuleAmountOnce({ ruleId, amount, effectiveDate });
+    else await updateRecurringRuleAmount({ ruleId, amount, effectiveDate });
   } catch (error) {
     return fail(error instanceof Error ? error.message : '반복 금액 변경에 실패했어요.');
   }
   revalidatePath('/settings/recurring');
   revalidatePath('/monthly');
-  return ok();
+  return ok(formData.get('scope') === 'once' ? '이번 달 예정 거래만 변경했어요.' : '이번 달부터 반복 금액을 변경했어요.');
 }
 
 export async function addRecurringPausePeriodAction(

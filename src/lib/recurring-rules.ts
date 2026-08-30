@@ -372,6 +372,18 @@ export async function updateRecurringRuleAmount(input: {
   if (error) throw new Error(`반복 금액 변경 실패: ${error.message}`);
 }
 
+export async function updateRecurringRuleAmountOnce(input: { ruleId: string; amount: number; effectiveDate: string }): Promise<void> {
+  const monthStart = `${input.effectiveDate.slice(0, 7)}-01`;
+  const [year, month] = input.effectiveDate.slice(0, 7).split('-').map(Number);
+  const monthEnd = `${input.effectiveDate.slice(0, 7)}-${String(new Date(Date.UTC(year, month, 0)).getUTCDate()).padStart(2, '0')}`;
+  const supabase = await createClient();
+  const { data, error } = await supabase.from('transactions').update({ amount: input.amount })
+    .eq('recurring_rule_id', input.ruleId).eq('status', 'planned').is('deleted_at', null)
+    .gte('transaction_date', monthStart).lte('transaction_date', monthEnd).select('id');
+  if (error) throw new Error(`이번 달 반복 금액 변경 실패: ${error.message}`);
+  if (!data.length) throw new Error('이번 달에 변경할 예정 거래가 없어요.');
+}
+
 export async function addRecurringPausePeriod(input: {
   ruleId: string;
   startDate: string;
