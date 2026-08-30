@@ -6,7 +6,7 @@ export type ParsedImportRow = {
   rowNumber: number;
   transactionDate: string | null;
   amount: number | null;
-  transactionType: 'expense' | 'refund';
+  transactionType: 'income' | 'expense' | 'refund';
   description: string;
   categoryName: string | null;
   memo: string | null;
@@ -106,6 +106,10 @@ function isRefund(status: unknown): boolean {
   return /취소|환불|반품|cancel|refund|return/i.test(String(status ?? ''));
 }
 
+function isIncome(status: unknown): boolean {
+  return /income|salary|payroll|deposit|bonus|dividend|interest|급여|수입|입금|상여|배당|이자/i.test(String(status ?? ''));
+}
+
 export function mapImportRows(rows: unknown[][], headers: string[], mapping: ImportMapping, headerRowIndex = 0): ParsedImportRow[] {
   const result: ParsedImportRow[] = [];
   for (let index = headerRowIndex + 1; index < rows.length; index += 1) {
@@ -123,7 +127,7 @@ export function mapImportRows(rows: unknown[][], headers: string[], mapping: Imp
       rowNumber: index + 1,
       transactionDate: date,
       amount: parsedAmount.amount,
-      transactionType: parsedAmount.negative || isRefund(status) ? 'refund' : 'expense',
+      transactionType: parsedAmount.negative || isRefund(status) ? 'refund' : isIncome(status) ? 'income' : 'expense',
       description,
       categoryName: String(valueAt(row, headers, mapping.category) ?? '').trim() || null,
       memo: String(valueAt(row, headers, mapping.memo) ?? '').trim() || null,

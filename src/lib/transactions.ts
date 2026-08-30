@@ -141,7 +141,7 @@ export async function createTransaction(input: {
 
 export type ImportedTransactionInput = {
   transactionDate: string;
-  transactionType: 'expense' | 'refund';
+  transactionType: 'income' | 'expense' | 'refund';
   amount: number;
   description: string;
   categoryId?: string | null;
@@ -162,7 +162,7 @@ function importDuplicateKey(row: { transactionDate: string; amount: number; desc
 export async function importTransactions(input: { householdId: string; rows: ImportedTransactionInput[] }): Promise<ImportTransactionsResult> {
   if (input.rows.length === 0) return { insertedCount: 0, duplicateCount: 0 };
   for (const row of input.rows) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(row.transactionDate) || !Number.isSafeInteger(row.amount) || row.amount <= 0 || !row.description.trim() || !row.paymentMethodId) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(row.transactionDate) || !Number.isSafeInteger(row.amount) || row.amount <= 0 || !row.description.trim() || (row.transactionType !== 'income' && !row.paymentMethodId)) {
       throw new Error('가져올 거래에 날짜·금액·내용·결제수단이 모두 필요해요.');
     }
   }

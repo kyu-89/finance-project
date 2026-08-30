@@ -33,4 +33,12 @@ describe('transaction import normalization', () => {
     expect(rows[0]).toMatchObject({ transactionDate: '2026-08-29', amount: 12000, transactionType: 'expense', errors: [] });
     expect(rows[1]).toMatchObject({ amount: 3000, transactionType: 'refund', errors: ['가맹점/내용이 비어 있어요.'] });
   });
+
+  it('maps income rows from a type/status column without requiring a payment method', () => {
+    const rows = mapImportRows([
+      ['date', 'description', 'amount', 'type'],
+      ['2026-08-29', 'Salary', '3000000', 'income'],
+    ], ['date', 'description', 'amount', 'type'], { date: 'date', description: 'description', amount: 'amount', status: 'type' });
+    expect(rows[0]).toMatchObject({ transactionType: 'income', amount: 3000000, errors: [] });
+  });
 });
