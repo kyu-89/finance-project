@@ -169,12 +169,21 @@ function importDuplicateKey(row: { transactionDate: string; transactionType: Imp
 // skipped, both against existing rows and within the uploaded file, so retrying an import is safe.
 export async function importTransactions(input: { householdId: string; rows: ImportedTransactionInput[] }): Promise<ImportTransactionsResult> {
   if (input.rows.length === 0) return { insertedCount: 0, duplicateCount: 0 };
-  for (const row of input.rows) {
+  // Browser mapping controls may submit an empty option as "". PostgreSQL UUID
+  // columns accept NULL for an unmapped category/payment method, but reject "".
+  // Normalize at the server boundary so every importer has the same safe behavior.
+  const rows = input.rows.map((row) => ({
+    ...row,
+    categoryId: row.categoryId?.trim() || null,
+    paymentMethodId: row.paymentMethodId?.trim() || null,
+    description: row.description.trim(),
+  }));
+  for (const row of rows) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(row.transactionDate) || !Number.isSafeInteger(row.amount) || row.amount <= 0 || !row.description.trim() || (row.transactionType !== 'income' && !row.paymentMethodId)) {
       throw new Error('가져올 거래에 날짜·금액·내용·결제수단이 모두 필요해요.');
     }
   }
-  const dates = input.rows.map((row) => row.transactionDate).sort();
+  const dates = rows.map((row) => row.transactionDate).sort();
   const supabase = await createClient();
   const { data: existing, error: existingError } = await supabase.from('transactions')
     .select('transaction_date, transaction_type, amount, description, payment_method_id')
@@ -184,7 +193,7 @@ export async function importTransactions(input: { householdId: string; rows: Imp
   const keys = new Set((existing ?? []).map((row) => importDuplicateKey({ transactionDate: row.transaction_date, transactionType: row.transaction_type as ImportedTransactionInput['transactionType'], amount: row.amount, description: row.description, paymentMethodId: row.payment_method_id })));
   const rowsToInsert: Record<string, unknown>[] = [];
   let duplicateCount = 0;
-  for (const row of input.rows) {
+  for (const row of rows) {
     const key = importDuplicateKey({ transactionDate: row.transactionDate, transactionType: row.transactionType, amount: row.amount, description: row.description, paymentMethodId: row.paymentMethodId });
     if (keys.has(key)) { duplicateCount += 1; continue; }
     keys.add(key);
