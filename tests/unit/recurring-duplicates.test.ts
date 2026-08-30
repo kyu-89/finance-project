@@ -7,6 +7,13 @@ const base: DuplicateCandidateTransaction = {
 };
 
 describe('findRecurringDuplicateCandidates', () => {
+  it('also matches planned income occurrences without requiring expense semantics', () => {
+    const result = findRecurringDuplicateCandidates([
+      { ...base, id: 'support-planned', description: '지원금', transactionDate: '2026-08-20', amount: 300000, categoryId: null, paymentMethodId: null },
+      { ...base, id: 'support-posted', status: 'posted', description: '지원금 입금', transactionDate: '2026-08-21', amount: 300000, categoryId: null, paymentMethodId: null },
+    ]);
+    expect(result['support-planned']).toEqual([{ id: 'support-posted', transactionDate: '2026-08-21', description: '지원금 입금', amount: 300000 }]);
+  });
   it('finds exact-amount posted rows within three days and ranks matching axes first', () => {
     const result = findRecurringDuplicateCandidates([
       base,
