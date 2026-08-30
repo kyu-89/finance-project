@@ -14,6 +14,8 @@ export async function GET() {
     if (error) throw new Error(error.message);
     const headers = ['transaction_date', 'transaction_type', 'amount', 'description', 'memo', 'status', 'category_id', 'payment_method_id'];
     const body = [headers, ...(data ?? []).map((row) => headers.map((header) => row[header as keyof typeof row]))].map((row) => row.map(csvCell).join(',')).join('\r\n');
+    const { data: userData } = await supabase.auth.getUser();
+    if (userData.user) await supabase.from('export_audit_logs').insert({ household_id: householdId, user_id: userData.user.id, export_type: 'transactions_csv', request_path: '/api/export/transactions' });
     return new NextResponse(`\uFEFF${body}`, { headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="transactions.csv"', 'Cache-Control': 'private, no-store' } });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : '데이터 내보내기에 실패했습니다.' }, { status: 500 });

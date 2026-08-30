@@ -15,6 +15,8 @@ export async function GET() {
       if (error) throw new Error(`${table}: ${error.message}`);
       return [table, data ?? []] as const;
     }));
+    const { data: userData } = await supabase.auth.getUser();
+    if (userData.user) await supabase.from('export_audit_logs').insert({ household_id: householdId, user_id: userData.user.id, export_type: 'all_json', request_path: '/api/export/all' });
     return new NextResponse(JSON.stringify({ exportedAt: new Date().toISOString(), householdId, data: Object.fromEntries(results) }, null, 2), { headers: { 'Content-Type': 'application/json; charset=utf-8', 'Content-Disposition': 'attachment; filename="our-household-finance-export.json"', 'Cache-Control': 'private, no-store' } });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : '전체 데이터 내보내기에 실패했습니다.' }, { status: 500 });
