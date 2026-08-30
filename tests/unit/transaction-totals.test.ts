@@ -26,6 +26,14 @@ describe('calculateTransactionTotals', () => {
     // 저축 is not 소비 (PRD §23.6); only planned consumption belongs in this total.
     expect(totals).toEqual({ consumptionTotal: 30_000, plannedTotal: 10_000 });
   });
+
+  it('subtracts posted refunds from confirmed consumption', () => {
+    const totals = calculateTransactionTotals([
+      { amount: 50_000, flowClass: 'consumption', status: 'posted' },
+      { amount: 20_000, transactionType: 'refund', flowClass: 'cash_in', status: 'posted' },
+    ]);
+    expect(totals.consumptionTotal).toBe(30_000);
+  });
 });
 
 describe('calculateTransactionTotals — planned rows must not mix inflow and outflow', () => {

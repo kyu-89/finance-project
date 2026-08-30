@@ -39,6 +39,12 @@ export function calculateMonthlyClosing(transactions: ClosingTransaction[], budg
     if (transaction.flowClass === 'investment') investment += transaction.amount;
     if (transaction.flowClass === 'debt_principal') debtPrincipal += transaction.amount;
     if (transaction.flowClass === 'finance_cost') financeCost += transaction.amount;
+    if (transaction.transactionType === 'refund') {
+      consumption -= transaction.amount;
+      if (transaction.includeInBudget && transaction.categoryId) {
+        spentByCategory[transaction.categoryId] = (spentByCategory[transaction.categoryId] ?? 0) - transaction.amount;
+      }
+    }
     if (transaction.flowClass === 'consumption') {
       consumption += transaction.amount;
       if (transaction.includeInBudget && transaction.categoryId) {
