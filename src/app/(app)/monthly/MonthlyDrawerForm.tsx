@@ -9,9 +9,9 @@ import type { PaymentMethod } from '@/lib/payment-methods';
 
 type TransactionType = 'income' | 'expense' | 'refund' | 'saving' | 'investment' | 'debt_principal' | 'finance_cost' | 'transfer';
 
-export function MonthlyDrawerForm({ categories, paymentMethods, transactions }: { categories: CategoryWithSubcategories[]; paymentMethods: PaymentMethod[]; transactions: { id: string; transactionDate: string; description: string; amount: number; transactionType: string; flowClass: string; status: string }[] }) {
+export function MonthlyDrawerForm({ categories, paymentMethods, transactions, initialTransactionType = 'expense' }: { categories: CategoryWithSubcategories[]; paymentMethods: PaymentMethod[]; transactions: { id: string; transactionDate: string; description: string; amount: number; transactionType: string; flowClass: string; status: string }[]; initialTransactionType?: TransactionType }) {
   const [categoryId, setCategoryId] = useState('');
-  const [transactionType, setTransactionType] = useState<TransactionType>('expense');
+  const [transactionType, setTransactionType] = useState<TransactionType>(initialTransactionType);
   const [state, formAction, pending] = useActionState(createMonthlyRowAction, INITIAL_ACTION_STATE);
   const selectedCategory = categories.find((category) => category.id === categoryId);
   const isCategorized = transactionType === 'income' || transactionType === 'expense';

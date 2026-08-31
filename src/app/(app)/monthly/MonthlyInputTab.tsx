@@ -138,11 +138,16 @@ export function MonthlyInputTab({
   duplicateCandidates: Record<string, DuplicateCandidate[]>;
 }) {
   const columns = useMemo(() => makeColumns(paymentMethods, duplicateCandidates), [paymentMethods, duplicateCandidates]);
-  const table = useTable({ features, columns, data: initialTransactions });
+  const orderedTransactions = useMemo(() => [...initialTransactions].sort((a, b) => {
+    if (a.status === 'planned' && b.status !== 'planned') return -1;
+    if (a.status !== 'planned' && b.status === 'planned') return 1;
+    return a.transactionDate.localeCompare(b.transactionDate);
+  }), [initialTransactions]);
+  const table = useTable({ features, columns, data: orderedTransactions });
 
   return (
     <div className="monthly-input-panel flex flex-col gap-4">
-      <div className="monthly-cta"><AddDrawer title="거래 입력" description="수입·지출·저축·투자 등 이번 달 거래를 추가하세요. 저장하면 목록에 바로 반영됩니다." triggerLabel="거래 추가"><MonthlyRowForm categories={categories} paymentMethods={paymentMethods} transactions={initialTransactions} /></AddDrawer></div>
+      <div className="monthly-cta monthly-quick-actions"><AddDrawer title="수입 추가" description="이번 달에 들어온 돈을 기록하세요." triggerLabel="수입 추가"><MonthlyRowForm initialTransactionType="income" categories={categories} paymentMethods={paymentMethods} transactions={initialTransactions} /></AddDrawer><AddDrawer title="지출 추가" description="이번 달에 쓴 돈을 기록하세요." triggerLabel="지출 추가"><MonthlyRowForm initialTransactionType="expense" categories={categories} paymentMethods={paymentMethods} transactions={initialTransactions} /></AddDrawer><AddDrawer title="기타 거래 입력" description="저축·투자·환불·이체 등 기타 거래를 기록하세요." triggerLabel="기타 거래"><MonthlyRowForm categories={categories} paymentMethods={paymentMethods} transactions={initialTransactions} /></AddDrawer></div>
 
       <div className="table-surface overflow-x-auto">
         <table className="monthly-input-table w-full border-collapse text-sm">
