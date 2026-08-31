@@ -476,11 +476,11 @@ textarea {
   vertical-align: middle;
 }
 
-.monthly-input-table { display: block; width: 100%; min-width: 1280px; }
-.monthly-input-table thead > tr, .monthly-input-table tbody > tr { display: grid; width: 100%; grid-template-columns: 108px 136px 100px 140px 132px 132px 250px 132px 150px; }
+.monthly-input-table { display: block; width: 100%; min-width: 960px; }
+.monthly-input-table thead > tr, .monthly-input-table tbody > tr { display: grid; width: 100%; grid-template-columns: 88px 112px 78px 112px 98px 98px minmax(140px, 1fr) 118px 110px; }
 .monthly-input-table tbody { display: block; }
 .monthly-input-table th, .monthly-input-table td { min-width: 0; }
-.monthly-input-table thead { background: var(--tds-white); }
+.monthly-input-table thead { display: block; width: 100%; background: var(--tds-white); }
 .monthly-input-table tbody { min-width: 0; }
 
 .monthly-input-table td {
@@ -953,7 +953,17 @@ label:has(> input[required])::after, label:has(> select[required])::after, label
   .monthly-input-table tbody { display: grid; gap: 10px; padding: 10px; }
   .monthly-input-table .monthly-input-row { content-visibility: visible; contain-intrinsic-size: auto; }
   .monthly-input-table tbody > tr { display: grid; grid-template-areas: "date status" "type cost" "category subcategory" "description description" "amount payment"; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4px 8px; padding: 10px 12px; border: 1px solid var(--tds-grey-200); border-radius: 16px; background: var(--tds-white); }
-  .monthly-input-table tbody > tr > td { min-width: 0; min-height: 0; border: 0; padding: 4px 0; }
+  .monthly-input-table tbody > tr > td { display: flex; min-width: 0; min-height: 0; align-items: center; gap: 6px; border: 0; padding: 4px 0; }
+  .monthly-input-table tbody > tr > td::before { flex: 0 0 auto; color: var(--tds-grey-500); content: ''; font-size: 11px; font-weight: 700; }
+  .monthly-input-table tbody > tr > td:nth-child(1)::before { content: '날짜'; }
+  .monthly-input-table tbody > tr > td:nth-child(2)::before { content: '상태'; }
+  .monthly-input-table tbody > tr > td:nth-child(3)::before { content: '유형'; }
+  .monthly-input-table tbody > tr > td:nth-child(4)::before { content: '성격'; }
+  .monthly-input-table tbody > tr > td:nth-child(5)::before { content: '대분류'; }
+  .monthly-input-table tbody > tr > td:nth-child(6)::before { content: '소분류'; }
+  .monthly-input-table tbody > tr > td:nth-child(7)::before { content: '내용'; }
+  .monthly-input-table tbody > tr > td:nth-child(8)::before { content: '금액'; }
+  .monthly-input-table tbody > tr > td:nth-child(9)::before { content: '결제'; }
   .monthly-input-table tbody > tr > td:nth-child(1) { grid-area: date; justify-content: flex-start; }
   .monthly-input-table tbody > tr > td:nth-child(2) { grid-area: status; justify-content: flex-end; }
   .monthly-input-table tbody > tr > td:nth-child(3) { grid-area: type; }
@@ -963,6 +973,8 @@ label:has(> input[required])::after, label:has(> select[required])::after, label
   .monthly-input-table tbody > tr > td:nth-child(7) { grid-area: description; overflow: hidden; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
   .monthly-input-table tbody > tr > td:nth-child(8) { grid-area: amount; justify-content: flex-end; padding-left: 0; }
   .monthly-input-table tbody > tr > td:nth-child(9) { grid-area: payment; }
+  .monthly-input-table tbody > tr > td:nth-child(2) form, .monthly-input-table tbody > tr > td:nth-child(4) form { min-width: 0; flex: 1; }
+  .monthly-input-table tbody > tr > td:nth-child(2) select, .monthly-input-table tbody > tr > td:nth-child(4) select { width: 100%; min-width: 0; }
   .monthly-input-table th, .monthly-input-table td { padding-block: 10px; }
   .monthly-input-table td:nth-child(3), .monthly-input-table td:nth-child(5), .monthly-input-table td:nth-child(6), .monthly-input-table td:nth-child(9) { padding-inline: 6px; }
   .monthly-input-table td:nth-child(4) select { width: 100%; }
