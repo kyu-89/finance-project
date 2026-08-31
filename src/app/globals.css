@@ -810,6 +810,10 @@ label:has(> input[required])::after, label:has(> select[required])::after, label
 .monthly-workspace { display: flex; flex-direction: column; gap: 10px; border: 1px solid var(--tds-grey-200); border-radius: 20px; background: var(--tds-white); padding: 10px; }
 .monthly-workspace .monthly-section { border: 0; border-radius: 14px; }
 .monthly-workspace .monthly-section-body { padding: 14px 10px 10px; }
+.monthly-workspace-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 14px; background: var(--tds-grey-100); }
+.monthly-workspace-tabs button { min-height: 44px; border-radius: 10px; color: var(--tds-grey-700); font-size: 14px; font-weight: 750; white-space: nowrap; }
+.monthly-workspace-tabs button[data-selected='true'] { background: var(--tds-white); color: var(--tds-blue-600); box-shadow: 0 2px 8px rgb(13 25 43 / .08); }
+.monthly-workspace-content { min-width: 0; }
 
 @media (max-width: 640px) {
   .home-filter-bar { gap: 8px; }
@@ -822,6 +826,8 @@ label:has(> input[required])::after, label:has(> select[required])::after, label
   .home-month-row .dashboard-period-mobile > summary span:first-child { font-size: 12px; }
   .home-month-row .dashboard-period-mobile > summary strong { font-size: 12px; }
   .home-month-row .dashboard-period-mobile .dashboard-period-presets { position: absolute; z-index: 5; right: 16px; left: 16px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .home-month-row .dashboard-period-mobile[open] { flex-basis: 100%; }
+  .home-month-row .dashboard-period-mobile[open] .dashboard-period-presets { position: static; margin-inline: 0; }
   .home-month-row .dashboard-period-mobile .dashboard-period-custom { grid-template-columns: 1fr 1fr; }
   .home-month-row .dashboard-period-mobile .dashboard-period-custom button { grid-column: 1 / -1; width: 100%; }
   .home-month-row .dashboard-period-mobile { position: relative; }
@@ -833,10 +839,31 @@ label:has(> input[required])::after, label:has(> select[required])::after, label
   .monthly-work-links > span { font-size: 13px; }
   .monthly-work-links > a { padding-inline: 10px; }
   .monthly-add-button { width: 100%; }
-  .monthly-cta { top: -2px; right: 0; }
+  .monthly-cta { position: static; align-self: stretch; }
   .monthly-cta .drawer-trigger { min-height: 42px; padding-inline: 12px; }
   .monthly-input-panel .table-surface { padding-top: 0; }
   .finance-snapshot { max-width: none; }
+}
+
+@media (min-width: 641px) {
+  .home-filter-bar { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .home-month-row { display: grid; min-width: 0; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 20px; }
+  .home-month-row > .dashboard-period-filters { display: grid; min-width: 0; grid-template-columns: minmax(0, 1fr) auto; justify-content: end; }
+  .home-month-row .dashboard-period-presets { min-width: 0; overflow-x: auto; scrollbar-width: none; }
+  .home-month-row .dashboard-period-presets::-webkit-scrollbar { display: none; }
+  .home-month-row .dashboard-period-custom { min-width: 0; }
+  .home-member-scroll { min-width: 0; }
+}
+
+@media (max-width: 640px) {
+  .home-month-row { flex-wrap: wrap; }
+  .home-month-row > .dashboard-period-filters { min-width: 0; }
+  .home-month-row > .dashboard-period-filters:has(.dashboard-period-mobile[open]) { flex-basis: 100%; }
+  .home-month-row .dashboard-period-mobile .dashboard-period-custom { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .home-month-row .dashboard-period-mobile .dashboard-period-custom label { min-width: 0; }
+  .home-month-row .dashboard-period-mobile .dashboard-period-custom button { grid-column: 1 / -1; }
+  .monthly-workspace-tabs button { min-height: 48px; font-size: 13px; }
+  .monthly-workspace { padding: 4px; }
 }
 
 .dashboard-period-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
