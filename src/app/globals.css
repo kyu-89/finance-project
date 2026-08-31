@@ -607,6 +607,9 @@ textarea {
 .home-monthly-category-children a { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 30px; color: var(--tds-grey-700); font-size: 12px; }
 .home-monthly-category-children a:hover { color: var(--tds-blue-600); }
 .home-monthly-category-children small { color: var(--tds-grey-500); font-size: 11px; }
+.home-monthly-category-group > a { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 30px; color: var(--tds-grey-700); font-size: 12px; font-weight: 700; }
+.home-monthly-subcategory-children { display: grid; gap: 2px; margin: 0 0 6px 12px; padding-left: 10px; border-left: 1px solid var(--tds-grey-200); }
+.home-monthly-subcategory-children a { min-height: 27px; color: var(--tds-grey-600); font-size: 11px; }
 .home-explorer-row { border-bottom: 1px solid var(--tds-grey-100); }
 .home-explorer-row-trigger { display: flex; width: 100%; min-width: 0; align-items: center; gap: 10px; padding: 12px 0; text-align: left; }
 .home-explorer-row-main { min-width: 0; flex: 1; }
