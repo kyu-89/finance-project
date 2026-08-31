@@ -19,28 +19,24 @@ export function TransactionStatusEditor({ transaction }: { transaction: Transact
   );
 
   return (
-    <form action={formAction} className="flex min-w-0 items-center gap-1">
+    <form action={formAction} className="transaction-status-editor flex min-w-0 items-center gap-1">
       <input type="hidden" name="id" value={transaction.id} />
       <select
         name="status"
         defaultValue={transaction.status}
         aria-label={`${transaction.description} 상태`}
         disabled={pending}
+        aria-busy={pending}
+        onChange={(event) => event.currentTarget.form?.requestSubmit()}
         className="min-w-0 px-2 py-1 text-xs"
       >
         {Object.entries(TRANSACTION_STATUS_LABEL).map(([value, label]) => (
           <option key={value} value={value}>{label}</option>
         ))}
       </select>
-      <button
-        type="submit"
-        disabled={pending}
-        className="secondary-button min-h-9 w-[52px] shrink-0 whitespace-nowrap px-2 text-xs"
-      >
-        {pending ? '저장 중' : '변경'}
-      </button>
-      {state.ok === false && <span role="alert" className="sr-only">{state.message}</span>}
-      {state.ok === true && <span role="status" className="sr-only">상태가 변경됐어요.</span>}
+      {pending && <span className="transaction-status-feedback" role="status">저장 중</span>}
+      {state.ok === false && <span role="alert" className="transaction-status-feedback is-error">{state.message}</span>}
+      {state.ok === true && <span role="status" className="transaction-status-feedback">저장됨</span>}
     </form>
   );
 }

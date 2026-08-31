@@ -345,6 +345,9 @@ textarea {
 .monthly-summary-card.is-wealth strong { color: var(--tds-green-500); }
 .monthly-quick-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .monthly-quick-actions > * { flex: 1 1 150px; }
+.transaction-status-editor select { min-height: 40px; }
+.transaction-status-feedback { flex: 0 0 auto; color: var(--tds-green-500); font-size: 11px; white-space: nowrap; }
+.transaction-status-feedback.is-error { color: var(--tds-red-500); }
 .monthly-report-lead { display: grid; gap: 6px; padding: 20px; border: 1px solid var(--tds-grey-200); border-radius: 18px; background: var(--tds-blue-50); }
 .monthly-report-lead h2 { max-width: 760px; font-size: 20px; line-height: 1.45; letter-spacing: -.03em; }
 .monthly-report-lead > p:last-child { color: var(--tds-grey-700); font-size: 13px; }
