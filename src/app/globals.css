@@ -586,6 +586,39 @@ textarea {
 .home-chart-legend .is-expense::before { background: #ff8f95; }
 .home-chart-legend .is-wealth::before { background: var(--tds-green-500); }
 .home-detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.home-primary-tabs { margin-top: 22px; }
+.home-primary-tab-list { display: flex; gap: 4px; padding: 4px; border-radius: 14px; background: var(--tds-grey-100); }
+.home-primary-tab-list button { min-height: 44px; flex: 1 1 0; border-radius: 10px; color: var(--tds-grey-700); font-size: 13px; font-weight: 700; transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease; }
+.home-primary-tab-list button.is-selected { background: var(--tds-white); color: var(--tds-blue-600); box-shadow: 0 2px 8px rgb(13 25 43 / 0.08); }
+.home-primary-panel { display: grid; min-width: 0; gap: 16px; margin-top: 16px; }
+.home-primary-panel > section { margin: 0; }
+.home-monthly-detail-lead { display: grid; gap: 14px; }
+.home-flow-kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.home-flow-kpi { display: grid; gap: 5px; min-width: 0; padding: 18px; }
+.home-flow-kpi > span { color: var(--tds-grey-700); font-size: 13px; font-weight: 700; }
+.home-flow-kpi strong { overflow: hidden; font-size: clamp(18px, 2vw, 24px); letter-spacing: -.035em; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.home-flow-kpi small { color: var(--tds-grey-500); font-size: 11px; }
+.home-flow-kpi .is-positive { color: var(--tds-blue-600); }
+.home-flow-kpi .is-negative { color: var(--tds-red-500); }
+.home-flow-kpi .is-wealth { color: var(--tds-green-500); }
+.home-flow-trend-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.home-flow-trend-card { min-width: 0; padding: 18px; }
+.home-flow-trend-card h3 { font-size: 14px; font-weight: 750; }
+.home-flow-trend-legend { display: flex; gap: 10px; margin-top: 8px; color: var(--tds-grey-600); font-size: 11px; }
+.home-flow-trend-legend span::before { display: inline-block; width: 7px; height: 7px; margin-right: 4px; border-radius: 50%; content: ''; }
+.home-flow-trend-legend .is-income::before { background: var(--tds-blue-500); }
+.home-flow-trend-legend .is-expense::before { background: var(--tds-red-500); }
+.home-flow-trend-callout { margin-top: 7px; color: var(--tds-green-600, var(--tds-green-500)); font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.home-flow-trend-callout.is-negative { color: var(--tds-red-500); }
+.home-flow-trend-chart { display: flex; height: 116px; align-items: flex-end; gap: 4px; margin-top: 10px; padding-top: 17px; border-bottom: 1px solid var(--tds-grey-200); }
+.home-flow-trend-column { display: flex; min-width: 0; flex: 1 1 0; height: 100%; flex-direction: column; justify-content: flex-end; align-items: center; gap: 3px; }
+.home-flow-trend-value { overflow: hidden; max-width: 100%; color: var(--tds-grey-500); font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.home-flow-trend-track { display: flex; width: 100%; height: 80px; align-items: flex-end; justify-content: center; gap: 2px; }
+.home-flow-trend-track span { display: block; width: 7px; min-height: 0; border-radius: 4px 4px 0 0; }
+.home-flow-trend-labels { display: flex; gap: 4px; margin-top: 6px; color: var(--tds-grey-500); font-size: 9px; text-align: center; }
+.home-flow-trend-labels span { min-width: 0; flex: 1 1 0; }
+.home-flow-trend-labels .is-current { color: var(--tds-blue-600); font-weight: 800; }
+.home-trend-period { color: var(--tds-grey-500); font-size: 12px; }
 .home-detail-card { min-width: 0; padding: 22px; }
 .home-spending-explorer { min-width: 0; padding: 22px; }
 .home-explorer-controls { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; margin-top: 18px; }
@@ -819,6 +852,14 @@ label:has(> input[required])::after, label:has(> select[required])::after, label
   .home-trend-bars { height: 144px; }
   .home-chart-legend { justify-content: flex-start; }
   .home-detail-grid { grid-template-columns: 1fr; }
+  .home-primary-tabs { margin-top: 16px; }
+  .home-primary-tab-list { margin-inline: -4px; }
+  .home-primary-tab-list button { min-height: 44px; padding-inline: 4px; font-size: 11px; }
+  .home-flow-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .home-flow-kpi { padding: 15px; }
+  .home-flow-kpi strong { font-size: 18px; }
+  .home-flow-trend-grid { grid-template-columns: 1fr; }
+  .home-flow-trend-card { padding: 16px; }
   .home-detail-card { padding: 20px; }
   .home-section-heading { align-items: flex-start; }
   .home-section-heading h2 { font-size: 18px; }
