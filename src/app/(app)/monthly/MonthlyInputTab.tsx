@@ -145,7 +145,7 @@ export function MonthlyInputTab({
       <div className="monthly-cta"><AddDrawer title="거래 입력" description="수입·지출·저축·투자 등 이번 달 거래를 추가하세요. 저장하면 목록에 바로 반영됩니다." triggerLabel="거래 추가"><MonthlyRowForm categories={categories} paymentMethods={paymentMethods} transactions={initialTransactions} /></AddDrawer></div>
 
       <div className="table-surface overflow-x-auto">
-        <table className="monthly-input-table w-full min-w-[1040px] border-collapse text-sm">
+        <table className="monthly-input-table w-full border-collapse text-sm">
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="border-b text-left">
