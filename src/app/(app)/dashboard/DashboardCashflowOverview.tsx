@@ -1,0 +1,17 @@
+import type { ReactNode } from 'react';
+import type { HomeMonth } from '@/lib/dashboard-home';
+
+const won = new Intl.NumberFormat('ko-KR');
+const money = (value: number) => `${won.format(Math.round(value))}원`;
+const outflow = (item: HomeMonth) => item.consumption + item.financeCost + item.saving + item.investment + item.debtPrincipal;
+
+export function DashboardCashflowOverview({ monthly, selectedMonth, children }: { monthly: HomeMonth[]; selectedMonth: string; children: ReactNode }) {
+  const max = Math.max(1, ...monthly.flatMap((item) => [item.income, item.consumption]));
+  const averageSavingRate = monthly.filter((item) => item.income > 0).reduce((sum, item) => sum + (item.saving + item.investment) / item.income, 0) / Math.max(1, monthly.filter((item) => item.income > 0).length);
+  return <div className="home-html-flow-view">
+    <section className="tds-card home-html-card"><div className="home-html-title"><h2>월별 수입 · 소비 추이</h2><span>확정 데이터 기준</span></div><div className="home-cashflow-chart">{monthly.map((item) => <div className={item.month === selectedMonth ? 'is-current' : ''} key={item.month}><div className="home-cashflow-bars"><i style={{ height: `${item.income / max * 100}%` }} /><i style={{ height: `${item.consumption / max * 100}%` }} /></div><small>{item.month.slice(5, 7)}월</small></div>)}</div><div className="home-html-legend"><span><i className="is-blue" />수입</span><span><i className="is-red" />소비성지출</span></div><p className="home-html-note">선택한 월: {selectedMonth.slice(0, 4)}년 {Number(selectedMonth.slice(5, 7))}월. 예정 거래는 확정 흐름에 포함하지 않습니다.</p></section>
+    <div className="home-html-two-column"><section className="tds-card home-html-card"><div className="home-html-title"><h2>저축률 추이</h2><span>평균 {(averageSavingRate * 100).toFixed(1)}%</span></div><div className="home-rate-chart">{monthly.map((item) => <div className={item.month === selectedMonth ? 'is-current' : ''} key={item.month}><i style={{ height: `${Math.min(100, (item.income > 0 ? (item.saving + item.investment) / item.income : 0) * 100)}%` }} /><small>{item.month.slice(5, 7)}월</small></div>)}</div><p className="home-html-note">저축률 = 저축성지출 ÷ 수입. 부를 쌓는 속도를 보여주는 지표입니다.</p></section><section className="tds-card home-html-card"><div className="home-html-title"><h2>순현금흐름</h2><span>수입 − 총지출</span></div><div className="home-cashflow-values">{monthly.slice(-6).map((item) => <div className={item.month === selectedMonth ? 'is-current' : ''} key={item.month}><span>{item.month.slice(5, 7)}월</span><b className={outflow(item) <= item.income ? 'is-positive' : 'is-negative'}>{money(item.income - outflow(item))}</b></div>)}</div><p className="home-html-note">양수면 해당 월에 돈이 남고, 음수면 보유 자산에서 부족분을 사용한 것입니다.</p></section></div>
+    <section className="tds-card home-html-card"><div className="home-html-title"><h2>수입 다각화 · 연간</h2><span>유형별 수입은 아래 상세에서 확인</span></div><div className="home-income-total"><b>{money(monthly.reduce((sum, item) => sum + item.income, 0))}</b><span>최근 {monthly.length}개월 확정 수입</span></div></section>
+    <div className="home-html-flow-detail"><div className="home-html-title"><h2>월별 상세</h2><span>{selectedMonth.slice(0, 4)}년 {Number(selectedMonth.slice(5, 7))}월</span></div>{children}</div>
+  </div>;
+}
