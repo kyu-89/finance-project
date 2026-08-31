@@ -19,7 +19,7 @@ export function TransactionStatusEditor({ transaction }: { transaction: Transact
   );
 
   return (
-    <form action={formAction} className="transaction-status-editor flex min-w-0 items-center gap-1">
+    <form action={formAction} className="transaction-status-editor transaction-inline-editor">
       <input type="hidden" name="id" value={transaction.id} />
       <select
         name="status"
@@ -28,7 +28,7 @@ export function TransactionStatusEditor({ transaction }: { transaction: Transact
         disabled={pending}
         aria-busy={pending}
         onChange={(event) => event.currentTarget.form?.requestSubmit()}
-        className="min-w-0 px-2 py-1 text-xs"
+        className="transaction-inline-select"
       >
         {Object.entries(TRANSACTION_STATUS_LABEL).map(([value, label]) => (
           <option key={value} value={value}>{label}</option>

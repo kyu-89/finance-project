@@ -356,6 +356,8 @@ textarea {
 .monthly-transaction-section-heading h2 { font-size: 16px; letter-spacing: -.02em; }
 .monthly-transaction-section-heading p { margin-top: 3px; color: var(--tds-grey-600); font-size: 12px; }
 .monthly-transaction-section-heading > strong { color: var(--tds-grey-600); font-size: 12px; white-space: nowrap; }
+.transaction-inline-editor { position: relative; display: grid; width: 100%; min-width: 0; }
+.transaction-inline-select { box-sizing: border-box; display: block; width: 100%; height: 40px; min-height: 40px; padding: 0 8px; font-size: 13px; line-height: 1.2; }
 .transaction-status-editor select { min-height: 40px; }
 .transaction-status-feedback { flex: 0 0 auto; color: var(--tds-green-500); font-size: 11px; white-space: nowrap; }
 .transaction-status-feedback.is-error { color: var(--tds-red-500); }
@@ -495,6 +497,8 @@ textarea {
 
 .monthly-input-table .monthly-input-row > td {
   line-height: 1.35;
+  font-size: 13px;
+  white-space: nowrap;
 }
 .monthly-input-table td:first-child,
 .monthly-input-table th:first-child { white-space: nowrap; }
@@ -975,6 +979,8 @@ label:has(> input[required])::after, label:has(> select[required])::after, label
   .monthly-input-table tbody > tr > td:nth-child(9) { grid-area: payment; }
   .monthly-input-table tbody > tr > td:nth-child(2) form, .monthly-input-table tbody > tr > td:nth-child(4) form { min-width: 0; flex: 1; }
   .monthly-input-table tbody > tr > td:nth-child(2) select, .monthly-input-table tbody > tr > td:nth-child(4) select { width: 100%; min-width: 0; }
+  .monthly-input-table .transaction-inline-select { height: 40px; min-height: 40px; font-size: 13px; }
+  .monthly-input-table .transaction-status-feedback { position: absolute; top: calc(100% + 2px); right: 0; z-index: 2; padding: 2px 5px; border-radius: 5px; background: var(--tds-white); box-shadow: 0 2px 8px rgb(15 23 42 / .12); }
   .monthly-input-table th, .monthly-input-table td { padding-block: 10px; }
   .monthly-input-table td:nth-child(3), .monthly-input-table td:nth-child(5), .monthly-input-table td:nth-child(6), .monthly-input-table td:nth-child(9) { padding-inline: 6px; }
   .monthly-input-table td:nth-child(4) select { width: 100%; }
