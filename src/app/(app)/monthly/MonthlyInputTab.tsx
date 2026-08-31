@@ -28,16 +28,16 @@ function CostBehaviorEditor({ transaction }: { transaction: Transaction }) {
   );
 
   return (
-    <form action={formAction} className="flex min-w-0 flex-col gap-1">
+    <form action={formAction} className="transaction-inline-editor">
       <input type="hidden" name="id" value={transaction.id} />
-      <div className="flex min-w-0 gap-1">
+      <div className="min-w-0">
         <select
           name="costBehavior"
           defaultValue={transaction.costBehavior ?? ''}
           aria-label={`${transaction.description} 비용성격`}
           onChange={(event) => event.currentTarget.form?.requestSubmit()}
           disabled={pending}
-          className="min-w-0 flex-1 px-2 py-1 text-xs"
+          className="transaction-inline-select"
         >
           <option value="">미지정</option>
           <option value="fixed">{COST_BEHAVIOR_LABEL.fixed}</option>
