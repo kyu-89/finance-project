@@ -1,16 +1,15 @@
 'use client';
 
-import { useActionState, useMemo, useState } from 'react';
+import { useActionState, useMemo } from 'react';
 import { createColumnHelper, tableFeatures, useTable } from '@tanstack/react-table';
 import {
-  createMonthlyRowAction,
   confirmPlannedTransactionAction,
   skipPlannedTransactionAction,
   linkRecurringOccurrenceAction,
   updateCostBehaviorAction,
 } from '@/actions/transaction-actions';
-import { FormMessage } from '@/components/FormMessage';
 import { AddDrawer } from '@/components/Drawer';
+import { FormMessage } from '@/components/FormMessage';
 import { INITIAL_ACTION_STATE } from '@/lib/action-result';
 import type { Transaction } from '@/lib/transactions';
 import type { CategoryWithSubcategories } from '@/lib/categories';
@@ -143,7 +142,7 @@ export function MonthlyInputTab({
 
   return (
     <div className="monthly-input-panel flex flex-col gap-4">
-      <div className="monthly-cta"><AddDrawer title="거래 입력" description="이번 달 거래를 추가하세요. 저장하면 목록에 바로 반영됩니다." triggerLabel="지출 추가"><MonthlyRowForm categories={categories} paymentMethods={paymentMethods} transactions={initialTransactions} /></AddDrawer></div>
+      <div className="monthly-cta"><AddDrawer title="거래 입력" description="수입·지출·저축·투자 등 이번 달 거래를 추가하세요. 저장하면 목록에 바로 반영됩니다." triggerLabel="거래 추가"><MonthlyRowForm categories={categories} paymentMethods={paymentMethods} transactions={initialTransactions} /></AddDrawer></div>
 
       <div className="table-surface overflow-x-auto">
         <table className="monthly-input-table w-full min-w-[1040px] border-collapse text-sm">
@@ -178,42 +177,5 @@ export function MonthlyInputTab({
         </table>
       </div>
     </div>
-  );
-}
-
-function LegacyMonthlyRowForm({ categories, paymentMethods }: { categories: CategoryWithSubcategories[]; paymentMethods: PaymentMethod[] }) {
-  const [categoryId, setCategoryId] = useState('');
-  const [transactionType, setTransactionType] = useState<'income' | 'expense' | 'saving' | 'investment' | 'debt_principal' | 'finance_cost' | 'transfer'>('expense');
-  const selectedCategory = categories.find((c) => c.id === categoryId);
-  const [state, formAction, pending] = useActionState(createMonthlyRowAction, INITIAL_ACTION_STATE);
-
-  return (
-    <form action={formAction} className="tds-card grid grid-cols-2 gap-3 p-5 md:grid-cols-7">
-      <div className="col-span-2 md:col-span-7"><FormMessage result={state} /></div>
-      <label className="col-span-2 flex flex-col gap-1 text-sm font-medium md:col-span-1"><span>거래 유형</span><select value={transactionType} onChange={(e) => { const next = e.target.value as typeof transactionType; setTransactionType(next); setCategoryId(''); }} className="rounded border px-2 py-1 text-sm"><option value="expense">지출</option><option value="income">수입</option><option value="saving">저축</option><option value="investment">투자</option><option value="debt_principal">대출 원금상환</option><option value="finance_cost">금융비용</option><option value="transfer">이체</option></select></label>
-      <input type="hidden" name="transactionType" value={transactionType} />
-      <input type="hidden" name="categoryDefaultCostBehavior" value={selectedCategory?.defaultCostBehavior ?? ''} />
-      <input type="date" name="transactionDate" required className="rounded border px-2 py-1 text-sm" />
-      {(transactionType === 'income' || transactionType === 'expense') && <select name="categoryId" required value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="rounded border px-2 py-1 text-sm">
-        <option value="">대분류</option>
-        {categories.filter((c) => c.transactionType === transactionType && c.isActive).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-      </select>}
-      {(transactionType === 'income' || transactionType === 'expense') && <select name="subcategoryId" className="rounded border px-2 py-1 text-sm">
-        <option value="">소분류</option>
-        {selectedCategory?.subcategories.map((sub) => <option key={sub.id} value={sub.id}>{sub.name}</option>)}
-      </select>}
-      {transactionType === 'expense' && <select name="paymentMethodId" required className="rounded border px-2 py-1 text-sm">
-        <option value="">결제수단</option>
-        {paymentMethods.map((method) => <option key={method.id} value={method.id}>{method.name}</option>)}
-      </select>}
-      {transactionType === 'expense' && <select name="costBehaviorOverride" className="rounded border px-2 py-1 text-sm">
-        <option value="">기본 비용성격</option><option value="fixed">고정비</option><option value="variable">변동비</option>
-      </select>}
-      <input name="description" placeholder="내용" required className="rounded border px-2 py-1 text-sm" />
-      <input name="amount" type="number" step="1" min="1" placeholder="금액" required className="rounded border px-2 py-1 text-sm" />
-      <button type="submit" disabled={pending} className="monthly-add-button tds-primary-button col-span-2 px-4 text-[0px] md:col-span-1">
-        <span className="text-[15px]">{pending ? '추가 중…' : `${transactionType === 'expense' ? '지출' : transactionType === 'income' ? '수입' : '거래'} 추가`}</span>
-      </button>
-    </form>
   );
 }
