@@ -32,10 +32,15 @@ export function BudgetClosingTab({ transactions, categories, budgets }: { transa
     ['목표 대비 저축률', closing.savingsRateVariance === null ? '-' : `${closing.savingsRateVariance >= 0 ? '+' : ''}${(closing.savingsRateVariance * 100).toFixed(1)}%p`],
     ['소비율', percent(closing.consumptionRate)],
   ];
+  const primaryMetrics = metrics.filter(([label]) => ['총수입', '소비성지출', '생활수지', '저축률', '자산형성액', '현금잔여액'].includes(label));
+  const detailMetrics = metrics.filter(([label]) => !['총수입', '소비성지출', '생활수지', '저축률', '자산형성액', '현금잔여액'].includes(label));
+  const insight = closing.income === 0 && closing.consumption === 0 ? '아직 확정된 거래가 없어요. 이번 달 수입과 지출을 입력하면 분석이 시작됩니다.' : closing.livingBalance >= 0 ? `이번 달 생활수지 ${won(closing.livingBalance)}로 흑자예요. 저축·투자로 ${won(closing.wealthBuilt)}을 자산으로 옮겼어요.` : `이번 달 지출이 수입보다 ${won(Math.abs(closing.livingBalance))} 많아요. 고정비와 예정 거래를 먼저 점검해 보세요.`;
   return <div className="flex flex-col gap-5">
-    <section className="grid grid-cols-2 gap-3 md:grid-cols-3">{metrics.map(([label, value]) => <div key={label} className="tds-card p-4">
+    <section className="monthly-report-lead"><p className="monthly-kicker">이번 달 분석 리포트</p><h2>{insight}</h2><p>확정된 거래를 기준으로 계산했어요. 예정 거래는 확정·제외 처리한 뒤 다시 확인할 수 있습니다.</p></section>
+    <section className="grid grid-cols-2 gap-3 md:grid-cols-3">{primaryMetrics.map(([label, value]) => <div key={label} className="tds-card p-4">
       <p className="text-xs text-[var(--tds-grey-500)]">{label}</p><p className="mt-2 text-xl font-bold tabular-nums">{value}</p>
     </div>)}</section>
+    <details className="monthly-report-details"><summary>상세 지표 {detailMetrics.length}개 보기</summary><section className="grid grid-cols-2 gap-3 p-3 md:grid-cols-3">{detailMetrics.map(([label, value]) => <div key={label} className="tds-card p-4"><p className="text-xs text-[var(--tds-grey-500)]">{label}</p><p className="mt-2 text-xl font-bold tabular-nums">{value}</p></div>)}</section></details>
     <section className="tds-card p-5"><div className="flex flex-wrap items-end justify-between gap-2">
       <div><h2 className="text-lg font-bold">소비 예산</h2><p className="mt-1 text-sm text-[var(--tds-grey-700)]">예산 {won(closing.budgetTotal)} · 잔액 {won(closing.budgetRemaining)}</p></div>
       <strong className="text-lg tabular-nums">소진율 {percent(closing.budgetUsageRate)}</strong></div>
