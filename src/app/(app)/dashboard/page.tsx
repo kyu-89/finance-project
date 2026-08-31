@@ -9,6 +9,8 @@ import { DashboardPeriodFilters } from './DashboardPeriodFilters';
 import { DashboardSpendingExplorer } from './DashboardSpendingExplorer';
 import { DashboardNetWorthExplorer } from './DashboardNetWorthExplorer';
 import { materializeRecurringRulesForRange } from '@/lib/recurring-rules';
+import { getDashboardIncomeSummary } from '@/lib/dashboard-income';
+import { DashboardIncomeExplorer } from './DashboardIncomeExplorer';
 
 const won = new Intl.NumberFormat('ko-KR');
 const monthPattern = /^\d{4}-(0[1-9]|1[0-2])$/;
@@ -25,8 +27,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const validMemberForQuery = requestedMember === UNASSIGNED_DASHBOARD_MEMBER || members.some((item) => item.id === requestedMember);
   const memberForQuery = validMemberForQuery ? requestedMember : undefined;
   await materializeRecurringRulesForRange(household.id, `${trendStart}-01`, bounds.to);
-  const [summary, netWorth, assetHistory, goals, tasks] = await Promise.all([
-    getDashboardHomeSummary({ householdId: household.id, from: dashboardRange.from < `${trendStart}-01` ? dashboardRange.from : `${trendStart}-01`, to: bounds.to, monthStart: dashboardRange.from, monthEnd: dashboardRange.to, memberId: memberForQuery }), computeCurrentNetWorth(household.id, today, memberForQuery), listAssetValueHistory(household.id, 36), listFinancialGoals(household.id), listFinancialTasks(household.id, today, `${currentMonth}-31`),
+  const [summary, incomeSummary, netWorth, assetHistory, goals, tasks] = await Promise.all([
+    getDashboardHomeSummary({ householdId: household.id, from: dashboardRange.from < `${trendStart}-01` ? dashboardRange.from : `${trendStart}-01`, to: bounds.to, monthStart: dashboardRange.from, monthEnd: dashboardRange.to, memberId: memberForQuery }), getDashboardIncomeSummary({ householdId: household.id, from: dashboardRange.from < `${trendStart}-01` ? dashboardRange.from : `${trendStart}-01`, to: bounds.to, monthStart: dashboardRange.from, monthEnd: dashboardRange.to, memberId: memberForQuery }), computeCurrentNetWorth(household.id, today, memberForQuery), listAssetValueHistory(household.id, 36), listFinancialGoals(household.id), listFinancialTasks(household.id, today, `${currentMonth}-31`),
   ]);
   const memberAssetHistory = memberForQuery && memberForQuery !== UNASSIGNED_DASHBOARD_MEMBER ? await listAssetValueHistory(household.id, 36, memberForQuery) : [];
   const validMember = requestedMember === UNASSIGNED_DASHBOARD_MEMBER || members.some((item) => item.id === requestedMember); const member = validMember ? requestedMember : undefined; const memberName = member === UNASSIGNED_DASHBOARD_MEMBER ? '미지정' : members.find((item) => item.id === member)?.displayName ?? '가구 전체'; const monthlyByMonth = new Map(summary.monthly.map((item) => [item.month, item])); const months = Array.from({ length: 12 }, (_, index) => shiftMonth(month, index - 11)); const monthlyTrend = months.map((target) => deriveMonth(monthlyByMonth.get(target) ?? emptyMonth(target))); const monthCurrent = deriveMonth(monthlyByMonth.get(month) ?? emptyMonth(month)); const current = preset === 'month' ? monthCurrent : derivePeriod(summary.monthly, dashboardRange.from, dashboardRange.to); const previous = deriveMonth(monthlyByMonth.get(previousMonth) ?? emptyMonth(previousMonth)); const maxTrend = Math.max(1, ...monthlyTrend.flatMap((item) => [item.income, item.consumption + item.financeCost, item.wealthBuilt])); const categoryRows = summary.categories; const paymentRows = summary.payments; const recent = summary.recent; const reviewCount = summary.reviewCount; const plannedCount = summary.plannedCount;
@@ -47,6 +49,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     </section>
 
     <DashboardSpendingExplorer month={month} categories={categoryRows} payments={paymentRows} total={current.consumption} monthly={months.map((target) => summary.monthlyCategories.find((item) => item.month === target) ?? ({ month: target, total: 0, categories: [] }))} />
+
+    <DashboardIncomeExplorer month={month} monthly={months.map((target) => incomeSummary.monthly.find((item) => item.month === target) ?? ({ month: target, total: 0, categories: [] }))} current={incomeSummary.current} />
 
     <section className="home-section home-trend-card"><SectionHeading title="12개월 재무 추이" description="월별 수입·생활비·자산형성액을 같은 기준으로 비교합니다." /><div className="home-trend-chart" role="img" aria-label="최근 12개월 수입, 생활비, 자산형성액 막대 차트">{monthlyTrend.map((item) => <div key={item.month} className={`home-trend-month ${item.month === month ? 'is-current' : ''}`}><div className="home-trend-bars"><TrendBar value={item.income} max={maxTrend} tone="income" /><TrendBar value={item.consumption + item.financeCost} max={maxTrend} tone="expense" /><TrendBar value={item.wealthBuilt} max={maxTrend} tone="wealth" /></div><span>{Number(item.month.slice(5, 7))}월</span></div>)}</div><div className="home-chart-legend"><span className="is-income">수입</span><span className="is-expense">생활비·이자</span><span className="is-wealth">자산형성</span></div></section>
 
