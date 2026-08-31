@@ -17,18 +17,13 @@ import type { CategoryWithSubcategories } from '@/lib/categories';
 import type { PaymentMethod } from '@/lib/payment-methods';
 import type { DuplicateCandidate } from '@/lib/recurring-duplicates';
 import { MonthlyDrawerForm as MonthlyRowForm } from './MonthlyDrawerForm';
+import { TransactionStatusEditor } from '@/components/TransactionStatusEditor';
 
 // No optional row models (sorting/filtering/etc.) are needed for this first-pass read-only
 // table, so the feature registry is empty — the core row model is automatic in v9.
 const features = tableFeatures({});
 const columnHelper = createColumnHelper<typeof features, Transaction>();
 
-const STATUS_LABEL: Record<Transaction['status'], string> = {
-  planned: '예정',
-  posted: '확정',
-  skipped: '이번 달 제외',
-  cancelled: '취소',
-};
 
 function CostBehaviorEditor({ transaction }: { transaction: Transaction }) {
   const [state, formAction, pending] = useActionState(
@@ -108,7 +103,7 @@ function PlannedTransactionEditor({ transaction, paymentMethods, candidates }: {
 function makeColumns(paymentMethods: PaymentMethod[], duplicateCandidates: Record<string, DuplicateCandidate[]>) {
   return columnHelper.columns([
   columnHelper.accessor('transactionDate', { header: '날짜' }),
-  columnHelper.accessor('status', { header: '상태', cell: (info) => <span className="tds-chip">{STATUS_LABEL[info.getValue()]}</span> }),
+  columnHelper.accessor('status', { header: '상태', cell: (info) => <TransactionStatusEditor transaction={info.row.original} /> }),
   columnHelper.accessor('description', { header: '내용' }),
   columnHelper.accessor('amount', {
     header: '금액',

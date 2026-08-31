@@ -10,13 +10,8 @@ import type { CategoryWithSubcategories } from '@/lib/categories';
 import type { PaymentMethod } from '@/lib/payment-methods';
 import type { DuplicateCandidate } from '@/lib/recurring-duplicates';
 import { RefundParentLinkPanel } from './RefundParentLinkPanel';
+import { TransactionStatusEditor, TRANSACTION_STATUS_LABEL } from '@/components/TransactionStatusEditor';
 
-const STATUS_LABEL: Record<Transaction['status'], string> = {
-  planned: '예정',
-  posted: '확정',
-  skipped: '이번 달 제외',
-  cancelled: '취소',
-};
 const TYPE_LABEL: Record<Transaction['transactionType'], string> = { income: '수입', expense: '지출', saving: '저축', investment: '투자', debt_principal: '대출원금', finance_cost: '금융비용', transfer: '이체', asset_adjustment: '자산조정', refund: '환불' };
 
 export function AllTransactionsTab({ initialTransactions, supportDetails, eventDetails, members, categories, paymentMethods, duplicateCandidates }: { initialTransactions: Transaction[]; supportDetails: Record<string, SupportDetail>; eventDetails: Record<string, EventDetail>; members: HouseholdMember[]; categories: CategoryWithSubcategories[]; paymentMethods: PaymentMethod[]; duplicateCandidates: Record<string, DuplicateCandidate[]> }) {
@@ -69,7 +64,7 @@ export function AllTransactionsTab({ initialTransactions, supportDetails, eventD
             data-selected={statusFilter === status}
             className="tds-chip px-4"
           >
-            {status === 'all' ? '전체' : STATUS_LABEL[status]}
+            {status === 'all' ? '전체' : TRANSACTION_STATUS_LABEL[status]}
           </button>
         ))}
       </div>
@@ -88,7 +83,7 @@ export function AllTransactionsTab({ initialTransactions, supportDetails, eventD
             {filtered.map((transaction) => (
               <tr key={transaction.id} className="border-b last:border-b-0">
                 <td className="px-4 py-3">{transaction.transactionDate}</td>
-                <td className="px-4 py-3">{STATUS_LABEL[transaction.status]}</td>
+                <td className="px-4 py-3"><TransactionStatusEditor transaction={transaction} /></td>
                 <td className="px-4 py-3"><button type="button" onClick={() => setSelected(transaction)} className="text-left font-semibold text-[var(--tds-blue-600)] hover:underline">{transaction.description}</button><p className="text-xs text-[var(--tds-grey-500)]">{categories.flatMap((category) => [category, ...category.subcategories]).find((item) => item.id === (transaction.subcategoryId ?? transaction.categoryId))?.name ?? '미분류'}</p>{transaction.tags?.length ? <p className="mt-1 text-xs text-[var(--tds-blue-600)]">{transaction.tags.map((tag) => `#${tag}`).join(' ')}</p> : null}</td>
                 <td className="px-4 py-3">{TYPE_LABEL[transaction.transactionType]}</td>
                 <td className="px-4 py-3 text-right font-semibold tabular-nums">{transaction.amount.toLocaleString('ko-KR')}원</td>

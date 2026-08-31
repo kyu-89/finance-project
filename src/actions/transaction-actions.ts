@@ -243,6 +243,37 @@ export async function updateCostBehaviorAction(
   return ok();
 }
 
+export async function updateTransactionStatusAction(
+  _prevState: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const id = String(formData.get('id') ?? '');
+  const status = formData.get('status');
+  if (!id) return fail('거래 id가 없습니다.');
+  if (status !== 'planned' && status !== 'posted' && status !== 'skipped' && status !== 'cancelled') {
+    return fail('올바른 거래 상태를 선택해주세요.');
+  }
+
+  try {
+    await getCurrentHouseholdId();
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('transactions')
+      .update({ status })
+      .eq('id', id)
+      .is('deleted_at', null)
+      .select('id');
+    if (error) throw new Error(error.message);
+    if (data.length !== 1) throw new Error('상태를 변경할 거래를 찾지 못했어요.');
+  } catch (error) {
+    return fail(error instanceof Error ? error.message : '거래 상태 변경에 실패했어요.');
+  }
+
+  revalidatePath('/monthly');
+  revalidatePath('/dashboard');
+  return ok('거래 상태를 변경했어요.');
+}
+
 export async function confirmPlannedTransactionAction(
   _prevState: ActionResult,
   formData: FormData,
