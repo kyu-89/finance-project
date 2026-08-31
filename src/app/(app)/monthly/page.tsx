@@ -1,27 +1,18 @@
 import Link from 'next/link';
 import { ensureHouseholdForCurrentUser } from '@/lib/household';
-import { listTransactions } from '@/lib/transactions';
+import { listTransactions, promotePastPlannedTransactions } from '@/lib/transactions';
 import { listCategoriesWithSubcategories } from '@/lib/categories';
 import { listPaymentMethods } from '@/lib/payment-methods';
 import { monthRangeFromSeoulDateString, todayInSeoul } from '@/lib/date';
 import { materializeRecurringRulesForRange } from '@/lib/recurring-rules';
-import { findRecurringDuplicateCandidates } from '@/lib/recurring-duplicates';
 import { listBudgets } from '@/lib/budgets';
 import { MonthlyPageTabs } from './MonthlyPageTabs';
-import { listEventDetails, listSupportDetails } from '@/lib/transaction-details';
-import { listHouseholdMembers } from '@/lib/household';
 
 const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
 
 function shiftMonth(month: string, offset: number) {
   const date = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)) - 1 + offset, 1));
   return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
-}
-
-function shiftDate(dateString: string, days: number) {
-  const date = new Date(`${dateString}T00:00:00Z`);
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
 }
 
 function monthLabel(month: string) {
@@ -37,29 +28,24 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
   const selectedSubcategory = params.subcategory && /^[0-9a-f-]{36}$/i.test(params.subcategory) ? params.subcategory : undefined;
   const selectedRecurringRule = params.recurringRule && /^[0-9a-f-]{36}$/i.test(params.recurringRule) ? params.recurringRule : undefined;
   const { fromDate, toDate } = monthRangeFromSeoulDateString(`${selectedMonth}-01`);
+  await promotePastPlannedTransactions(household.id, `${currentMonth}-01`);
   await materializeRecurringRulesForRange(household.id, fromDate, toDate);
 
   const year = Number(fromDate.slice(0, 4));
   const monthNumber = Number(fromDate.slice(5, 7));
-  const [transactions, duplicateScanTransactions, categories, paymentMethods, annualBudgets, supportDetails, eventDetails, members] = await Promise.all([
+  const [transactions, allTransactions, categories, paymentMethods, annualBudgets] = await Promise.all([
     listTransactions({ householdId: household.id, fromDate, toDate, categoryId: selectedCategory, subcategoryId: selectedSubcategory, recurringRuleId: selectedRecurringRule }),
-    listTransactions({ householdId: household.id, fromDate: shiftDate(fromDate, -3), toDate: shiftDate(toDate, 3) }),
+    listTransactions({ householdId: household.id }),
     listCategoriesWithSubcategories(household.id),
     listPaymentMethods(household.id),
     listBudgets(household.id, year),
-    listSupportDetails(household.id),
-    listEventDetails(household.id),
-    listHouseholdMembers(household.id),
   ]);
 
   const budgetCategories = categories.filter((c) => c.transactionType === 'expense');
   const categoryFilterName = selectedCategory ? categories.find((category) => category.id === selectedCategory)?.name : null;
   const subcategoryFilterName = selectedSubcategory ? categories.flatMap((category) => category.subcategories).find((subcategory) => subcategory.id === selectedSubcategory)?.name : null;
   const activePaymentMethods = paymentMethods.filter((m) => m.isActive);
-  const duplicateCandidates = findRecurringDuplicateCandidates(duplicateScanTransactions);
   const budgets = annualBudgets.filter((budget) => budget.month === monthNumber);
-  const supportByTransaction = Object.fromEntries(supportDetails.map((detail) => [detail.transactionId, detail]));
-  const eventByTransaction = Object.fromEntries(eventDetails.map((detail) => [detail.transactionId, detail]));
 
   return (
     <div className="tds-page">
@@ -76,15 +62,12 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
       </div>
       <MonthlyPageTabs
         transactions={transactions}
+        allTransactions={allTransactions}
+        selectedMonth={selectedMonth}
         categories={categories}
         paymentMethods={activePaymentMethods}
-        duplicateCandidates={duplicateCandidates}
         budgets={budgets}
         budgetCategories={budgetCategories}
-        allCategories={categories}
-        supportDetails={supportByTransaction}
-        eventDetails={eventByTransaction}
-        members={members}
       />
     </div>
   );

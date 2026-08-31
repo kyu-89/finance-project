@@ -476,8 +476,8 @@ textarea {
   vertical-align: middle;
 }
 
-.monthly-input-table { display: block; width: 100%; min-width: 1116px; }
-.monthly-input-table thead > tr, .monthly-input-table tbody > tr { display: grid; width: 100%; grid-template-columns: 100px 150px minmax(340px, 1fr) 116px 190px minmax(220px, .75fr); }
+.monthly-input-table { display: block; width: 100%; min-width: 1280px; }
+.monthly-input-table thead > tr, .monthly-input-table tbody > tr { display: grid; width: 100%; grid-template-columns: 108px 136px 100px 140px 132px 132px 250px 132px 150px; }
 .monthly-input-table tbody { display: block; }
 .monthly-input-table th, .monthly-input-table td { min-width: 0; }
 .monthly-input-table thead { background: var(--tds-white); }
@@ -498,18 +498,10 @@ textarea {
 }
 .monthly-input-table td:first-child,
 .monthly-input-table th:first-child { white-space: nowrap; }
-.monthly-input-table td:nth-child(3) { padding-right: 8px; }
-.monthly-input-table td:nth-child(4) { padding-left: 8px; }
-.monthly-input-table td:nth-child(5) { padding-inline: 12px; }
-.monthly-input-table th:nth-child(5), .monthly-input-table td:nth-child(5) { overflow: hidden; }
-.monthly-input-table th:nth-child(6), .monthly-input-table td:nth-child(6) { padding-inline: 8px; }
-.monthly-input-table td:last-child { padding-left: 8px; padding-right: 8px; display: flex; justify-content: flex-end; }
-.monthly-input-table td:last-child > div { width: 100%; }
-.monthly-input-table td:last-child form { max-width: 100%; }
-.monthly-input-table td:last-child form:first-child { flex-wrap: wrap; overflow: visible; }
-.monthly-input-table td:last-child form:first-child input[type="date"] { width: 112px; }
-.monthly-input-table td:last-child form:first-child input[type="number"] { width: 92px; }
-.monthly-input-table td:last-child form:first-child select { width: 112px; }
+.monthly-input-table td:nth-child(1) { white-space: nowrap; }
+.monthly-input-table td:nth-child(2), .monthly-input-table td:nth-child(4) { padding-inline: 10px; }
+.monthly-input-table td:nth-child(2) form, .monthly-input-table td:nth-child(4) form { width: 100%; }
+.monthly-input-table th:nth-child(2), .monthly-input-table td:nth-child(2), .monthly-input-table th:nth-child(4), .monthly-input-table td:nth-child(4) { overflow: visible; }
 .monthly-drawer-form { display: flex; flex-direction: column; gap: 24px; }
 .monthly-drawer-section { display: flex; flex-direction: column; gap: 12px; }
 .monthly-drawer-section h3 { color: var(--tds-grey-900); font-size: 14px; font-weight: 750; }
@@ -960,19 +952,20 @@ label:has(> input[required])::after, label:has(> select[required])::after, label
   .monthly-input-table thead { display: none; }
   .monthly-input-table tbody { display: grid; gap: 10px; padding: 10px; }
   .monthly-input-table .monthly-input-row { content-visibility: visible; contain-intrinsic-size: auto; }
-  .monthly-input-table tbody > tr { display: grid; grid-template-areas: "date status" "description amount" "cost cost" "action action"; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; padding: 10px 12px; border: 1px solid var(--tds-grey-200); border-radius: 16px; background: var(--tds-white); }
+  .monthly-input-table tbody > tr { display: grid; grid-template-areas: "date status" "type cost" "category subcategory" "description description" "amount payment"; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4px 8px; padding: 10px 12px; border: 1px solid var(--tds-grey-200); border-radius: 16px; background: var(--tds-white); }
   .monthly-input-table tbody > tr > td { min-width: 0; min-height: 0; border: 0; padding: 4px 0; }
   .monthly-input-table tbody > tr > td:nth-child(1) { grid-area: date; justify-content: flex-start; }
   .monthly-input-table tbody > tr > td:nth-child(2) { grid-area: status; justify-content: flex-end; }
-  .monthly-input-table tbody > tr > td:nth-child(3) { grid-area: description; padding-right: 0; overflow: hidden; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
-  .monthly-input-table tbody > tr > td:nth-child(4) { grid-area: amount; justify-content: flex-end; padding-left: 0; }
-  .monthly-input-table tbody > tr > td:nth-child(5) { grid-area: cost; padding-inline: 0; }
-  .monthly-input-table tbody > tr > td:nth-child(6) { grid-area: action; justify-content: flex-end; padding-inline: 0; }
-  .monthly-input-table td:last-child form { max-width: 100%; }
+  .monthly-input-table tbody > tr > td:nth-child(3) { grid-area: type; }
+  .monthly-input-table tbody > tr > td:nth-child(4) { grid-area: cost; padding-inline: 0; }
+  .monthly-input-table tbody > tr > td:nth-child(5) { grid-area: category; }
+  .monthly-input-table tbody > tr > td:nth-child(6) { grid-area: subcategory; }
+  .monthly-input-table tbody > tr > td:nth-child(7) { grid-area: description; overflow: hidden; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+  .monthly-input-table tbody > tr > td:nth-child(8) { grid-area: amount; justify-content: flex-end; padding-left: 0; }
+  .monthly-input-table tbody > tr > td:nth-child(9) { grid-area: payment; }
   .monthly-input-table th, .monthly-input-table td { padding-block: 10px; }
-  .monthly-input-table td:nth-child(3) { padding-right: 6px; }
-  .monthly-input-table td:nth-child(4) { padding-left: 6px; }
-  .monthly-input-table td:nth-child(5), .monthly-input-table td:last-child { padding-inline: 6px; }
+  .monthly-input-table td:nth-child(3), .monthly-input-table td:nth-child(5), .monthly-input-table td:nth-child(6), .monthly-input-table td:nth-child(9) { padding-inline: 6px; }
+  .monthly-input-table td:nth-child(4) select { width: 100%; }
   .monthly-drawer-grid { grid-template-columns: 1fr; }
 
   .home-page { gap: 20px; padding-inline: 16px; }
@@ -1112,10 +1105,19 @@ label:has(> input[required])::after, label:has(> select[required])::after, label
 .monthly-workspace { display: flex; flex-direction: column; gap: 10px; border: 1px solid var(--tds-grey-200); border-radius: 20px; background: var(--tds-white); padding: 10px; }
 .monthly-workspace .monthly-section { border: 0; border-radius: 14px; }
 .monthly-workspace .monthly-section-body { padding: 14px 10px 10px; }
-.monthly-workspace-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 14px; background: var(--tds-grey-100); }
+.monthly-workspace-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 14px; background: var(--tds-grey-100); }
 .monthly-workspace-tabs button { min-height: 44px; border-radius: 10px; color: var(--tds-grey-700); font-size: 14px; font-weight: 750; white-space: nowrap; }
 .monthly-workspace-tabs button[data-selected='true'] { background: var(--tds-white); color: var(--tds-blue-600); box-shadow: 0 2px 8px rgb(13 25 43 / .08); }
 .monthly-workspace-content { min-width: 0; }
+.monthly-ledger-filters { display: flex; flex-direction: column; gap: 12px; padding: 16px; border: 1px solid var(--tds-grey-200); border-radius: 18px; background: var(--tds-grey-50); }
+.monthly-ledger-filter-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; }
+.monthly-ledger-filter-heading > div:first-child { display: flex; min-width: 0; flex-direction: column; gap: 3px; }
+.monthly-ledger-filter-heading strong { overflow: hidden; color: var(--tds-grey-900); font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
+.monthly-ledger-period-toggle { display: inline-flex; flex: 0 0 auto; gap: 2px; padding: 3px; border-radius: 10px; background: var(--tds-white); }
+.monthly-ledger-period-toggle button { min-height: 36px; padding: 0 10px; border-radius: 8px; color: var(--tds-grey-600); font-size: 12px; font-weight: 750; white-space: nowrap; }
+.monthly-ledger-period-toggle button[data-selected='true'] { background: var(--tds-blue-500); color: var(--tds-white); }
+.monthly-ledger-filter-grid { display: grid; grid-template-columns: minmax(180px, 1.5fr) repeat(2, minmax(130px, 1fr)) repeat(4, minmax(130px, 1fr)); gap: 8px; }
+.monthly-ledger-filter-grid input, .monthly-ledger-filter-grid select { min-width: 0; min-height: 44px; padding-inline: 12px; border: 1px solid var(--tds-grey-200); border-radius: 10px; background: var(--tds-white); font-size: 13px; }
 
 @media (max-width: 640px) {
   .home-filter-bar { gap: 8px; }
@@ -1165,6 +1167,11 @@ label:has(> input[required])::after, label:has(> select[required])::after, label
   .home-month-row .dashboard-period-mobile .dashboard-period-custom button { grid-column: 1 / -1; }
   .monthly-workspace-tabs button { min-height: 48px; font-size: 13px; }
   .monthly-workspace { padding: 4px; }
+  .monthly-ledger-filter-heading { align-items: stretch; flex-direction: column; }
+  .monthly-ledger-period-toggle { width: 100%; }
+  .monthly-ledger-period-toggle button { flex: 1; }
+  .monthly-ledger-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .monthly-ledger-filter-grid input:first-child { grid-column: 1 / -1; }
 }
 
 .dashboard-period-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }

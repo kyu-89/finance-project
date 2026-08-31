@@ -254,6 +254,18 @@ export async function listTransactions(filter: {
   return rows.map(mapRow);
 }
 
+export async function promotePastPlannedTransactions(householdId: string, currentMonthStart: string): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('transactions')
+    .update({ status: 'posted' })
+    .eq('household_id', householdId)
+    .eq('status', 'planned')
+    .lt('transaction_date', currentMonthStart)
+    .is('deleted_at', null);
+  if (error) throw new Error(`지난 예정 거래 자동 확정 실패: ${error.message}`);
+}
+
 export async function softDeleteTransaction(id: string): Promise<void> {
   const supabase = await createClient();
   // Soft delete only (PRD §5.4) — never a real SQL DELETE. See Task 2's migration note.

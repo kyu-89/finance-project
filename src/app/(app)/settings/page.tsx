@@ -2,12 +2,14 @@ import Link from 'next/link';
 import { SignOutButton } from '@/components/SignOutButton';
 import { ensureHouseholdForCurrentUser, listHouseholdMembers } from '@/lib/household';
 import { listFinancialGoals, listFinancialTasks } from '@/lib/excel-extended-data';
-import { todayInSeoul } from '@/lib/date';
+import { monthRangeFromSeoulDateString, todayInSeoul } from '@/lib/date';
 import { HouseholdPlanning } from './HouseholdPlanning';
 
 export default async function SettingsPage() {
   const household = await ensureHouseholdForCurrentUser();
-  const [members, goals, tasks] = await Promise.all([listHouseholdMembers(household.id), listFinancialGoals(household.id), listFinancialTasks(household.id, todayInSeoul(), `${todayInSeoul().slice(0, 7)}-31`)]);
+  const today = todayInSeoul();
+  const { toDate } = monthRangeFromSeoulDateString(`${today.slice(0, 7)}-01`);
+  const [members, goals, tasks] = await Promise.all([listHouseholdMembers(household.id), listFinancialGoals(household.id), listFinancialTasks(household.id, today, toDate)]);
   return (
     <div className="tds-page">
       <h1 className="tds-title mb-2">설정을 관리해요</h1>
