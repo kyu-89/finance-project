@@ -506,6 +506,8 @@ textarea {
 .monthly-input-table td:nth-child(2), .monthly-input-table td:nth-child(4) { padding-inline: 10px; }
 .monthly-input-table td:nth-child(2) form, .monthly-input-table td:nth-child(4) form { width: 100%; }
 .monthly-input-table th:nth-child(2), .monthly-input-table td:nth-child(2), .monthly-input-table th:nth-child(4), .monthly-input-table td:nth-child(4) { overflow: visible; }
+.monthly-input-table th:nth-child(8), .monthly-input-table td:nth-child(8) { text-align: right; }
+.monthly-input-table th:nth-child(9), .monthly-input-table td:nth-child(9) { text-align: left; }
 .monthly-drawer-form { display: flex; flex-direction: column; gap: 24px; }
 .monthly-drawer-section { display: flex; flex-direction: column; gap: 12px; }
 .monthly-drawer-section h3 { color: var(--tds-grey-900); font-size: 14px; font-weight: 750; }
@@ -975,7 +977,7 @@ label:has(> input[required])::after, label:has(> select[required])::after, label
   .monthly-input-table tbody > tr > td:nth-child(5) { grid-area: category; }
   .monthly-input-table tbody > tr > td:nth-child(6) { grid-area: subcategory; }
   .monthly-input-table tbody > tr > td:nth-child(7) { grid-area: description; overflow: hidden; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
-  .monthly-input-table tbody > tr > td:nth-child(8) { grid-area: amount; justify-content: flex-end; }
+  .monthly-input-table tbody > tr > td:nth-child(8) { grid-area: amount; justify-content: space-between; }
   .monthly-input-table tbody > tr > td:nth-child(9) { grid-area: payment; }
   .monthly-input-table tbody > tr > td:nth-child(2) form, .monthly-input-table tbody > tr > td:nth-child(4) form { min-width: 0; flex: 1; }
   .monthly-input-table tbody > tr > td:nth-child(2) select, .monthly-input-table tbody > tr > td:nth-child(4) select { width: 100%; min-width: 0; }
