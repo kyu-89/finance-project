@@ -16,14 +16,16 @@ export function AddDrawer({
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const wasOpenRef = useRef(false);
   const titleId = `drawer-title-${title.replace(/[^a-zA-Z0-9가-힣]/g, '-')}`;
 
   useEffect(() => {
     if (!open) {
-      triggerRef.current?.focus();
+      if (wasOpenRef.current) triggerRef.current?.focus();
       return;
     }
 
+    wasOpenRef.current = true;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     closeRef.current?.focus();
@@ -32,6 +34,24 @@ export function AddDrawer({
       if (event.key === 'Escape') {
         event.preventDefault();
         setOpen(false);
+        return;
+      }
+      if (event.key === 'Tab') {
+        const drawer = document.querySelector<HTMLElement>('.app-drawer');
+        if (!drawer) return;
+        const focusable = Array.from(drawer.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
+        ));
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
       }
     };
     document.addEventListener('keydown', onKeyDown);

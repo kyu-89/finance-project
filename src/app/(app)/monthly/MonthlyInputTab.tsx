@@ -37,7 +37,7 @@ function CostBehaviorEditor({ transaction }: { transaction: Transaction }) {
   );
 
   return (
-    <form action={formAction} className="flex min-w-[220px] flex-col gap-1">
+    <form action={formAction} className="flex min-w-0 flex-col gap-1">
       <input type="hidden" name="id" value={transaction.id} />
       <div className="flex gap-1">
         <select
