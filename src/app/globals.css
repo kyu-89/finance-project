@@ -869,7 +869,7 @@ label:has(> input[required])::after, label:has(> select[required])::after, label
   .dashboard-period-mobile > summary { display: flex; min-height: 46px; align-items: center; gap: 8px; padding: 0 14px; border: 1px solid var(--tds-grey-200); border-radius: 14px; background: var(--tds-white); list-style: none; font-size: 13px; font-weight: 700; }
   .dashboard-period-mobile > summary::-webkit-details-marker { display: none; }
   .dashboard-period-mobile > summary strong { color: var(--tds-blue-600); }
-  .dashboard-period-mobile > summary span:last-child { margin-left: auto; color: var(--tds-grey-500); font-size: 18px; }
+.dashboard-period-mobile > summary span:last-child { display: grid; width: 24px; height: 24px; margin-left: auto; place-items: center; align-self: center; color: var(--tds-grey-500); font-size: 18px; line-height: 1; }
   .dashboard-period-mobile[open] > summary { border-color: var(--tds-blue-500); }
   .dashboard-period-mobile .dashboard-period-presets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 8px; padding: 10px; border: 1px solid var(--tds-grey-200); border-radius: 14px; background: var(--tds-white); }
   .dashboard-period-mobile .dashboard-period-presets a { min-height: 42px; padding-inline: 8px; border-radius: 10px; }
