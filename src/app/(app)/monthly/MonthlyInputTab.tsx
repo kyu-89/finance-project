@@ -143,11 +143,13 @@ export function MonthlyInputTab({
     if (a.status !== 'planned' && b.status === 'planned') return 1;
     return a.transactionDate.localeCompare(b.transactionDate);
   }), [initialTransactions]);
+  const plannedTransactions = orderedTransactions.filter((transaction) => transaction.status === 'planned');
   const table = useTable({ features, columns, data: orderedTransactions });
 
   return (
     <div className="monthly-input-panel flex flex-col gap-4">
       <div className="monthly-cta monthly-quick-actions"><AddDrawer title="수입 추가" description="이번 달에 들어온 돈을 기록하세요." triggerLabel="수입 추가"><MonthlyRowForm initialTransactionType="income" categories={categories} paymentMethods={paymentMethods} transactions={initialTransactions} /></AddDrawer><AddDrawer title="지출 추가" description="이번 달에 쓴 돈을 기록하세요." triggerLabel="지출 추가"><MonthlyRowForm initialTransactionType="expense" categories={categories} paymentMethods={paymentMethods} transactions={initialTransactions} /></AddDrawer><AddDrawer title="기타 거래 입력" description="저축·투자·환불·이체 등 기타 거래를 기록하세요." triggerLabel="기타 거래"><MonthlyRowForm categories={categories} paymentMethods={paymentMethods} transactions={initialTransactions} /></AddDrawer></div>
+      <section className={`monthly-planned-queue ${plannedTransactions.length ? 'has-items' : 'is-clear'}`} aria-label="예정 거래 처리 현황"><div><span className="monthly-kicker">예정 거래 처리</span><strong>{plannedTransactions.length ? `${plannedTransactions.length}건이 처리 대기 중이에요` : '처리할 예정 거래가 없어요'}</strong></div><p>{plannedTransactions.length ? '표의 상단에서 금액을 확인한 뒤 확정하거나 이번 달 제외를 선택하세요.' : '반복항목이 생성되면 이 영역과 거래 목록 상단에 먼저 표시됩니다.'}</p></section>
 
       <div className="table-surface overflow-x-auto">
         <table className="monthly-input-table w-full border-collapse text-sm">

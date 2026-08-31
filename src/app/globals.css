@@ -345,6 +345,12 @@ textarea {
 .monthly-summary-card.is-wealth strong { color: var(--tds-green-500); }
 .monthly-quick-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .monthly-quick-actions > * { flex: 1 1 150px; }
+.monthly-planned-queue { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 16px; border: 1px solid var(--tds-grey-200); border-radius: 16px; background: var(--tds-white); }
+.monthly-planned-queue.has-items { border-color: color-mix(in oklab, var(--tds-yellow-700) 26%, var(--tds-grey-200)); background: var(--tds-yellow-50, #fffaf0); }
+.monthly-planned-queue.is-clear { background: var(--tds-grey-50); }
+.monthly-planned-queue > div { display: grid; gap: 3px; min-width: 0; }
+.monthly-planned-queue strong { font-size: 14px; }
+.monthly-planned-queue p { color: var(--tds-grey-700); font-size: 12px; }
 .transaction-status-editor select { min-height: 40px; }
 .transaction-status-feedback { flex: 0 0 auto; color: var(--tds-green-500); font-size: 11px; white-space: nowrap; }
 .transaction-status-feedback.is-error { color: var(--tds-red-500); }
@@ -910,6 +916,7 @@ label:has(> input[required])::after, label:has(> select[required])::after, label
   .monthly-quick-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .monthly-quick-actions > * { min-width: 0; }
   .monthly-quick-actions > :last-child { grid-column: 1 / -1; }
+  .monthly-planned-queue { align-items: flex-start; flex-direction: column; gap: 6px; }
   .tds-page {
     padding: 24px 16px calc(112px + env(safe-area-inset-bottom));
   }
