@@ -33,32 +33,28 @@ function CostBehaviorEditor({ transaction }: { transaction: Transaction }) {
   return (
     <form action={formAction} className="flex min-w-0 flex-col gap-1">
       <input type="hidden" name="id" value={transaction.id} />
-      <div className="flex gap-1">
+      <div className="flex min-w-0 gap-1">
         <select
           name="costBehavior"
           defaultValue={transaction.costBehavior ?? ''}
           aria-label={`${transaction.description} 비용성격`}
+          onChange={(event) => event.currentTarget.form?.requestSubmit()}
+          disabled={pending}
           className="min-w-0 flex-1 px-2 py-1 text-xs"
         >
           <option value="">미지정</option>
           <option value="fixed">고정비</option>
           <option value="variable">변동비</option>
         </select>
-        <button
-          type="submit"
-          disabled={pending}
-          className="secondary-button w-[76px] shrink-0 whitespace-nowrap px-2 text-xs"
-        >
-          {pending ? '저장 중…' : '변경'}
-        </button>
+        {pending && <span className="transaction-status-feedback" role="status">저장 중</span>}
       </div>
       {state.ok === false && (
-        <span role="alert" className="text-xs text-red-600">
+        <span role="alert" className="transaction-status-feedback is-error">
           {state.message}
         </span>
       )}
-      {state.ok === true && (
-        <span role="status" className="text-xs text-green-700">
+      {state.ok === true && !pending && (
+        <span role="status" className="transaction-status-feedback">
           저장됨
         </span>
       )}
@@ -70,7 +66,7 @@ function PlannedTransactionEditor({ transaction, paymentMethods, candidates }: {
   const [confirmState, confirmAction, confirmPending] = useActionState(confirmPlannedTransactionAction, INITIAL_ACTION_STATE);
   const [skipState, skipAction, skipPending] = useActionState(skipPlannedTransactionAction, INITIAL_ACTION_STATE);
   const [linkState, linkAction, linkPending] = useActionState(linkRecurringOccurrenceAction, INITIAL_ACTION_STATE);
-  if (transaction.status !== 'planned') return <span className="text-xs text-[var(--tds-grey-500)]">처리 완료</span>;
+  if (transaction.status !== 'planned') return <span className="monthly-planned-complete text-xs text-[var(--tds-grey-500)]">{transaction.status === 'posted' ? '확정됨' : transaction.status === 'skipped' ? '이번 달 제외됨' : '취소됨'}</span>;
 
   return <div className="flex min-w-0 flex-col gap-1">
     {candidates.length > 0 && <p className="rounded-lg bg-[var(--tds-yellow-100)] px-2 py-1 text-xs font-semibold text-[var(--tds-yellow-700)]">비슷한 실제 거래가 {candidates.length}건 있어요. 확정 전에 확인해 주세요.</p>}
@@ -81,7 +77,7 @@ function PlannedTransactionEditor({ transaction, paymentMethods, candidates }: {
       <select name="paymentMethodId" defaultValue={transaction.paymentMethodId ?? ''} className="w-24 min-w-0 px-2 py-1 text-xs">
         <option value="">결제수단 없음</option>{paymentMethods.map((method) => <option key={method.id} value={method.id}>{method.name}</option>)}
       </select>
-      <button type="submit" disabled={confirmPending} title="예정 거래를 실제 거래로 반영합니다." className="tds-primary-button min-h-11 px-3 text-xs">실제 반영</button>
+      <button type="submit" disabled={confirmPending} title="예정 거래를 확정 거래로 저장합니다." className="tds-primary-button min-h-11 px-3 text-xs">확정</button>
     </form>
     <form action={skipAction} className="flex items-center justify-end gap-2">
       <input type="hidden" name="id" value={transaction.id} />
