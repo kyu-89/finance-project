@@ -13,8 +13,8 @@ import { RefundParentLinkPanel } from './RefundParentLinkPanel';
 
 const STATUS_LABEL: Record<Transaction['status'], string> = {
   planned: '예정',
-  posted: '실제 반영됨',
-  skipped: '이번 회차 제외',
+  posted: '확정',
+  skipped: '이번 달 제외',
   cancelled: '취소',
 };
 const TYPE_LABEL: Record<Transaction['transactionType'], string> = { income: '수입', expense: '지출', saving: '저축', investment: '투자', debt_principal: '대출원금', finance_cost: '금융비용', transfer: '이체', asset_adjustment: '자산조정', refund: '환불' };

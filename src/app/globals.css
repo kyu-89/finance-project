@@ -794,6 +794,51 @@ label:has(> input[required])::after, label:has(> select[required])::after, label
   .home-action-links a { text-align: center; }
 }
 
+/* Shared mobile hierarchy: the month navigator and period filter are one control row. */
+.home-month-row { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 10px; }
+.home-month-row > .dashboard-period-filters { flex: 0 0 auto; margin: 0; }
+.home-month-row .dashboard-period-mobile > summary { min-width: 118px; }
+.monthly-work-links { overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
+.monthly-work-links::-webkit-scrollbar { display: none; }
+.monthly-work-links > span, .monthly-work-links > a { flex: 0 0 auto; white-space: nowrap; }
+.monthly-section > summary strong { flex: 0 0 auto; white-space: nowrap; }
+.monthly-section > summary span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.finance-snapshot { min-width: 0; }
+.monthly-input-panel { position: relative; }
+.monthly-cta { position: absolute; z-index: 2; top: -4px; right: 0; }
+.monthly-input-panel .table-surface { padding-top: 4px; }
+.monthly-workspace { display: flex; flex-direction: column; gap: 10px; border: 1px solid var(--tds-grey-200); border-radius: 20px; background: var(--tds-white); padding: 10px; }
+.monthly-workspace .monthly-section { border: 0; border-radius: 14px; }
+.monthly-workspace .monthly-section-body { padding: 14px 10px 10px; }
+
+@media (max-width: 640px) {
+  .home-filter-bar { gap: 8px; }
+  .home-month-row { gap: 8px; }
+  .home-month-row .home-month-control { min-width: 0; flex: 1 1 auto; gap: 4px; }
+  .home-month-row .home-month-control strong { min-width: 0; font-size: 14px; }
+  .home-month-row .home-arrow { flex: 0 0 40px; width: 40px; height: 40px; }
+  .home-month-row .dashboard-period-filters { flex: 0 0 auto; }
+  .home-month-row .dashboard-period-mobile > summary { min-width: 112px; min-height: 40px; padding-inline: 10px; border-radius: 12px; }
+  .home-month-row .dashboard-period-mobile > summary span:first-child { font-size: 12px; }
+  .home-month-row .dashboard-period-mobile > summary strong { font-size: 12px; }
+  .home-month-row .dashboard-period-mobile .dashboard-period-presets { position: absolute; z-index: 5; right: 16px; left: 16px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .home-month-row .dashboard-period-mobile .dashboard-period-custom { grid-template-columns: 1fr 1fr; }
+  .home-month-row .dashboard-period-mobile .dashboard-period-custom button { grid-column: 1 / -1; width: 100%; }
+  .home-month-row .dashboard-period-mobile { position: relative; }
+  .monthly-section > summary { gap: 8px; }
+  .monthly-section > summary span { display: none; }
+  .monthly-workspace { margin-inline: -4px; padding: 6px; border-radius: 18px; gap: 6px; }
+  .monthly-workspace .monthly-section-body { padding: 10px 4px 4px; }
+  .monthly-work-links { margin-inline: -4px; padding-inline: 4px; }
+  .monthly-work-links > span { font-size: 13px; }
+  .monthly-work-links > a { padding-inline: 10px; }
+  .monthly-add-button { width: 100%; }
+  .monthly-cta { top: -2px; right: 0; }
+  .monthly-cta .drawer-trigger { min-height: 42px; padding-inline: 12px; }
+  .monthly-input-panel .table-surface { padding-top: 0; }
+  .finance-snapshot { max-width: none; }
+}
+
 .dashboard-period-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .dashboard-period-presets { display: flex; min-width: 0; gap: 8px; }
 .dashboard-period-presets a { display: inline-flex; min-height: 40px; align-items: center; justify-content: center; padding: 0 14px; border: 1px solid var(--tds-grey-200); border-radius: 999px; background: var(--tds-white); color: var(--tds-grey-700); font-size: 13px; font-weight: 700; white-space: nowrap; }
