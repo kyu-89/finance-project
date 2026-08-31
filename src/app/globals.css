@@ -173,14 +173,16 @@ th {
 .home-flow-card,
 .home-detail-card,
 .home-networth-card,
-.home-cash-card {
+.home-cash-card,
+.home-flow-summary {
   transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
 .home-flow-card:hover,
 .home-detail-card:hover,
 .home-networth-card:hover,
-.home-cash-card:hover {
+.home-cash-card:hover,
+.home-flow-summary:hover {
   border-color: color-mix(in oklab, var(--tds-blue-500) 28%, var(--tds-grey-200));
   box-shadow: 0 8px 24px rgb(13 25 43 / 0.06);
 }
@@ -501,15 +503,18 @@ textarea {
 .home-filter-chip:hover { background: var(--tds-grey-100); }
 .home-filter-chip.is-selected { background: var(--tds-grey-900); color: white; }
 .home-hero-grid { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr); gap: 16px; }
-.home-networth-card, .home-cash-card { min-height: 336px; border-radius: 26px; padding: 28px; }
+.home-networth-card, .home-flow-summary { min-width: 0; min-height: 336px; border-radius: 26px; padding: 28px; }
 .home-networth-card { background: linear-gradient(145deg, #eef5ff, #f8fbff 70%); border: 1px solid #dce9fb; }
 .home-cash-card { background: var(--tds-grey-900); color: white; }
+.home-flow-summary { background: var(--tds-grey-900); color: white; }
 .home-card-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
 .home-card-heading p { color: var(--tds-grey-700); font-size: 14px; font-weight: 650; }
 .home-cash-card .home-card-heading p { color: rgb(255 255 255 / .68); }
+.home-flow-summary .home-card-heading p { color: rgb(255 255 255 / .68); }
 .home-card-heading strong { display: block; margin-top: 7px; font-size: clamp(27px, 3vw, 38px); line-height: 1.18; letter-spacing: -.035em; font-variant-numeric: tabular-nums; }
 .home-card-heading a { flex: 0 0 auto; color: var(--tds-blue-600); font-size: 13px; font-weight: 700; }
 .home-cash-card .home-card-heading a { color: #8ec5ff; }
+.home-flow-summary .home-card-heading a { color: #8ec5ff; }
 .home-change { margin-top: 10px; color: var(--tds-blue-600); font-size: 13px; font-weight: 650; }
 .home-change.is-negative, .home-card-heading strong.is-negative { color: var(--tds-red-500); }
 .home-asset-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 24px; padding-top: 20px; border-top: 1px solid rgb(49 130 246 / .13); }
@@ -523,6 +528,20 @@ textarea {
 .home-allocation-legend p { overflow: hidden; color: var(--tds-grey-500); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .home-allocation-legend strong { display: block; margin-top: 2px; font-size: 12px; white-space: nowrap; }
 .home-cash-formula { margin-top: 9px; color: rgb(255 255 255 / .52); font-size: 12px; }
+.home-networth-tabs { display: flex; gap: 4px; margin-top: 22px; padding: 4px; border-radius: 12px; background: rgb(49 130 246 / .08); }
+.home-networth-tabs button { min-height: 34px; flex: 1 1 0; border-radius: 9px; color: var(--tds-grey-700); font-size: 12px; font-weight: 700; }
+.home-networth-tabs button.is-selected { background: white; color: var(--tds-blue-600); box-shadow: 0 1px 3px rgb(15 23 42 / .12); }
+.home-networth-trend > p { margin-top: 16px; color: var(--tds-grey-600); font-size: 12px; }
+.home-networth-trend { min-width: 0; }
+.home-debt-view { margin-top: 28px; }
+.home-debt-primary { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.home-debt-primary span, .home-debt-primary small { color: var(--tds-grey-600); font-size: 12px; }
+.home-debt-primary strong { margin-left: auto; font-size: 24px; font-variant-numeric: tabular-nums; }
+.home-debt-primary small { white-space: nowrap; }
+.home-debt-track { height: 10px; margin-top: 20px; overflow: hidden; border-radius: 999px; background: var(--tds-grey-200); }
+.home-debt-track span { display: block; height: 100%; border-radius: inherit; background: var(--tds-red-500); }
+.home-debt-view p { margin-top: 14px; color: var(--tds-grey-600); font-size: 12px; line-height: 1.6; }
+.home-debt-view a { display: inline-block; margin-top: 14px; color: var(--tds-blue-600); font-size: 13px; font-weight: 700; }
 .home-flow-list { display: grid; gap: 8px; margin-top: 22px; }
 .home-flow-list > div { display: flex; align-items: center; justify-content: space-between; min-height: 28px; }
 .home-flow-list span { color: rgb(255 255 255 / .7); font-size: 13px; }
@@ -574,6 +593,14 @@ textarea {
 .home-explorer-tabs button { min-height: 36px; padding: 0 12px; border-radius: 9px; color: var(--tds-grey-700); font-size: 12px; font-weight: 700; }
 .home-explorer-tabs button.is-selected { background: var(--tds-white); color: var(--tds-blue-600); box-shadow: 0 1px 3px rgb(15 23 42 / .12); }
 .home-explorer-list { margin-top: 18px; }
+.home-monthly-spending-list { display: grid; gap: 4px; margin-top: 18px; }
+.home-monthly-spending-list > div { display: grid; grid-template-columns: 92px minmax(80px, 1fr) auto; align-items: center; gap: 12px; min-height: 42px; padding: 0 10px; border-radius: 10px; }
+.home-monthly-spending-list > div.is-current { background: var(--tds-blue-50); }
+.home-monthly-spending-list > div > span:first-child { color: var(--tds-grey-700); font-size: 12px; font-weight: 650; }
+.home-monthly-spending-track { height: 8px; overflow: hidden; border-radius: 999px; background: var(--tds-grey-100); }
+.home-monthly-spending-track span { display: block; height: 100%; border-radius: inherit; background: var(--tds-red-400); }
+.home-monthly-spending-list strong { white-space: nowrap; font-size: 12px; font-variant-numeric: tabular-nums; }
+.home-monthly-spending-list em { margin-left: 5px; color: var(--tds-grey-500); font-size: 11px; font-style: normal; font-weight: 650; }
 .home-explorer-row { border-bottom: 1px solid var(--tds-grey-100); }
 .home-explorer-row-trigger { display: flex; width: 100%; min-width: 0; align-items: center; gap: 10px; padding: 12px 0; text-align: left; }
 .home-explorer-row-main { min-width: 0; flex: 1; }
@@ -768,14 +795,14 @@ label:has(> input[required])::after, label:has(> select[required])::after, label
   .home-month-control strong { flex: 1; }
   .home-member-scroll { margin-inline: -16px; padding-inline: 16px; }
   .home-hero-grid { grid-template-columns: 1fr; }
-  .home-networth-card, .home-cash-card { min-height: 0; border-radius: 22px; padding: 22px; }
+  .home-networth-card, .home-flow-summary { min-height: 0; border-radius: 22px; padding: 22px; }
   .home-networth-card { order: 1; }
-  .home-cash-card { order: 2; }
+  .home-flow-summary { order: 2; }
   .home-card-heading strong { font-size: 27px; }
   .home-asset-summary { gap: 8px; margin-top: 19px; padding-top: 16px; }
   .home-asset-summary strong { font-size: 12px; }
   .home-allocation-legend { grid-template-columns: repeat(3, 1fr); row-gap: 8px; }
-  .home-cash-card .home-card-heading { align-items: center; }
+  .home-flow-summary .home-card-heading { align-items: center; }
   .home-flow-cards { display: flex; margin-inline: -16px; overflow-x: auto; padding: 0 16px 4px; scroll-snap-type: x proximity; scrollbar-width: none; }
   .home-flow-card { min-width: 205px; scroll-snap-align: start; }
   .home-trend-card { margin-inline: -16px; border-inline: 0; border-radius: 0; padding: 22px 16px; }
@@ -792,6 +819,9 @@ label:has(> input[required])::after, label:has(> select[required])::after, label
   .home-explorer-tabs { justify-content: stretch; }
   .home-explorer-tabs button { flex: 1 1 0; min-height: 40px; }
   .home-spending-explorer { padding: 18px; }
+  .home-monthly-spending-list > div { grid-template-columns: 78px minmax(40px, 1fr) auto; gap: 8px; padding-inline: 6px; }
+  .home-monthly-spending-list strong { font-size: 11px; }
+  .home-networth-tabs button { min-height: 38px; padding-inline: 4px; font-size: 11px; }
   .app-toast { right: 16px; bottom: calc(82px + env(safe-area-inset-bottom)); width: calc(100vw - 32px); }
   .drawer-backdrop { align-items: flex-end; }
   .app-drawer { width: 100%; height: min(88dvh, 760px); border-radius: 22px 22px 0 0; box-shadow: 0 -12px 40px rgb(0 0 0 / .16); animation: drawer-up 180ms ease-out; }
