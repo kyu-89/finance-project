@@ -351,6 +351,11 @@ textarea {
 .monthly-planned-queue > div { display: grid; gap: 3px; min-width: 0; }
 .monthly-planned-queue strong { font-size: 14px; }
 .monthly-planned-queue p { color: var(--tds-grey-700); font-size: 12px; }
+.monthly-transaction-section { display: grid; gap: 10px; }
+.monthly-transaction-section-heading { display: flex; align-items: end; justify-content: space-between; gap: 12px; padding: 4px 2px; }
+.monthly-transaction-section-heading h2 { font-size: 16px; letter-spacing: -.02em; }
+.monthly-transaction-section-heading p { margin-top: 3px; color: var(--tds-grey-600); font-size: 12px; }
+.monthly-transaction-section-heading > strong { color: var(--tds-grey-600); font-size: 12px; white-space: nowrap; }
 .transaction-status-editor select { min-height: 40px; }
 .transaction-status-feedback { flex: 0 0 auto; color: var(--tds-green-500); font-size: 11px; white-space: nowrap; }
 .transaction-status-feedback.is-error { color: var(--tds-red-500); }
