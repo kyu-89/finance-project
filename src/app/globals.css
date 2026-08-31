@@ -893,8 +893,3 @@ label:has(> input[required])::after, label:has(> select[required])::after, label
   .dashboard-period-custom input { width: 100%; min-width: 0; min-height: 42px; font-size: 13px; }
 .dashboard-period-custom button { min-height: 42px; padding-inline: 11px; }
 }
-
-.quick-add-event { border-top: 1px solid var(--tds-grey-200); padding-top: 4px; }
-.quick-add-secondary-trigger { display: flex; min-height: 44px; width: 100%; align-items: center; justify-content: space-between; color: var(--tds-blue-600); font-size: 14px; font-weight: 700; text-align: left; }
-.quick-add-secondary-trigger span:last-child { font-size: 18px; line-height: 1; }
-.quick-add-event-fields { display: grid; gap: 12px; margin-top: 10px; padding: 14px; border-radius: 14px; background: var(--tds-grey-100); }

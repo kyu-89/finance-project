@@ -41,7 +41,6 @@ export function QuickAddForm({
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string | null>(null);
   const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string | null>(null);
   const [showMore, setShowMore] = useState(false);
-  const [showEventDetail, setShowEventDetail] = useState(false);
   const [showSavedBanner, setShowSavedBanner] = useState(false);
   const [state, formAction, pending] = useActionState(createQuickTransactionAction, INITIAL_ACTION_STATE);
   const [undoState, undoAction, undoPending] = useActionState(
@@ -69,7 +68,6 @@ export function QuickAddForm({
     setTransactionType('expense');
     setIncomeGroup('fixed');
     setShowMore(false);
-    setShowEventDetail(false);
   }
 
   // Auto-hide the confirmation banner after a few seconds. Unlike the reset above, this setState
@@ -152,7 +150,7 @@ export function QuickAddForm({
 
       <label className="flex flex-col gap-1">
         <span className="text-[15px] font-semibold text-[var(--tds-grey-700)]">거래 유형</span>
-        <select value={transactionType} onChange={(e) => { const next = e.target.value as typeof transactionType; setTransactionType(next); setSelectedCategory(null); setSelectedSubcategoryId(null); setSelectedPaymentMethodId(null); setShowEventDetail(false); }} className="px-4">
+        <select value={transactionType} onChange={(e) => { const next = e.target.value as typeof transactionType; setTransactionType(next); setSelectedCategory(null); setSelectedSubcategoryId(null); setSelectedPaymentMethodId(null); }} className="px-4">
           <option value="expense">지출</option><option value="income">수입</option><option value="saving">저축</option><option value="investment">투자</option><option value="debt_principal">대출 원금상환</option><option value="finance_cost">금융비용</option><option value="transfer">이체</option>
         </select>
       </label>
@@ -242,28 +240,6 @@ export function QuickAddForm({
       )}
 
       {transactionType === 'income' && <details className="rounded-xl bg-[var(--tds-blue-50)] p-4"><summary className="cursor-pointer text-sm font-semibold">정부지원금 상세 (선택)</summary><div className="mt-3 grid gap-3"><label className="flex flex-col gap-1"><span className="text-sm font-semibold">지원금 종류</span><input name="supportKind" placeholder="예: 아동수당, 주거지원금" /></label></div></details>}
-      {transactionType === 'expense' && (
-        <div className="quick-add-event">
-          <button
-            type="button"
-            className="quick-add-secondary-trigger"
-            aria-expanded={showEventDetail}
-            onClick={() => setShowEventDetail((value) => !value)}
-          >
-            <span>{showEventDetail ? '경조사 내용 접기' : '경조사 내용 추가'}</span>
-            <span aria-hidden="true">{showEventDetail ? '−' : '+'}</span>
-          </button>
-          {showEventDetail && (
-            <div className="quick-add-event-fields">
-              <label className="flex flex-col gap-1"><span className="text-sm font-semibold">행사 유형</span><select name="eventType" defaultValue=""><option value="">선택 안 함</option><option value="wedding">결혼</option><option value="condolence">조의</option><option value="gift">선물</option><option value="other">기타</option></select></label>
-              <label className="flex flex-col gap-1"><span className="text-sm font-semibold">상대방</span><input name="counterparty" placeholder="상대방 이름 (선택)" /></label>
-              <label className="flex flex-col gap-1"><span className="text-sm font-semibold">관계</span><input name="relationshipGroup" placeholder="예: 친척, 직장동료" /></label>
-              <label className="flex flex-col gap-1"><span className="text-sm font-semibold">행사 내용</span><input name="eventDescription" placeholder="행사 내용 (선택)" /></label>
-            </div>
-          )}
-        </div>
-      )}
-
       <button
         type="submit"
         disabled={pending}
