@@ -5,9 +5,9 @@ import { usePathname } from 'next/navigation';
 
 const MOBILE_ITEMS = [
   { href: '/dashboard', label: '홈', icon: 'home' },
-  { href: '/monthly', label: '월간 입력', icon: 'calendar' },
-  { href: '/quick-add', label: '기록하기', icon: 'plus' },
-  { href: '/finance', label: '자산·금융', icon: 'wallet' },
+  { href: '/monthly', label: '입력', icon: 'calendar' },
+  { href: '/quick-add', label: '추가', icon: 'plus' },
+  { href: '/finance', label: '자산', icon: 'wallet' },
   { href: '/settings', label: '설정', icon: 'settings' },
 ] as const;
 

@@ -13,8 +13,8 @@ import { RefundParentLinkPanel } from './RefundParentLinkPanel';
 
 const STATUS_LABEL: Record<Transaction['status'], string> = {
   planned: '예정',
-  posted: '확정',
-  skipped: '건너뜀',
+  posted: '실제 반영됨',
+  skipped: '이번 회차 제외',
   cancelled: '취소',
 };
 const TYPE_LABEL: Record<Transaction['transactionType'], string> = { income: '수입', expense: '지출', saving: '저축', investment: '투자', debt_principal: '대출원금', finance_cost: '금융비용', transfer: '이체', asset_adjustment: '자산조정', refund: '환불' };
@@ -98,12 +98,12 @@ export function AllTransactionsTab({ initialTransactions, supportDetails, eventD
         </table>
       </div>
 
-      {selected && selected.transactionType !== 'refund' && <TransactionDetailDrawer transaction={selected} support={supportDetails[selected.id]} event={eventDetails[selected.id]} members={members} candidates={duplicateCandidates[selected.id]} onClose={() => setSelected(null)} />}
+      {selected && selected.transactionType !== 'refund' && <TransactionDetailDrawer transaction={selected} support={supportDetails[selected.id]} event={eventDetails[selected.id]} members={members} candidates={duplicateCandidates[selected.id]} showEvent={Boolean(eventDetails[selected.id]) || (() => { const name = categories.flatMap((category) => [category, ...category.subcategories]).find((item) => item.id === (selected.subcategoryId ?? selected.categoryId))?.name ?? ''; return /경조|조의|부조|결혼/.test(name); })()} showSupport={Boolean(supportDetails[selected.id]) || (() => { const name = categories.flatMap((category) => [category, ...category.subcategories]).find((item) => item.id === (selected.subcategoryId ?? selected.categoryId))?.name ?? ''; return /지원금|정부/.test(name); })()} onClose={() => setSelected(null)} />}
       {selected?.transactionType === 'refund' && <RefundParentLinkPanel transaction={selected} transactions={initialTransactions} onClose={() => setSelected(null)} />}
 
       <div className="tds-card flex flex-col items-end gap-1 p-4 text-sm">
         <p className="font-medium">
-          소비 합계 (확정): {consumptionTotal.toLocaleString('ko-KR')}원
+            실제 지출 합계: {consumptionTotal.toLocaleString('ko-KR')}원
         </p>
         {plannedTotal > 0 && (
           <p className="text-gray-500">

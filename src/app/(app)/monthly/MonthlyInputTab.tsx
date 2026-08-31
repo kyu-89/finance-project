@@ -25,8 +25,8 @@ const columnHelper = createColumnHelper<typeof features, Transaction>();
 
 const STATUS_LABEL: Record<Transaction['status'], string> = {
   planned: '예정',
-  posted: '확정',
-  skipped: '건너뜀',
+  posted: '실제 반영됨',
+  skipped: '이번 회차 제외',
   cancelled: '취소',
 };
 
@@ -87,11 +87,11 @@ function PlannedTransactionEditor({ transaction, paymentMethods, candidates }: {
       <select name="paymentMethodId" defaultValue={transaction.paymentMethodId ?? ''} className="w-24 min-w-0 px-2 py-1 text-xs">
         <option value="">결제수단 없음</option>{paymentMethods.map((method) => <option key={method.id} value={method.id}>{method.name}</option>)}
       </select>
-      <button type="submit" disabled={confirmPending} className="tds-primary-button min-h-11 px-3 text-xs">확정</button>
+      <button type="submit" disabled={confirmPending} title="예정 거래를 실제 거래로 반영합니다." className="tds-primary-button min-h-11 px-3 text-xs">실제 반영</button>
     </form>
     <form action={skipAction} className="flex items-center justify-end gap-2">
       <input type="hidden" name="id" value={transaction.id} />
-      <button type="submit" disabled={skipPending} className="min-h-11 px-3 text-xs font-semibold text-[var(--tds-red-500)]">이번 회차 건너뛰기</button>
+      <button type="submit" disabled={skipPending} title="이번 예정 회차만 목록에서 제외합니다." className="min-h-11 px-3 text-xs font-semibold text-[var(--tds-red-500)]">이번 회차 제외</button>
     </form>
     {candidates.length > 0 && transaction.recurringOccurrenceId && <form action={linkAction} className="flex items-center gap-1 rounded-xl bg-[var(--tds-blue-50)] p-2">
       <input type="hidden" name="occurrenceId" value={transaction.recurringOccurrenceId} />
