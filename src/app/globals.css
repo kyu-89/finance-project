@@ -404,20 +404,6 @@ textarea {
   background: var(--tds-blue-700);
 }
 
-.monthly-add-button {
-  font-size: 0 !important;
-}
-
-.monthly-add-button > span {
-  display: none;
-}
-
-.monthly-add-button::after {
-  content: '지출 추가';
-  font-size: 15px;
-  font-weight: 700;
-}
-
 .list-surface {
   border: 1px solid var(--tds-grey-200);
   border-radius: 20px;
@@ -838,7 +824,6 @@ label:has(> input[required])::after, label:has(> select[required])::after, label
   .monthly-work-links { margin-inline: -4px; padding-inline: 4px; }
   .monthly-work-links > span { font-size: 13px; }
   .monthly-work-links > a { padding-inline: 10px; }
-  .monthly-add-button { width: 100%; }
   .monthly-cta { position: static; align-self: stretch; }
   .monthly-cta .drawer-trigger { min-height: 42px; padding-inline: 12px; }
   .monthly-input-panel .table-surface { padding-top: 0; }
