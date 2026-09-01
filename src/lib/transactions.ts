@@ -374,6 +374,12 @@ export async function updateTransactionBasics(input: { id: string; transactionDa
   if (error) throw new Error(`거래 수정 실패: ${error.message}`);
 }
 
+export async function updateTransactionClassification(input: { id: string; categoryId: string | null; subcategoryId: string | null; paymentMethodId: string | null }): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase.from('transactions').update({ category_id: input.categoryId, subcategory_id: input.subcategoryId, payment_method_id: input.paymentMethodId }).eq('id', input.id).is('deleted_at', null).select('id').single();
+  if (error) throw new Error(`거래 분류 수정 실패: ${error.message}`);
+}
+
 export async function confirmPlannedTransaction(input: {
   id: string;
   transactionDate: string;

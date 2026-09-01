@@ -503,6 +503,7 @@ textarea {
 .monthly-input-table td:first-child,
 .monthly-input-table th:first-child { white-space: nowrap; }
 .monthly-input-table td:nth-child(1) { white-space: nowrap; }
+.monthly-description-button { display: block; max-width: 100%; overflow: hidden; color: var(--tds-blue-600); font: inherit; font-weight: 650; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
 .monthly-input-table td:nth-child(2), .monthly-input-table td:nth-child(4) { padding-inline: 10px; }
 .monthly-input-table td:nth-child(2) form, .monthly-input-table td:nth-child(4) form { width: 100%; }
 .monthly-input-table th:nth-child(2), .monthly-input-table td:nth-child(2), .monthly-input-table th:nth-child(4), .monthly-input-table td:nth-child(4) { overflow: visible; }
