@@ -7,6 +7,8 @@ const items = [
   ['카테고리 관리', '수입·지출 분류', '/settings/categories'],
   ['결제수단 관리', '카드·계좌·현금', '/settings/payment-methods'],
   ['거래 내역 가져오기', '엑셀·CSV·백업 데이터', '/settings/data'],
+  ['예산 관리', '연간 예산과 월별 목표', '/settings/budgets'],
+  ['반복 항목 관리', '예정 거래와 정기 지출', '/settings/recurring'],
 ] as const;
 
 export function SettingsNav() {

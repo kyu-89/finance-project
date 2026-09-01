@@ -500,6 +500,23 @@ textarea {
   font-size: 13px;
   white-space: nowrap;
 }
+
+.settings-back-link {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 8px;
+  color: var(--tds-blue-600);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.settings-back-link:hover { color: var(--tds-blue-700); }
+.settings-back-link:focus-visible {
+  border-radius: 8px;
+  outline: 2px solid var(--tds-blue-500);
+  outline-offset: 3px;
+}
 .monthly-input-table td:first-child,
 .monthly-input-table th:first-child { white-space: nowrap; }
 .monthly-input-table td:nth-child(1) { white-space: nowrap; }
