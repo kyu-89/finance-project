@@ -16,7 +16,7 @@ export function WorkbookMonthlyImport({ categories, paymentMethods }: { categori
   const [message, setMessage] = useState('');
   const [state, action, pending] = useActionState(importTransactionsAction, INITIAL_ACTION_STATE);
   const categoryByName = useMemo(() => new Map(categories.map((category) => [category.name.toLocaleLowerCase(), category])), [categories]);
-  const validRows = useMemo(() => rows
+  const parsedValidRows = useMemo(() => rows
     .filter((row) => row.errors.length === 0 && row.transactionDate && row.amount)
     .map((row) => {
       const category = row.categoryName ? categoryByName.get(row.categoryName.toLocaleLowerCase()) : undefined;
@@ -35,6 +35,20 @@ export function WorkbookMonthlyImport({ categories, paymentMethods }: { categori
         needsReview: Boolean(row.categoryName && !category) || Boolean(row.subcategoryName && !subcategory) || Boolean(row.cardLabel && !paymentMethod),
       };
     }), [rows, categoryByName, paymentMethodId, paymentMethods, fileName]);
+  const validRows = useMemo(() => {
+    const seen = new Set<string>();
+    return parsedValidRows.filter((row) => {
+      const key = `${row.sourceMonth ?? ''}|${row.transactionDate}|${row.transactionType}|${row.amount}|${row.description.trim().toLocaleLowerCase()}|${row.paymentMethodId ?? ''}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [parsedValidRows]);
+  const duplicateRows = parsedValidRows.length - validRows.length;
+  const sourceMonthCounts = useMemo(() => Array.from(rows.reduce((counts, row) => {
+    if (row.sourceMonth && row.errors.length === 0) counts.set(row.sourceMonth, (counts.get(row.sourceMonth) ?? 0) + 1);
+    return counts;
+  }, new Map<string, number>()).entries()).sort(([a], [b]) => a.localeCompare(b)), [rows]);
 
   async function handleFile(file: File) {
     setFileName(file.name);
@@ -58,6 +72,6 @@ export function WorkbookMonthlyImport({ categories, paymentMethods }: { categori
   return <section className="tds-card p-5">
     <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-lg font-bold">월별 거래 전체 가져오기</h2><p className="mt-1 text-sm text-[var(--tds-grey-700)]">1월~12월 시트를 한 번에 읽어 거래 원장에 추가합니다.</p></div><label className="tds-button-secondary inline-flex cursor-pointer px-4"><span>Excel 파일 선택</span><input className="sr-only" type="file" accept=".xlsx,.xls,.xlsm" onChange={(event) => { const file = event.target.files?.[0]; if (file) void handleFile(file); }} /></label></div>
     {message && <p role="alert" className="mt-3 text-sm text-[var(--tds-red-500)]">{message}</p>}
-    {rows.length > 0 && <><p className="mt-4 text-sm">총 {rows.length}건 · 가져오기 가능 {validRows.length}건 · 오류 {rows.length - validRows.length}건</p><FormMessage result={state} /><form action={action}><input type="hidden" name="rows" value={JSON.stringify(validRows)} /><button disabled={pending || !paymentMethodId || !validRows.length} className="tds-primary-button mt-4 w-full">{pending ? '가져오는 중…' : `${validRows.length}건 가져오기`}</button></form></>}
+    {rows.length > 0 && <><div className="mt-4 grid gap-2 text-sm sm:grid-cols-3"><p>원본 행 <strong>{rows.length}건</strong></p><p>가져오기 대상 <strong>{validRows.length}건</strong></p><p>오류 <strong>{rows.length - parsedValidRows.length}건</strong></p></div><p className="mt-2 text-xs text-[var(--tds-grey-600)]">파일 내 중복 {duplicateRows}건은 한 번만 반영합니다. 기존 DB 중복은 서버에서 추가로 확인합니다.</p><div className="mt-3 flex flex-wrap gap-2">{sourceMonthCounts.map(([month, count]) => <span key={month} className="tds-chip">{month}: {count}건</span>)}</div><FormMessage result={state} /><form action={action}><input type="hidden" name="rows" value={JSON.stringify(validRows)} /><button disabled={pending || !paymentMethodId || !validRows.length} className="tds-primary-button mt-4 w-full">{pending ? '가져오는 중…' : `${validRows.length}건 가져오기`}</button></form></>}
   </section>;
 }
