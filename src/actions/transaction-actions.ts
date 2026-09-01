@@ -7,6 +7,7 @@ import {
   confirmPlannedTransaction,
   skipPlannedTransaction,
   undoTransaction,
+  softDeleteTransaction,
   updateTransactionCostBehavior,
   restoreTransaction,
 } from '@/lib/transactions';
@@ -205,9 +206,9 @@ export async function undoTransactionAction(
 export async function deleteTransactionAction(_prevState: ActionResult, formData: FormData): Promise<ActionResult> {
   const id = String(formData.get('id') ?? '');
   if (!id) return fail('삭제할 거래 id가 없습니다.');
-  try { await getCurrentHouseholdId(); await undoTransaction(id); }
+  try { await getCurrentHouseholdId(); await softDeleteTransaction(id); }
   catch (error) { return fail(error instanceof Error ? error.message : '거래 삭제에 실패했어요.'); }
-  revalidatePath('/monthly'); revalidatePath('/dashboard');
+  revalidatePath('/monthly'); revalidatePath('/dashboard'); revalidatePath('/settings/data');
   return ok('거래를 삭제했어요.');
 }
 
