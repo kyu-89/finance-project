@@ -10,8 +10,15 @@ export function SettingsSectionAnchors() {
     headings.forEach((heading, index) => {
       heading.closest('section')?.setAttribute('id', sectionIds[index]);
     });
-    const target = document.getElementById(window.location.hash.slice(1));
-    target?.scrollIntoView({ block: 'start' });
+    const scrollToHash = () => {
+      const hash = window.location.hash.slice(1);
+      if (!hash) return;
+      document.getElementById(hash)?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    };
+
+    window.addEventListener('hashchange', scrollToHash);
+    requestAnimationFrame(scrollToHash);
+    return () => window.removeEventListener('hashchange', scrollToHash);
   }, []);
 
   return null;
