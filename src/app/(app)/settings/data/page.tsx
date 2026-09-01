@@ -17,12 +17,14 @@ import { AnnualAudit } from './AnnualAudit';
 import { WorkbookMonthlyImport } from './WorkbookMonthlyImport';
 import { FinancialAudit } from './FinancialAudit';
 import { SettingsNav } from '../SettingsNav';
+import { listImportSyncRuns } from '@/lib/import-history';
+import { SyncHistory } from './SyncHistory';
 
 export default async function DataSettingsPage() {
   const household = await ensureHouseholdForCurrentUser();
-  const [categories, paymentMethods, deletedTransactions] = await Promise.all([
+  const [categories, paymentMethods, deletedTransactions, syncRuns] = await Promise.all([
     listCategoriesWithSubcategories(household.id),
-    listPaymentMethods(household.id), listRecentlyDeletedTransactions(household.id),
+    listPaymentMethods(household.id), listRecentlyDeletedTransactions(household.id), listImportSyncRuns(household.id),
   ]);
   return <div className="tds-page flex flex-col gap-6">
     <SettingsNav />
@@ -31,6 +33,7 @@ export default async function DataSettingsPage() {
     <details className="tds-card settings-advanced-imports"><summary>자산·금융 데이터 가져오기 <span>필요한 경우에만 열기</span></summary><div className="settings-advanced-imports-body"><InvestmentImport /><AccountImport /><SavingsProductsImport /><InsuranceImport /><LoanImport /><SupportEventImport /><PlanningImport /><AssetCardImport /><AnnualAudit /><FinancialAudit /></div></details>
     <section className="tds-card flex flex-wrap items-center justify-between gap-4 p-5"><div><h2 className="text-lg font-bold">데이터 내보내기</h2><p className="mt-1 text-sm text-[var(--tds-grey-700)]">2단계 인증이 완료된 세션에서만 금융 데이터를 내려받습니다.</p></div><div className="flex flex-wrap gap-2"><a href="/api/export/transactions" className="tds-button-secondary">거래 CSV</a><a href="/api/export/all" className="tds-button-secondary">전체 JSON</a></div></section>
     <WorkbookMonthlyImport categories={categories.filter((category) => category.isActive)} paymentMethods={paymentMethods.filter((method) => method.isActive)} />
+    <SyncHistory runs={syncRuns} />
     <DeletedTransactions transactions={deletedTransactions} />
   </div>;
 }

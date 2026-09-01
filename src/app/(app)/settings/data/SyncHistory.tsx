@@ -1,0 +1,5 @@
+import type { ImportSyncRun } from '@/lib/import-history';
+
+export function SyncHistory({ runs }: { runs: ImportSyncRun[] }) {
+  return <section className="tds-card p-5"><h2 className="text-lg font-bold">동기화 이력</h2><p className="mt-1 text-sm text-[var(--tds-grey-700)]">최근 엑셀 가져오기 결과를 확인합니다.</p>{runs.length === 0 ? <p className="mt-4 text-sm text-[var(--tds-grey-500)]">아직 동기화 이력이 없습니다.</p> : <div className="mt-4 divide-y divide-[var(--tds-grey-200)]">{runs.map((run) => <div key={run.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm"><div className="min-w-0"><p className="truncate font-semibold">{run.sourceFileName}</p><p className="mt-1 text-xs text-[var(--tds-grey-600)]">{new Date(run.createdAt).toLocaleString('ko-KR')} · 원본 {run.totalRows}건</p></div><div className="flex flex-wrap gap-2 text-xs tabular-nums"><span className="tds-chip">반영 {run.importedRows}</span><span className="tds-chip">중복 {run.duplicateRows}</span><span className="tds-chip">오류 {run.invalidRows}</span></div></div>)}</div>}</section>;
+}
