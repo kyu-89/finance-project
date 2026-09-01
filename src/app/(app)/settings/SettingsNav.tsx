@@ -1,9 +1,9 @@
 import Link from 'next/link';
 
 const items = [
-  ['가족 구성원', '가구 구성원과 활성 상태', '/settings'],
-  ['재무 목표', '목표 금액과 진행 상황', '/settings'],
-  ['재무 일정', '기념일·점검 일정', '/settings'],
+  ['가족 구성원', '가구 구성원과 활성 상태', '/settings#members'],
+  ['재무 목표', '목표 금액과 진행 상황', '/settings#goals'],
+  ['재무 일정', '기념일·점검 일정', '/settings#tasks'],
   ['카테고리 관리', '수입·지출 분류', '/settings/categories'],
   ['결제수단 관리', '카드·계좌·현금', '/settings/payment-methods'],
   ['거래 내역 가져오기', '엑셀·CSV·백업 데이터', '/settings/data'],
