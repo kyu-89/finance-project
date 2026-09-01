@@ -30,7 +30,7 @@ export function findDuplicateTransactionGroups(rows: DuplicateTransactionRecord[
     groups.set(key, [...(groups.get(key) ?? []), row]);
   });
   return [...groups.entries()]
-    .map(([key, group]) => [...group].sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id)))
+    .map(([, group]) => [...group].sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id)))
     .filter((group) => group.length > 1)
     .map((group) => ({ key: duplicateTransactionKey(group[0]), keeper: group[0], duplicates: group.slice(1) }));
 }
