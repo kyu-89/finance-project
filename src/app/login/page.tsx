@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useState } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
@@ -75,6 +76,9 @@ function LoginForm() {
           {submitting ? '로그인 중...' : '로그인'}
         </button>
       </form>
+      <p className="mt-5 text-center text-sm text-[var(--tds-grey-700)]">
+        처음 이용하시나요? <Link href="/signup" className="font-semibold text-[var(--tds-blue-600)] underline-offset-4 hover:underline">회원가입</Link>
+      </p>
       </section>
     </main>
   );

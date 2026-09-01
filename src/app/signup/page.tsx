@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
@@ -66,6 +67,9 @@ export default function SignupPage() {
           {submitting ? '가입 중...' : '가입하기'}
         </button>
       </form>
+      <p className="mt-5 text-center text-sm text-[var(--tds-grey-700)]">
+        이미 계정이 있으신가요? <Link href="/login" className="font-semibold text-[var(--tds-blue-600)] underline-offset-4 hover:underline">로그인</Link>
+      </p>
       </section>
     </main>
   );
