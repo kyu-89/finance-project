@@ -10,6 +10,14 @@ const AAL2_EXEMPT_PREFIXES = ['/mfa'];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
+  const path = request.nextUrl.pathname;
+  const isProtected = PROTECTED_PREFIXES.some((prefix) => path.startsWith(prefix));
+  const isAal2Exempt = AAL2_EXEMPT_PREFIXES.some((prefix) => path.startsWith(prefix));
+
+  // Public routes do not consume session state, so avoid an auth round trip for them.
+  if (!isProtected) {
+    return response;
+  }
 
   const supabase = createServerClient(env.supabaseUrl, env.supabasePublishableKey, {
     cookies: {
@@ -26,25 +34,17 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // One verified JWT-claims read supplies both identity and MFA assurance level.
+  // Previously getUser() and getAuthenticatorAssuranceLevel() ran sequentially.
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const claims = claimsData?.claims;
 
-  const path = request.nextUrl.pathname;
-  const isProtected = PROTECTED_PREFIXES.some((prefix) => path.startsWith(prefix));
-  const isAal2Exempt = AAL2_EXEMPT_PREFIXES.some((prefix) => path.startsWith(prefix));
-
-  if (isProtected && !user) {
+  if (!claims?.sub) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  if (isProtected && user && !isAal2Exempt) {
-    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-    // Fail closed: if the AAL lookup itself errors (aal === null), treat it as "not aal2"
-    // rather than silently skipping the check and letting the request through.
-    if (!aal || aal.currentLevel !== 'aal2') {
-      return NextResponse.redirect(new URL('/mfa/verify', request.url));
-    }
+  if (!isAal2Exempt && claims.aal !== 'aal2') {
+    return NextResponse.redirect(new URL('/mfa/verify', request.url));
   }
 
   return response;

@@ -35,24 +35,23 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
     listPaymentMethods(household.id),
     listBudgets(household.id, year),
   ]);
-  await promotePastPlannedTransactions(household.id, `${currentMonth}-01`);
-  await materializeRecurringRulesForRange(household.id, fromDate, toDate);
 
-  const [categories, paymentMethods, annualBudgets] = await metadataPromise;
-  const transactions = await listTransactions({ householdId: household.id, fromDate, toDate, reportMonthFrom: selectedMonth, reportMonthTo: selectedMonth, categoryId: selectedCategory, subcategoryId: selectedSubcategory, recurringRuleId: selectedRecurringRule });
-  /*
-   * 월간관리는 선택한 연월만 다루는 작업 공간입니다. 전체 거래 조회는
-   * 대시보드와 데이터 관리의 책임이며, 여기서 다시 불러오지 않습니다.
-   */
-  /*
-  const [[categories, paymentMethods, annualBudgets], [transactions, allTransactions]] = await Promise.all([
+  if (selectedMonth < currentMonth) {
+    // Historical occurrences must exist before their planned status is promoted.
+    await materializeRecurringRulesForRange(household.id, fromDate, toDate);
+    await promotePastPlannedTransactions(household.id, `${currentMonth}-01`);
+  } else {
+    // Current/future materialization cannot overlap the historical promotion range.
+    await Promise.all([
+      promotePastPlannedTransactions(household.id, `${currentMonth}-01`),
+      materializeRecurringRulesForRange(household.id, fromDate, toDate),
+    ]);
+  }
+
+  const [[categories, paymentMethods, annualBudgets], transactions] = await Promise.all([
     metadataPromise,
-    Promise.all([
-      listTransactions({ householdId: household.id, fromDate, toDate, reportMonthFrom: selectedMonth, reportMonthTo: selectedMonth, categoryId: selectedCategory, subcategoryId: selectedSubcategory, recurringRuleId: selectedRecurringRule }),
-      listTransactions({ householdId: household.id }),
-    ]),
+    listTransactions({ householdId: household.id, fromDate, toDate, reportMonthFrom: selectedMonth, reportMonthTo: selectedMonth, categoryId: selectedCategory, subcategoryId: selectedSubcategory, recurringRuleId: selectedRecurringRule }),
   ]);
-  */
 
   const budgetCategories = categories.filter((c) => c.transactionType === 'expense');
   const categoryFilterName = selectedCategory ? categories.find((category) => category.id === selectedCategory)?.name : null;

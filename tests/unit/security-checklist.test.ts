@@ -28,7 +28,8 @@ describe('security checklist', () => {
 
   it('keeps app routes behind AAL2 and exports behind a second server-side check', () => {
     const proxy = read('src/lib/supabase/proxy.ts');
-    expect(proxy).toContain("currentLevel !== 'aal2'");
+    expect(proxy).toContain('supabase.auth.getClaims()');
+    expect(proxy).toContain("claims.aal !== 'aal2'");
     expect(read('src/app/api/export/transactions/route.ts')).toContain("currentLevel !== 'aal2'");
     expect(read('src/app/api/export/all/route.ts')).toContain("currentLevel !== 'aal2'");
   });

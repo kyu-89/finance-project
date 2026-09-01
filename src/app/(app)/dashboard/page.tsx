@@ -27,12 +27,23 @@ const shiftMonth = (month: string, offset: number) => { const d = new Date(Date.
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ month?: string; member?: string; preset?: string; customFrom?: string; customTo?: string }> }) {
   const query = await searchParams; const today = todayInSeoul(); const currentMonth = today.slice(0, 7); const month = query.month && monthPattern.test(query.month) ? query.month : currentMonth; const trendStart = shiftMonth(month, -23); const bounds = monthBounds(month); const preset: DashboardPreset = 'month'; const dashboardRange = resolveDashboardRange(bounds.to, preset); const memberForQuery = undefined; const household = await ensureHouseholdForCurrentUser();
-  await materializeRecurringRulesForRange(household.id, `${trendStart}-01`, bounds.to);
-  const [summary, netWorth, assetHistory, insurances, realAssets, loans] = await Promise.all([
-    getDashboardHomeSummary({ householdId: household.id, from: dashboardRange.from < `${trendStart}-01` ? dashboardRange.from : `${trendStart}-01`, to: bounds.to, monthStart: dashboardRange.from, monthEnd: dashboardRange.to, memberId: memberForQuery }), computeCurrentNetWorth(household.id, today, memberForQuery), listAssetValueHistory(household.id, 36), listInsurances(household.id), listAssets(household.id), listLoans(household.id),
+  const referenceDataPromise = Promise.all([
+    computeCurrentNetWorth(household.id, today, memberForQuery),
+    listAssetValueHistory(household.id, 36),
+    listInsurances(household.id),
+    listAssets(household.id),
+    listLoans(household.id),
+    listCategoriesWithSubcategories(household.id),
   ]);
-  const transactions = await listTransactions({ householdId: household.id, fromDate: `${trendStart}-01`, toDate: bounds.to, reportMonthFrom: trendStart, reportMonthTo: month });
-  const categories = await listCategoriesWithSubcategories(household.id);
+  // The dashboard only needs planned rows for the selected month. Materializing the
+  // entire 24-month chart range made every visit perform avoidable database writes.
+  await materializeRecurringRulesForRange(household.id, bounds.from, bounds.to);
+  const [summary, transactions, referenceData] = await Promise.all([
+    getDashboardHomeSummary({ householdId: household.id, from: dashboardRange.from < `${trendStart}-01` ? dashboardRange.from : `${trendStart}-01`, to: bounds.to, monthStart: dashboardRange.from, monthEnd: dashboardRange.to, memberId: memberForQuery }),
+    listTransactions({ householdId: household.id, fromDate: `${trendStart}-01`, toDate: bounds.to, reportMonthFrom: trendStart, reportMonthTo: month }),
+    referenceDataPromise,
+  ]);
+  const [netWorth, assetHistory, insurances, realAssets, loans, categories] = referenceData;
   const incomeSubcategoryNames = new Map(categories.find((category) => category.transactionType === 'income')?.subcategories.map((subcategory) => [subcategory.id, subcategory.name]) ?? []);
   const reportMonth = (transaction: { sourceMonth?: string | null; transactionDate: string }) => transaction.sourceMonth ?? transaction.transactionDate.slice(0, 7);
   const transactionDetails = transactions.filter((transaction) => transaction.status === 'posted' && transaction.transactionType !== 'income' && (transaction.flowClass === 'consumption' || transaction.transactionType === 'refund')).map((transaction) => ({ month: reportMonth(transaction), id: transaction.categoryId ?? 'unassigned', label: '', value: transaction.amount, subcategories: [{ id: transaction.id, label: `${transaction.transactionDate} · ${transaction.description}`, value: transaction.transactionType === 'refund' ? -transaction.amount : transaction.amount }] }));
