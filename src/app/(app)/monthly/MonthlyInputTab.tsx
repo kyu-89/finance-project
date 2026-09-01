@@ -97,40 +97,31 @@ function MonthlyTransactionTable({ transactions, categories, paymentMethods, dup
 
 export function MonthlyInputTab({
   initialTransactions,
-  allTransactions,
   selectedMonth,
   categories,
   paymentMethods,
 }: {
   initialTransactions: Transaction[];
-  allTransactions: Transaction[];
   selectedMonth: string;
   categories: CategoryWithSubcategories[];
   paymentMethods: PaymentMethod[];
 }) {
-  const [period, setPeriod] = useState<'month' | 'all'>('month');
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<'all' | Transaction['status']>('all');
   const [type, setType] = useState<'all' | Transaction['transactionType']>('all');
   const [costBehavior, setCostBehavior] = useState<'all' | 'fixed' | 'variable'>('all');
   const [category, setCategory] = useState('all');
-  const [fromDate, setFromDate] = useState(`${selectedMonth}-01`);
-  const [toDate, setToDate] = useState('');
-  const sourceTransactions = period === 'month' ? initialTransactions : allTransactions;
   const duplicateCandidates = useMemo(() => {
-    const uniqueTransactions = Array.from(new Map([...initialTransactions, ...allTransactions].map((transaction) => [transaction.id, transaction])).values());
-    return findRecurringDuplicateCandidates(uniqueTransactions);
-  }, [initialTransactions, allTransactions]);
-  const visibleTransactions = useMemo(() => sourceTransactions.filter((transaction) => {
+    return findRecurringDuplicateCandidates(initialTransactions);
+  }, [initialTransactions]);
+  const visibleTransactions = useMemo(() => initialTransactions.filter((transaction) => {
     const normalizedQuery = query.trim().toLowerCase();
     return (status === 'all' || transaction.status === status)
       && (type === 'all' || transaction.transactionType === type)
       && (costBehavior === 'all' || transaction.costBehavior === costBehavior)
       && (category === 'all' || transaction.categoryId === category || transaction.subcategoryId === category)
-      && (!normalizedQuery || `${transaction.description} ${transaction.memo ?? ''}`.toLowerCase().includes(normalizedQuery))
-      && (!fromDate || transaction.transactionDate >= fromDate)
-      && (!toDate || transaction.transactionDate <= toDate);
-  }), [sourceTransactions, status, type, costBehavior, category, query, fromDate, toDate]);
+      && (!normalizedQuery || `${transaction.description} ${transaction.memo ?? ''}`.toLowerCase().includes(normalizedQuery));
+  }), [initialTransactions, status, type, costBehavior, category, query]);
   const orderedTransactions = useMemo(() => [...initialTransactions].sort((a, b) => {
     if (a.status === 'planned' && b.status !== 'planned') return -1;
     if (a.status !== 'planned' && b.status === 'planned') return 1;
@@ -143,11 +134,11 @@ export function MonthlyInputTab({
   return (
     <div className="monthly-input-panel flex flex-col gap-4">
       <div className="monthly-cta monthly-quick-actions"><AddDrawer title="수입 추가" description="이번 달에 들어온 돈을 기록하세요." triggerLabel="수입 추가"><MonthlyRowForm initialTransactionType="income" categories={categories} paymentMethods={paymentMethods} transactions={initialTransactions} /></AddDrawer><AddDrawer title="지출 추가" description="이번 달에 쓴 돈을 기록하세요." triggerLabel="지출 추가"><MonthlyRowForm initialTransactionType="expense" categories={categories} paymentMethods={paymentMethods} transactions={initialTransactions} /></AddDrawer></div>
-      <section className="monthly-ledger-filters" aria-label="거래 조회 필터"><div className="monthly-ledger-filter-heading"><div><span className="monthly-kicker">거래 조회</span><strong>{period === 'month' ? `${selectedMonth.replace('-', '년 ')}월 거래` : '전체 기간 거래'}</strong></div><div className="monthly-ledger-period-toggle" role="group" aria-label="조회 범위"><button type="button" data-selected={period === 'month'} onClick={() => { setPeriod('month'); setFromDate(`${selectedMonth}-01`); setToDate(''); }}>선택한 달</button><button type="button" data-selected={period === 'all'} onClick={() => { setPeriod('all'); setFromDate(''); setToDate(''); }}>전체 기간</button></div></div><div className="monthly-ledger-filter-grid"><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="내용·메모 검색" aria-label="내용·메모 검색" /><input type="date" value={fromDate} onChange={(event) => setFromDate(event.target.value)} aria-label="시작일" /><input type="date" value={toDate} onChange={(event) => setToDate(event.target.value)} aria-label="종료일" /><select value={status} onChange={(event) => setStatus(event.target.value as typeof status)} aria-label="상태"><option value="all">모든 상태</option><option value="planned">예정</option><option value="posted">확정</option><option value="skipped">이번 달 제외</option><option value="cancelled">취소</option></select><select value={type} onChange={(event) => setType(event.target.value as typeof type)} aria-label="유형"><option value="all">모든 유형</option><option value="income">수입</option><option value="expense">지출</option><option value="saving">저축</option><option value="investment">투자</option><option value="debt_principal">대출원금</option></select><select value={costBehavior} onChange={(event) => setCostBehavior(event.target.value as typeof costBehavior)} aria-label="비용성격"><option value="all">모든 비용성격</option><option value="fixed">고정비</option><option value="variable">변동비</option></select><select value={category} onChange={(event) => setCategory(event.target.value)} aria-label="카테고리"><option value="all">모든 카테고리</option>{categories.map((item) => <optgroup key={item.id} label={item.name}><option value={item.id}>{item.name}</option>{item.subcategories.map((sub) => <option key={sub.id} value={sub.id}>{sub.name}</option>)}</optgroup>)}</select></div></section>
+      <section className="monthly-ledger-filters" aria-label="이번 달 거래 필터"><div className="monthly-ledger-filter-heading"><div><span className="monthly-kicker">거래 조회</span><strong>{selectedMonth.replace('-', '년 ')}월 거래</strong></div></div><div className="monthly-ledger-filter-grid"><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="내용·메모 검색" aria-label="내용·메모 검색" /><select value={status} onChange={(event) => setStatus(event.target.value as typeof status)} aria-label="상태"><option value="all">모든 상태</option><option value="planned">예정</option><option value="posted">확정</option><option value="skipped">이번 달 제외</option><option value="cancelled">취소</option></select><select value={type} onChange={(event) => setType(event.target.value as typeof type)} aria-label="유형"><option value="all">모든 유형</option><option value="income">수입</option><option value="expense">지출</option><option value="saving">저축</option><option value="investment">투자</option><option value="debt_principal">대출원금</option></select><select value={costBehavior} onChange={(event) => setCostBehavior(event.target.value as typeof costBehavior)} aria-label="비용성격"><option value="all">모든 비용성격</option><option value="fixed">고정비</option><option value="variable">변동비</option></select><select value={category} onChange={(event) => setCategory(event.target.value)} aria-label="카테고리"><option value="all">모든 카테고리</option>{categories.map((item) => <optgroup key={item.id} label={item.name}><option value={item.id}>{item.name}</option>{item.subcategories.map((sub) => <option key={sub.id} value={sub.id}>{sub.name}</option>)}</optgroup>)}</select></div></section>
       <section className={`monthly-planned-queue ${plannedTransactions.length ? 'has-items' : 'is-clear'}`} aria-label="예정 거래 처리 현황"><div><span className="monthly-kicker">예정 거래 처리</span><strong>{plannedTransactions.length ? `${plannedTransactions.length}건이 처리 대기 중이에요` : '처리할 예정 거래가 없어요'}</strong></div><p>{plannedTransactions.length ? '상태 드롭다운에서 확정 또는 이번 달 제외를 선택하세요.' : '반복항목이 생성되면 이 영역과 거래 목록 상단에 먼저 표시됩니다.'}</p></section>
 
       {visiblePlannedTransactions.length > 0 && <section className="monthly-transaction-section"><div className="monthly-transaction-section-heading"><div><h2>예정 거래</h2><p>확인 후 상태 드롭다운에서 확정하거나 이번 달에서 제외하세요.</p></div><strong>{visiblePlannedTransactions.length}건</strong></div><MonthlyTransactionTable transactions={visiblePlannedTransactions} categories={categories} paymentMethods={paymentMethods} duplicateCandidates={duplicateCandidates} /></section>}
-      <section className="monthly-transaction-section"><div className="monthly-transaction-section-heading"><div><h2>{period === 'month' ? '이번 달 거래' : '전체 거래'}</h2><p>{period === 'month' ? '선택한 달의 수입·지출과 자산 거래를 관리하세요.' : '기간과 필터를 바꿔 전체 원장을 조회하세요.'}</p></div><strong>{visiblePostedTransactions.length}건</strong></div><MonthlyTransactionTable transactions={visiblePostedTransactions} categories={categories} paymentMethods={paymentMethods} duplicateCandidates={duplicateCandidates} /></section>
+      <section className="monthly-transaction-section"><div className="monthly-transaction-section-heading"><div><h2>이번 달 거래</h2><p>선택한 달의 수입·지출과 자산 거래를 관리하세요.</p></div><strong>{visiblePostedTransactions.length}건</strong></div><MonthlyTransactionTable transactions={visiblePostedTransactions} categories={categories} paymentMethods={paymentMethods} duplicateCandidates={duplicateCandidates} /></section>
     </div>
   );
 }
