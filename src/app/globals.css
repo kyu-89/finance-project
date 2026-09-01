@@ -517,6 +517,30 @@ textarea {
   outline: 2px solid var(--tds-blue-500);
   outline-offset: 3px;
 }
+
+.settings-month-switcher {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 4px;
+  border: 1px solid var(--tds-grey-200);
+  border-radius: 14px;
+  background: var(--tds-grey-50);
+  scrollbar-width: none;
+}
+.settings-month-switcher::-webkit-scrollbar { display: none; }
+.settings-month-switcher button {
+  min-width: 52px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  color: var(--tds-grey-700);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.settings-month-switcher button:hover { background: var(--tds-white); }
+.settings-month-switcher button.is-selected { color: var(--tds-blue-700); background: var(--tds-white); box-shadow: 0 1px 4px rgb(15 23 42 / .12); }
 .monthly-input-table td:first-child,
 .monthly-input-table th:first-child { white-space: nowrap; }
 .monthly-input-table td:nth-child(1) { white-space: nowrap; }
