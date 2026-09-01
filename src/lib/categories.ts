@@ -245,6 +245,12 @@ export async function deactivateCategory(id: string): Promise<void> {
   }
 }
 
+export async function setCategoryActive(id: string, isActive: boolean): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase.from('categories').update({ is_active: isActive }).eq('id', id);
+  if (error) throw new Error(`카테고리 상태 변경 실패: ${error.message}`);
+}
+
 export async function updateCategory(input: {
   id: string;
   name: string;
@@ -289,4 +295,10 @@ export async function deactivateSubcategory(id: string): Promise<void> {
   if (error) {
     throw new Error(`소분류 비활성화 실패: ${error.message}`);
   }
+}
+
+export async function setSubcategoryActive(id: string, isActive: boolean): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase.from('subcategories').update({ is_active: isActive }).eq('id', id);
+  if (error) throw new Error(`소분류 상태 변경 실패: ${error.message}`);
 }

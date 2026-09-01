@@ -24,6 +24,7 @@ export function WorkbookMonthlyImport({ categories, paymentMethods }: { categori
       const paymentMethod = row.cardLabel ? paymentMethods.find((method) => method.name.toLocaleLowerCase() === row.cardLabel!.toLocaleLowerCase()) : undefined;
       return {
         transactionDate: row.transactionDate as string,
+        sourceMonth: row.sourceMonth ?? null,
         transactionType: row.transactionType,
         amount: row.amount as number,
         description: row.description,
@@ -42,7 +43,11 @@ export function WorkbookMonthlyImport({ categories, paymentMethods }: { categori
     try {
       const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array', cellDates: true, dense: true });
       const monthly = workbook.SheetNames.filter((name) => /^(?:[1-9]|1[0-2])월$/.test(name));
-      const parsed = monthly.flatMap((name) => mapMonthlySheetRows(XLSX.utils.sheet_to_json(workbook.Sheets[name], { header: 1, raw: true, defval: '' }) as unknown[][]));
+      const year = file.name.match(/20\d{2}/)?.[0] ?? String(new Date().getFullYear());
+      const parsed = monthly.flatMap((name) => mapMonthlySheetRows(
+        XLSX.utils.sheet_to_json(workbook.Sheets[name], { header: 1, raw: true, defval: '' }) as unknown[][],
+        `${year}-${String(Number(name.replace('월', ''))).padStart(2, '0')}`,
+      ));
       if (!parsed.length) setMessage('1월~12월 시트에서 거래 표를 찾지 못했습니다.');
       setRows(parsed);
     } catch {

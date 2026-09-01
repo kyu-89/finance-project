@@ -117,3 +117,9 @@ export async function deactivatePaymentMethod(id: string, householdId?: string):
     throw new Error(`결제수단 비활성화 실패: ${error.message}`);
   }
 }
+
+export async function setPaymentMethodActive(id: string, householdId: string, isActive: boolean): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase.from('payment_methods').update({ is_active: isActive }).eq('id', id).eq('household_id', householdId);
+  if (error) throw new Error(`결제수단 상태 변경 실패: ${error.message}`);
+}

@@ -12,6 +12,7 @@ export type ParsedImportRow = {
   subcategoryName: string | null;
   memo: string | null;
   cardLabel: string | null;
+  sourceMonth?: string | null;
   errors: string[];
 };
 
@@ -111,7 +112,7 @@ function isIncome(status: unknown): boolean {
   return /income|salary|payroll|deposit|bonus|dividend|interest|급여|수입|입금|상여|배당|이자/i.test(String(status ?? ''));
 }
 
-export function mapImportRows(rows: unknown[][], headers: string[], mapping: ImportMapping, headerRowIndex = 0): ParsedImportRow[] {
+export function mapImportRows(rows: unknown[][], headers: string[], mapping: ImportMapping, headerRowIndex = 0, sourceMonth: string | null = null): ParsedImportRow[] {
   const result: ParsedImportRow[] = [];
   for (let index = headerRowIndex + 1; index < rows.length; index += 1) {
     const row = rows[index];
@@ -134,13 +135,14 @@ export function mapImportRows(rows: unknown[][], headers: string[], mapping: Imp
       subcategoryName: null,
       memo: String(valueAt(row, headers, mapping.memo) ?? '').trim() || null,
       cardLabel: String(valueAt(row, headers, mapping.card) ?? '').trim() || null,
+      sourceMonth,
       errors,
     });
   }
   return result;
 }
 
-export function mapMonthlySheetRows(rows: unknown[][]): ParsedImportRow[] {
+export function mapMonthlySheetRows(rows: unknown[][], sourceMonth: string | null = null): ParsedImportRow[] {
   type Block = { headerRow: number; start: number; kind: 'income' | 'expense' };
   const blocks: Block[] = [];
   for (let rowIndex = 0; rowIndex < rows.length; rowIndex += 1) {
@@ -175,7 +177,7 @@ export function mapMonthlySheetRows(rows: unknown[][]): ParsedImportRow[] {
       if (!parsedDate || !description || parsedAmount.amount === null || parsedAmount.amount <= 0) continue;
 
       const errors: string[] = [];
-      result.push({ rowNumber: index + 1, transactionDate: parsedDate, amount: parsedAmount.amount, transactionType: block.kind === 'income' ? 'income' : parsedAmount.negative || isRefund(data.memo) ? 'refund' : 'expense', description, categoryName: String(data.category ?? '').trim() || null, subcategoryName: String(data.subcategory ?? '').trim() || null, memo: String(data.memo ?? '').trim() || null, cardLabel: String(data.payment ?? '').trim() || null, errors });
+      result.push({ rowNumber: index + 1, transactionDate: parsedDate, amount: parsedAmount.amount, transactionType: block.kind === 'income' ? 'income' : parsedAmount.negative || isRefund(data.memo) ? 'refund' : 'expense', description, categoryName: String(data.category ?? '').trim() || null, subcategoryName: String(data.subcategory ?? '').trim() || null, memo: String(data.memo ?? '').trim() || null, cardLabel: String(data.payment ?? '').trim() || null, sourceMonth, errors });
     }
   }
   return result;

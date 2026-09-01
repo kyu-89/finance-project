@@ -6,6 +6,7 @@ export type Transaction = {
   id: string;
   householdId: string;
   transactionDate: string;
+  sourceMonth?: string | null;
   transactionType: TransactionType;
   flowClass: string;
   costBehavior: 'fixed' | 'variable' | null;
@@ -43,7 +44,7 @@ export const FLOW_CLASS_BY_TRANSACTION_TYPE: Record<TransactionType, string> = {
 };
 
 function mapRow(row: {
-  id: string; household_id: string; transaction_date: string; transaction_type: string;
+  id: string; household_id: string; transaction_date: string; source_month: string | null; transaction_type: string;
   flow_class: string; cost_behavior: string | null; payment_method_id: string | null;
   category_id: string | null; subcategory_id: string | null; account_id: string | null; income_group: string | null; parent_transaction_id: string | null; payer_member_id: string | null;
   beneficiary_member_id: string | null; amount: number; description: string; memo: string | null; tags: string[] | null;
@@ -54,6 +55,7 @@ function mapRow(row: {
     id: row.id,
     householdId: row.household_id,
     transactionDate: row.transaction_date,
+    sourceMonth: row.source_month,
     transactionType: row.transaction_type as TransactionType,
     flowClass: row.flow_class,
     costBehavior: row.cost_behavior as 'fixed' | 'variable' | null,
@@ -81,11 +83,12 @@ function mapRow(row: {
 // this as a literal string type, not a widened `string` — Supabase's `.select()` overloads
 // parse the select-string type at compile time to produce the typed row shape, and a widened
 // `string` makes that parse fail with a generic, untyped `GenericStringError` result.
-const TRANSACTION_COLUMNS = `id, household_id, transaction_date, transaction_type, flow_class, cost_behavior, payment_method_id, account_id, income_group, parent_transaction_id, category_id, subcategory_id, payer_member_id, beneficiary_member_id, amount, description, memo, tags, include_in_budget, needs_review, recurring_rule_id, recurring_occurrence_id, status`;
+const TRANSACTION_COLUMNS = `id, household_id, transaction_date, source_month, transaction_type, flow_class, cost_behavior, payment_method_id, account_id, income_group, parent_transaction_id, category_id, subcategory_id, payer_member_id, beneficiary_member_id, amount, description, memo, tags, include_in_budget, needs_review, recurring_rule_id, recurring_occurrence_id, status`;
 
 export async function createTransaction(input: {
   householdId: string;
   transactionDate: string;
+  sourceMonth?: string | null;
   transactionType: TransactionType;
   categoryId: string | null;
   categoryDefaultCostBehavior: 'fixed' | 'variable' | null;
@@ -149,6 +152,7 @@ export async function createTransaction(input: {
 
 export type ImportedTransactionInput = {
   transactionDate: string;
+  sourceMonth?: string | null;
   transactionType: 'income' | 'expense' | 'refund';
   amount: number;
   description: string;
@@ -203,6 +207,7 @@ export async function importTransactions(input: { householdId: string; rows: Imp
     rowsToInsert.push({
       household_id: input.householdId,
       transaction_date: row.transactionDate,
+      source_month: row.sourceMonth ?? null,
       transaction_type: row.transactionType,
       flow_class: FLOW_CLASS_BY_TRANSACTION_TYPE[row.transactionType],
       cost_behavior: costBehavior,

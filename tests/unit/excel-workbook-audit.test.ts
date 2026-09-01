@@ -32,10 +32,11 @@ describe('2026 workbook parser audit', () => {
 
   it('maps the side-by-side monthly income and expense tables without parser errors', () => {
     const parsed = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월']
-      .flatMap((name) => mapMonthlySheetRows(rows(XLSX.readFile(workbookPath, { cellDates: true }), name)));
+      .flatMap((name) => mapMonthlySheetRows(rows(XLSX.readFile(workbookPath, { cellDates: true }), name), `2026-${String(Number(name.replace('월', ''))).padStart(2, '0')}`));
     expect(parsed.length).toBeGreaterThan(0);
     expect(parsed.filter((row) => row.errors.length > 0)).toEqual([]);
     expect(parsed.some((row) => row.categoryName === '수입' && row.subcategoryName === '급여')).toBe(true);
     expect(parsed.some((row) => row.categoryName === '식비' && row.subcategoryName === '외식')).toBe(true);
+    expect(parsed.filter((row) => row.sourceMonth === '2026-08').length).toBeGreaterThan(0);
   });
 });

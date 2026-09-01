@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { createPaymentMethod, deactivatePaymentMethod } from '@/lib/payment-methods';
+import { createPaymentMethod, deactivatePaymentMethod, setPaymentMethodActive } from '@/lib/payment-methods';
 import { ensureHouseholdForCurrentUser } from '@/lib/household';
 import { getCurrentHouseholdId } from '@/lib/household';
 import { fail, ok, type ActionResult } from '@/lib/action-result';
@@ -52,4 +52,12 @@ export async function deactivatePaymentMethodAction(
 
   revalidatePath('/settings/payment-methods');
   return ok('결제수단을 사용하지 않도록 바꿨어요.');
+}
+
+export async function setPaymentMethodActiveAction(_prevState: ActionResult, formData: FormData): Promise<ActionResult> {
+  const id = String(formData.get('id') ?? ''); const raw = String(formData.get('isActive') ?? '');
+  if (!id || !['true', 'false'].includes(raw)) return fail('상태를 확인해 주세요.');
+  try { await setPaymentMethodActive(id, await getCurrentHouseholdId(), raw === 'true'); }
+  catch (error) { return fail(error instanceof Error ? error.message : '결제수단 상태 변경에 실패했습니다.'); }
+  revalidatePath('/settings/payment-methods'); return ok('결제수단 상태를 변경했습니다.');
 }

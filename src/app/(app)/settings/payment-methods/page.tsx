@@ -1,8 +1,10 @@
 import { ensureHouseholdForCurrentUser, listHouseholdMembers } from '@/lib/household';
 import { listPaymentMethods } from '@/lib/payment-methods';
 import { PaymentMethodForm } from './PaymentMethodForm';
-import { DeactivatePaymentMethodButton } from './DeactivatePaymentMethodButton';
 import { AddDrawer } from '@/components/Drawer';
+import { StatusSelect } from '@/components/StatusSelect';
+import { setPaymentMethodActiveAction } from '@/actions/payment-method-actions';
+import { SettingsNav } from '../SettingsNav';
 
 export default async function PaymentMethodsSettingsPage() {
   const household = await ensureHouseholdForCurrentUser();
@@ -11,6 +13,7 @@ export default async function PaymentMethodsSettingsPage() {
   return (
     <div className="tds-page flex max-w-3xl flex-col gap-6">
       <div><h1 className="tds-title mb-2">결제수단을 관리해요</h1><p className="text-sm text-[var(--tds-grey-700)]">자주 쓰는 카드와 계좌를 추가할 수 있어요.</p></div>
+      <SettingsNav />
 
       <div className="flex justify-end"><AddDrawer title="결제수단 추가" description="카드·계좌·현금 등 자주 쓰는 결제수단을 등록하세요." triggerLabel="결제수단 추가"><PaymentMethodForm members={members} /></AddDrawer></div>
 
@@ -18,7 +21,7 @@ export default async function PaymentMethodsSettingsPage() {
         {paymentMethods.map((method) => (
           <li key={method.id} className="flex min-h-16 items-center justify-between px-5">
             <div className={method.isActive ? '' : 'text-gray-400'}><div className="flex items-center gap-2"><span className={method.isActive ? 'font-semibold' : 'font-semibold line-through'}>{method.name}</span><span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${method.isActive ? 'bg-[var(--tds-blue-50)] text-[var(--tds-blue-600)]' : 'bg-[var(--tds-grey-100)] text-[var(--tds-grey-500)]'}`}>{method.isActive ? '사용 중' : '사용 안 함'}</span></div><p className="mt-1 text-xs text-[var(--tds-grey-500)]">{[method.providerName, method.accountNumber ? `계좌 ${method.accountNumber}` : null, method.cardNumberLast4 ? `카드 •••• ${method.cardNumberLast4}` : null, method.expiresAt ? `만료 ${method.expiresAt.slice(0, 7)}` : null].filter(Boolean).join(' · ')}</p></div>
-            {method.isActive && <DeactivatePaymentMethodButton id={method.id} />}
+            <StatusSelect id={method.id} active={method.isActive} action={setPaymentMethodActiveAction} label={`${method.name} 활성 상태`} />
           </li>
         ))}
       </ul>

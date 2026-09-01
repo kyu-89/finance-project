@@ -16,6 +16,7 @@ import { AssetCardImport } from './AssetCardImport';
 import { AnnualAudit } from './AnnualAudit';
 import { WorkbookMonthlyImport } from './WorkbookMonthlyImport';
 import { FinancialAudit } from './FinancialAudit';
+import { SettingsNav } from '../SettingsNav';
 
 export default async function DataSettingsPage() {
   const household = await ensureHouseholdForCurrentUser();
@@ -24,6 +25,7 @@ export default async function DataSettingsPage() {
     listPaymentMethods(household.id), listRecentlyDeletedTransactions(household.id),
   ]);
   return <div className="tds-page flex flex-col gap-6">
+    <SettingsNav />
     <div><Link href="/settings" className="text-sm font-semibold text-[var(--tds-blue-500)]">← 설정</Link><h1 className="tds-title mt-3">데이터 관리</h1><p className="mt-2 text-sm text-[var(--tds-grey-700)]">거래 파일을 업로드하거나 필요한 금융 데이터를 가져오고 내보내요.</p></div>
     <TransactionImport categories={categories.filter((category) => category.transactionType === 'expense' && category.isActive)} paymentMethods={paymentMethods.filter((method) => method.isActive)} />
     <details className="tds-card settings-advanced-imports"><summary>자산·금융 데이터 가져오기 <span>필요한 경우에만 열기</span></summary><div className="settings-advanced-imports-body"><InvestmentImport /><AccountImport /><SavingsProductsImport /><InsuranceImport /><LoanImport /><SupportEventImport /><PlanningImport /><AssetCardImport /><AnnualAudit /><FinancialAudit /></div></details>

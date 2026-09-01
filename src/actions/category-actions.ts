@@ -8,6 +8,8 @@ import {
   deactivateSubcategory,
   updateCategory,
   updateSubcategory,
+  setCategoryActive,
+  setSubcategoryActive,
 } from '@/lib/categories';
 import { ensureHouseholdForCurrentUser } from '@/lib/household';
 import { fail, ok, type ActionResult } from '@/lib/action-result';
@@ -54,6 +56,13 @@ export async function deactivateCategoryAction(
 
   revalidatePath('/settings/categories');
   return ok();
+}
+
+export async function setCategoryActiveAction(_prevState: ActionResult, formData: FormData): Promise<ActionResult> {
+  const id = String(formData.get('id') ?? ''); const raw = String(formData.get('isActive') ?? '');
+  if (!id || !['true', 'false'].includes(raw)) return fail('상태를 확인해 주세요.');
+  try { await setCategoryActive(id, raw === 'true'); } catch (error) { return fail(error instanceof Error ? error.message : '카테고리 상태 변경에 실패했습니다.'); }
+  revalidatePath('/settings/categories'); return ok('카테고리 상태를 변경했습니다.');
 }
 
 export async function updateCategoryAction(
@@ -147,4 +156,11 @@ export async function deactivateSubcategoryAction(
 
   revalidatePath('/settings/categories');
   return ok();
+}
+
+export async function setSubcategoryActiveAction(_prevState: ActionResult, formData: FormData): Promise<ActionResult> {
+  const id = String(formData.get('id') ?? ''); const raw = String(formData.get('isActive') ?? '');
+  if (!id || !['true', 'false'].includes(raw)) return fail('상태를 확인해 주세요.');
+  try { await setSubcategoryActive(id, raw === 'true'); } catch (error) { return fail(error instanceof Error ? error.message : '소분류 상태 변경에 실패했습니다.'); }
+  revalidatePath('/settings/categories'); return ok('소분류 상태를 변경했습니다.');
 }

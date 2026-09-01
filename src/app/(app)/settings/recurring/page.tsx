@@ -8,6 +8,7 @@ import { RecurringRuleAmountForm } from './RecurringRuleAmountForm';
 import { RecurringPauseForm } from './RecurringPauseForm';
 import { RecurringRuleScheduleForm } from './RecurringRuleScheduleForm';
 import { AddDrawer } from '@/components/Drawer';
+import { SettingsNav } from '../SettingsNav';
 
 const STATUS_LABEL = { active: '사용 중', paused: '일시중지', ended: '종료' } as const;
 const FREQUENCY_LABEL = { monthly: '개월', weekly: '주', yearly: '년', custom: '일' } as const;
@@ -19,6 +20,7 @@ export default async function RecurringSettingsPage() {
   ]);
 
   return <div className="tds-page flex max-w-3xl flex-col gap-6">
+    <SettingsNav />
     <div><h1 className="tds-title mb-2">반복항목을 관리해요</h1>
       <p className="text-sm text-[var(--tds-grey-700)]">월세, 급여, 구독처럼 반복되는 거래를 예정 내역으로 만들어요.</p></div>
     <div className="flex justify-end"><AddDrawer title="반복 항목 추가" description="월세·급여·구독처럼 반복되는 거래를 한 번만 등록하세요." triggerLabel="반복 항목 추가"><RecurringRuleForm categories={categories} paymentMethods={paymentMethods} /></AddDrawer></div>

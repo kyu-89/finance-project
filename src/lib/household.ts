@@ -41,6 +41,17 @@ export async function updateHouseholdMember(input: { id: string; displayName: st
   if (error) throw new Error(`구성원 수정 실패: ${error.message}`);
 }
 
+export async function updateHouseholdMemberStatus(input: { id: string; householdId: string; isActive: boolean }): Promise<void> {
+  const supabase = await createClient();
+  const { data: member, error: memberError } = await supabase.from('household_members')
+    .select('member_type').eq('id', input.id).eq('household_id', input.householdId).single();
+  if (memberError || !member) throw new Error('구성원을 찾을 수 없습니다.');
+  if (member.member_type === 'self' && !input.isActive) throw new Error('본인 구성원은 비활성화할 수 없습니다.');
+  const { error } = await supabase.from('household_members').update({ is_active: input.isActive })
+    .eq('id', input.id).eq('household_id', input.householdId);
+  if (error) throw new Error(`구성원 상태 변경 실패: ${error.message}`);
+}
+
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
 const UNIQUE_VIOLATION = '23505';

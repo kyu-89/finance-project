@@ -5,11 +5,12 @@ import { INITIAL_ACTION_STATE } from '@/lib/action-result';
 import { FormMessage } from '@/components/FormMessage';
 import {
   createSubcategoryAction,
-  deactivateSubcategoryAction,
   updateCategoryAction,
   updateSubcategoryAction,
+  setSubcategoryActiveAction,
 } from '@/actions/category-actions';
 import type { CategoryWithSubcategories } from '@/lib/categories';
+import { StatusSelect } from '@/components/StatusSelect';
 
 export function CategoryEditor({ category }: { category: CategoryWithSubcategories }) {
   const [expanded, setExpanded] = useState(false);
@@ -17,10 +18,6 @@ export function CategoryEditor({ category }: { category: CategoryWithSubcategori
   const [subState, subAction, subPending] = useActionState(createSubcategoryAction, INITIAL_ACTION_STATE);
   const [subEditState, subEditAction, subEditPending] = useActionState(
     updateSubcategoryAction,
-    INITIAL_ACTION_STATE,
-  );
-  const [deactivateState, deactivateAction] = useActionState(
-    deactivateSubcategoryAction,
     INITIAL_ACTION_STATE,
   );
 
@@ -103,22 +100,11 @@ export function CategoryEditor({ category }: { category: CategoryWithSubcategori
                       {sub.name}
                     </span>
                   )}
-                  {sub.isActive && (
-                    <form action={deactivateAction} className="shrink-0">
-                      <input type="hidden" name="id" value={sub.id} />
-                      <button
-                        type="submit"
-                        className="min-h-11 px-3 text-sm font-semibold text-[var(--tds-red-500)]"
-                      >
-                        비활성화
-                      </button>
-                    </form>
-                  )}
+                  <StatusSelect id={sub.id} active={sub.isActive} action={setSubcategoryActiveAction} label={`${sub.name} 활성 상태`} />
                 </li>
               ))}
             </ul>
             <FormMessage result={subEditState} />
-            <FormMessage result={deactivateState} />
 
             <form action={subAction} className="flex items-end gap-2">
               <input type="hidden" name="categoryId" value={category.id} />
