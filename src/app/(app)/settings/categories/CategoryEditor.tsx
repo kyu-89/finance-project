@@ -38,21 +38,22 @@ export function CategoryEditor({ category }: { category: CategoryWithSubcategori
         <div className="mt-3 flex flex-col gap-4">
           <form action={editAction} className="flex flex-wrap items-end gap-2">
             <input type="hidden" name="id" value={category.id} />
-            <label className="flex flex-col gap-1 text-sm">
+            <label className="form-field">
               이름
               <input
                 name="name"
                 defaultValue={category.name}
                 required
                 className="px-3 py-2"
+                placeholder="카테고리 이름"
               />
             </label>
-            <label className="flex flex-col gap-1 text-sm">
+            <label className="form-field">
               기본 비용성격
               <select
                 name="defaultCostBehavior"
                 defaultValue={category.defaultCostBehavior ?? ''}
-                className="px-3 py-2"
+                className="tds-select px-3 py-2"
               >
                 <option value="">(해당 없음)</option>
                 <option value="fixed">고정비</option>
@@ -86,6 +87,7 @@ export function CategoryEditor({ category }: { category: CategoryWithSubcategori
                         aria-label={`${sub.name} 소분류 이름`}
                         required
                         className="min-w-0 flex-1 px-3 py-2 text-sm"
+                        placeholder="소분류 이름"
                       />
                       <button
                         type="submit"
