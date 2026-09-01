@@ -29,11 +29,11 @@ export default async function RecurringSettingsPage() {
       {rules.map((rule) => <li key={rule.id} className="recurring-rule-card">
         <div><div className="flex items-center gap-2"><span className="font-semibold">{rule.description}</span>
           <span className="tds-chip">{STATUS_LABEL[rule.status]}</span></div>
-          <p className="mt-1 text-sm text-[var(--tds-grey-700)]">
+              <p className="mt-1 text-sm text-[var(--tds-grey-700)]">
             {rule.defaultAmount.toLocaleString('ko-KR')}원 · {rule.intervalCount}{FREQUENCY_LABEL[rule.frequency]}마다 · {rule.startDate}부터
-          </p><details className="recurring-rule-edit"><summary>항목 수정 및 중지</summary><div className="recurring-rule-edit-body"><RecurringRuleAmountForm id={rule.id} amount={rule.defaultAmount} ended={rule.status === 'ended'} />
+          </p><AddDrawer title={`${rule.description} 수정`} description="금액과 반복 주기를 바꾸면 이후 예정 거래에 반영됩니다." triggerLabel="정보 수정"><div className="recurring-rule-edit-body"><RecurringRuleAmountForm id={rule.id} amount={rule.defaultAmount} ended={rule.status === 'ended'} />
           <RecurringRuleScheduleForm id={rule.id} frequency={rule.frequency} intervalCount={rule.intervalCount} day={rule.dayOfMonth ?? 1} ended={rule.status === 'ended'} />
-          <RecurringPauseForm id={rule.id} ended={rule.status === 'ended'} pauses={pauses.filter((pause) => pause.recurringRuleId === rule.id)} /></div></details></div>
+          <RecurringPauseForm id={rule.id} ended={rule.status === 'ended'} pauses={pauses.filter((pause) => pause.recurringRuleId === rule.id)} /></div></AddDrawer></div>
         <RecurringRuleStatusButton id={rule.id} status={rule.status} />
       </li>)}
     </ul>
