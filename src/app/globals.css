@@ -504,6 +504,10 @@ textarea {
 .monthly-input-table th:first-child { white-space: nowrap; }
 .monthly-input-table td:nth-child(1) { white-space: nowrap; }
 .monthly-description-button { display: block; max-width: 100%; overflow: hidden; color: var(--tds-blue-600); font: inherit; font-weight: 650; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+.monthly-table-pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--tds-grey-200); color: var(--tds-grey-600); font-size: 12px; }
+.monthly-table-pagination > div { display: flex; align-items: center; gap: 8px; }
+.monthly-table-pagination button { min-height: 36px; padding-inline: 10px; border: 1px solid var(--tds-grey-200); border-radius: 8px; background: var(--tds-white); font-size: 12px; font-weight: 700; }
+.monthly-table-pagination button:disabled { cursor: not-allowed; opacity: .45; }
 .monthly-input-table td:nth-child(2), .monthly-input-table td:nth-child(4) { padding-inline: 10px; }
 .monthly-input-table td:nth-child(2) form, .monthly-input-table td:nth-child(4) form { width: 100%; }
 .monthly-input-table th:nth-child(2), .monthly-input-table td:nth-child(2), .monthly-input-table th:nth-child(4), .monthly-input-table td:nth-child(4) { overflow: visible; }
