@@ -12,7 +12,7 @@ import type { PaymentMethod } from '@/lib/payment-methods';
 export function WorkbookMonthlyImport({ categories, paymentMethods }: { categories: CategoryWithSubcategories[]; paymentMethods: PaymentMethod[] }) {
   const [rows, setRows] = useState<ParsedImportRow[]>([]);
   const [fileName, setFileName] = useState('');
-  const [paymentMethodId, setPaymentMethodId] = useState(paymentMethods[0]?.id ?? '');
+  const [paymentMethodId] = useState(paymentMethods[0]?.id ?? '');
   const [message, setMessage] = useState('');
   const [state, action, pending] = useActionState(importTransactionsAction, INITIAL_ACTION_STATE);
   const categoryByName = useMemo(() => new Map(categories.map((category) => [category.name.toLocaleLowerCase(), category])), [categories]);
