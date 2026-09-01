@@ -4,14 +4,15 @@ import { useActionState } from 'react';
 import { FormMessage } from '@/components/FormMessage';
 import { INITIAL_ACTION_STATE, type ActionResult } from '@/lib/action-result';
 
-export function StatusSelect({ id, active, action, label = '상태' }: {
+export function StatusSelect({ id, active, action, label = '상태', className = '' }: {
   id: string;
   active: boolean;
   action: (state: ActionResult, formData: FormData) => Promise<ActionResult>;
   label?: string;
+  className?: string;
 }) {
   const [state, formAction, pending] = useActionState(action, INITIAL_ACTION_STATE);
-  return <form action={formAction} className="status-select flex min-w-28 flex-col items-stretch gap-1">
+  return <form action={formAction} className={`status-select flex min-w-28 flex-col items-stretch gap-1 ${className}`}>
     <input type="hidden" name="id" value={id} />
     <label className="sr-only" htmlFor={`status-${id}`}>{label}</label>
     <select id={`status-${id}`} name="isActive" defaultValue={active ? 'true' : 'false'} disabled={pending}

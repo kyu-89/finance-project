@@ -3,8 +3,6 @@ import { listCategoriesWithSubcategories } from '@/lib/categories';
 import { CategoryForm } from './CategoryForm';
 import { CategoryEditor } from './CategoryEditor';
 import { AddDrawer } from '@/components/Drawer';
-import { StatusSelect } from '@/components/StatusSelect';
-import { setCategoryActiveAction } from '@/actions/category-actions';
 import { SettingsBackLink } from '../SettingsBackLink';
 
 export default async function CategoriesSettingsPage() {
@@ -20,14 +18,7 @@ export default async function CategoriesSettingsPage() {
 
       <ul className="settings-resource-list flex flex-col gap-3">
         {categories.map((category) => (
-          <li key={category.id}>
-            <div className="settings-resource-row flex items-start gap-3">
-              <div className="flex-1">
-                <CategoryEditor category={category} />
-              </div>
-              <StatusSelect id={category.id} active={category.isActive} action={setCategoryActiveAction} label={`${category.name} 활성 상태`} />
-            </div>
-          </li>
+          <li key={category.id}><CategoryEditor category={category} /></li>
         ))}
       </ul>
     </div>
