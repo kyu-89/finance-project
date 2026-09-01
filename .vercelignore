@@ -1,0 +1,12 @@
+.env*
+.git
+.agents
+.artifacts
+.playwright-cli
+output
+*.xlsm
+*.xlsx
+*.csv
+*.zip
+*.patch
+docs/HANDOFF_*.md
