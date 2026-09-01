@@ -28,17 +28,22 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
   const selectedSubcategory = params.subcategory && /^[0-9a-f-]{36}$/i.test(params.subcategory) ? params.subcategory : undefined;
   const selectedRecurringRule = params.recurringRule && /^[0-9a-f-]{36}$/i.test(params.recurringRule) ? params.recurringRule : undefined;
   const { fromDate, toDate } = monthRangeFromSeoulDateString(`${selectedMonth}-01`);
-  await promotePastPlannedTransactions(household.id, `${currentMonth}-01`);
-  await materializeRecurringRulesForRange(household.id, fromDate, toDate);
-
   const year = Number(fromDate.slice(0, 4));
   const monthNumber = Number(fromDate.slice(5, 7));
-  const [transactions, allTransactions, categories, paymentMethods, annualBudgets] = await Promise.all([
-    listTransactions({ householdId: household.id, fromDate, toDate, categoryId: selectedCategory, subcategoryId: selectedSubcategory, recurringRuleId: selectedRecurringRule }),
-    listTransactions({ householdId: household.id }),
+  const metadataPromise = Promise.all([
     listCategoriesWithSubcategories(household.id),
     listPaymentMethods(household.id),
     listBudgets(household.id, year),
+  ]);
+  await promotePastPlannedTransactions(household.id, `${currentMonth}-01`);
+  await materializeRecurringRulesForRange(household.id, fromDate, toDate);
+
+  const [[categories, paymentMethods, annualBudgets], [transactions, allTransactions]] = await Promise.all([
+    metadataPromise,
+    Promise.all([
+      listTransactions({ householdId: household.id, fromDate, toDate, reportMonthFrom: selectedMonth, reportMonthTo: selectedMonth, categoryId: selectedCategory, subcategoryId: selectedSubcategory, recurringRuleId: selectedRecurringRule }),
+      listTransactions({ householdId: household.id }),
+    ]),
   ]);
 
   const budgetCategories = categories.filter((c) => c.transactionType === 'expense');

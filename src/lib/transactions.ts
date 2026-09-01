@@ -236,6 +236,8 @@ export async function listTransactions(filter: {
   subcategoryId?: string;
   recurringRuleId?: string;
   recurringRuleIds?: string[];
+  reportMonthFrom?: string;
+  reportMonthTo?: string;
 }): Promise<Transaction[]> {
   const supabase = await createClient();
   const pageSize = 1000;
@@ -245,8 +247,12 @@ export async function listTransactions(filter: {
       .eq('household_id', filter.householdId).is('deleted_at', null)
       .order('transaction_date', { ascending: false }).order('id', { ascending: true })
       .range(from, from + pageSize - 1);
-    if (filter.fromDate) query = query.gte('transaction_date', filter.fromDate);
-    if (filter.toDate) query = query.lte('transaction_date', filter.toDate);
+    if (filter.reportMonthFrom && filter.reportMonthTo && filter.fromDate && filter.toDate) {
+      query = query.or(`and(source_month.gte.${filter.reportMonthFrom},source_month.lte.${filter.reportMonthTo}),and(source_month.is.null,transaction_date.gte.${filter.fromDate},transaction_date.lte.${filter.toDate})`);
+    } else {
+      if (filter.fromDate) query = query.gte('transaction_date', filter.fromDate);
+      if (filter.toDate) query = query.lte('transaction_date', filter.toDate);
+    }
     if (filter.categoryId) query = query.eq('category_id', filter.categoryId);
     if (filter.subcategoryId) query = query.eq('subcategory_id', filter.subcategoryId);
     if (filter.recurringRuleId) query = query.eq('recurring_rule_id', filter.recurringRuleId);
