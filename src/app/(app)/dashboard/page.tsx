@@ -7,7 +7,6 @@ import { computeCurrentNetWorth, listAssetValueHistory } from '@/lib/snapshots';
 import { materializeRecurringRulesForRange } from '@/lib/recurring-rules';
 import { getDashboardIncomeSummary } from '@/lib/dashboard-income';
 import { DashboardPrimaryTabs } from './DashboardPrimaryTabs';
-import { getDashboardMonthlySubcategories } from '@/lib/dashboard-subcategories';
 import { DashboardAssetOverview } from './DashboardAssetOverview';
 import { DashboardCashflowOverview } from './DashboardCashflowOverview';
 import { DashboardDebtOverview } from './DashboardDebtOverview';
@@ -17,6 +16,7 @@ import { DashboardIncomeExplorer } from './DashboardIncomeExplorer';
 import { listInsurances } from '@/lib/insurances';
 import { listAssets } from '@/lib/assets';
 import { listLoans } from '@/lib/loans';
+import { listTransactions } from '@/lib/transactions';
 import { buildAmortizationSchedule, paymentMonthsInclusive } from '@/lib/loan-calculations';
 
 const won = new Intl.NumberFormat('ko-KR');
@@ -29,9 +29,11 @@ const shiftMonth = (month: string, offset: number) => { const d = new Date(Date.
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ month?: string; member?: string; preset?: string; customFrom?: string; customTo?: string }> }) {
   const query = await searchParams; const today = todayInSeoul(); const currentMonth = today.slice(0, 7); const month = query.month && monthPattern.test(query.month) ? query.month : currentMonth; const trendStart = shiftMonth(month, -23); const bounds = monthBounds(month); const preset: DashboardPreset = 'month'; const dashboardRange = resolveDashboardRange(bounds.to, preset); const memberForQuery = undefined; const household = await ensureHouseholdForCurrentUser();
   await materializeRecurringRulesForRange(household.id, `${trendStart}-01`, bounds.to);
-  const [summary, incomeSummary, monthlyDetails, netWorth, assetHistory, insurances, realAssets, loans] = await Promise.all([
-    getDashboardHomeSummary({ householdId: household.id, from: dashboardRange.from < `${trendStart}-01` ? dashboardRange.from : `${trendStart}-01`, to: bounds.to, monthStart: dashboardRange.from, monthEnd: dashboardRange.to, memberId: memberForQuery }), getDashboardIncomeSummary({ householdId: household.id, from: dashboardRange.from < `${trendStart}-01` ? dashboardRange.from : `${trendStart}-01`, to: bounds.to, monthStart: dashboardRange.from, monthEnd: dashboardRange.to, memberId: memberForQuery }), getDashboardMonthlySubcategories({ householdId: household.id, from: `${trendStart}-01`, to: bounds.to, memberId: memberForQuery }), computeCurrentNetWorth(household.id, today, memberForQuery), listAssetValueHistory(household.id, 36), listInsurances(household.id), listAssets(household.id), listLoans(household.id),
+  const [summary, incomeSummary, netWorth, assetHistory, insurances, realAssets, loans] = await Promise.all([
+    getDashboardHomeSummary({ householdId: household.id, from: dashboardRange.from < `${trendStart}-01` ? dashboardRange.from : `${trendStart}-01`, to: bounds.to, monthStart: dashboardRange.from, monthEnd: dashboardRange.to, memberId: memberForQuery }), getDashboardIncomeSummary({ householdId: household.id, from: dashboardRange.from < `${trendStart}-01` ? dashboardRange.from : `${trendStart}-01`, to: bounds.to, monthStart: dashboardRange.from, monthEnd: dashboardRange.to, memberId: memberForQuery }), computeCurrentNetWorth(household.id, today, memberForQuery), listAssetValueHistory(household.id, 36), listInsurances(household.id), listAssets(household.id), listLoans(household.id),
   ]);
+  const transactions = await listTransactions({ householdId: household.id, fromDate: `${trendStart}-01`, toDate: bounds.to });
+  const transactionDetails = transactions.filter((transaction) => transaction.status === 'posted' && (transaction.transactionType === 'income' || transaction.flowClass === 'consumption' || transaction.transactionType === 'refund')).map((transaction) => ({ month: transaction.transactionDate.slice(0, 7), id: transaction.categoryId ?? 'unassigned', label: '', value: transaction.amount, subcategories: [{ id: transaction.id, label: `${transaction.transactionDate} · ${transaction.description}`, value: transaction.transactionType === 'refund' ? -transaction.amount : transaction.amount }] }));
   const monthlyByMonth = new Map(summary.monthly.map((item) => [item.month, item])); const months = Array.from({ length: 12 }, (_, index) => shiftMonth(month, index - 11)); const monthlyTrend = months.map((target) => deriveMonth(monthlyByMonth.get(target) ?? emptyMonth(target))); const monthCurrent = deriveMonth(monthlyByMonth.get(month) ?? emptyMonth(month)); const current = monthCurrent; const categoryRows = summary.categories; const paymentRows = summary.payments;
   const history = [...assetHistory.filter((item) => item.snapshotMonth.slice(0, 7) !== currentMonth), { id: 'current', snapshotMonth: `${currentMonth}-01`, totalAssets: netWorth.totalAssets, source: 'live' }].sort((a, b) => a.snapshotMonth.localeCompare(b.snapshotMonth)).slice(-12); const debtRatio = netWorth.totalAssets > 0 ? netWorth.totalDebt / netWorth.totalAssets : 0;
   const assetRows = [{ label: '현금·입출금', value: netWorth.cashAssets, color: 'var(--tds-blue-500)' }, { label: '예금', value: netWorth.depositAssets, color: '#6b8afd' }, { label: '적금', value: netWorth.savingsAssets, color: 'var(--tds-green-500)' }, { label: '투자', value: netWorth.investmentAssets, color: '#8b5cf6' }, { label: '부동산·자동차', value: netWorth.nonFinancialAssets, color: '#f59e0b' }].filter((item) => item.value > 0);
@@ -47,7 +49,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       </>}
       monthly={<>
         <DashboardCashflowOverview monthly={monthlyTrend} selectedMonth={month}>
-          <DashboardMonthlyDetail selectedMonth={month} monthly={monthlyTrend} incomeMonthly={months.map((target) => incomeSummary.monthly.find((item) => item.month === target) ?? ({ month: target, total: 0, categories: [] }))} incomeCurrent={incomeSummary.current} expenseMonthly={months.map((target) => summary.monthlyCategories.find((item) => item.month === target) ?? ({ month: target, total: 0, categories: [] }))} expenseCurrent={categoryRows} expensePayments={paymentRows} expenseDetails={monthlyDetails.filter((item) => item.month === month)} />
+          <DashboardMonthlyDetail selectedMonth={month} monthly={monthlyTrend} incomeMonthly={months.map((target) => incomeSummary.monthly.find((item) => item.month === target) ?? ({ month: target, total: 0, categories: [] }))} incomeCurrent={incomeSummary.current} expenseMonthly={months.map((target) => summary.monthlyCategories.find((item) => item.month === target) ?? ({ month: target, total: 0, categories: [] }))} expenseCurrent={categoryRows} expensePayments={paymentRows} transactionDetails={transactionDetails} />
           <DashboardIncomeExplorer month={month} monthly={incomeSummary.monthly} current={incomeSummary.current} />
         </DashboardCashflowOverview>
 
