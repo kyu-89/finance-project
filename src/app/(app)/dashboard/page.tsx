@@ -13,6 +13,7 @@ import { DashboardCashflowOverview } from './DashboardCashflowOverview';
 import { DashboardDebtOverview } from './DashboardDebtOverview';
 import { DashboardRiskOverview } from './DashboardRiskOverview';
 import { DashboardMonthlyDetail } from './DashboardMonthlyDetail';
+import { DashboardIncomeExplorer } from './DashboardIncomeExplorer';
 import { listInsurances } from '@/lib/insurances';
 import { listAssets } from '@/lib/assets';
 import { listLoans } from '@/lib/loans';
@@ -47,6 +48,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       monthly={<>
         <DashboardCashflowOverview monthly={monthlyTrend} selectedMonth={month}>
           <DashboardMonthlyDetail selectedMonth={month} monthly={monthlyTrend} incomeMonthly={months.map((target) => incomeSummary.monthly.find((item) => item.month === target) ?? ({ month: target, total: 0, categories: [] }))} incomeCurrent={incomeSummary.current} expenseMonthly={months.map((target) => summary.monthlyCategories.find((item) => item.month === target) ?? ({ month: target, total: 0, categories: [] }))} expenseCurrent={categoryRows} expensePayments={paymentRows} expenseDetails={monthlyDetails.filter((item) => item.month === month)} />
+          <DashboardIncomeExplorer month={month} monthly={incomeSummary.monthly} current={incomeSummary.current} />
         </DashboardCashflowOverview>
 
 
