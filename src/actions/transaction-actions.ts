@@ -17,6 +17,7 @@ import { fail, ok, type ActionResult } from '@/lib/action-result';
 import { linkRecurringOccurrence } from '@/lib/recurring-rules';
 import { upsertEventDetail, upsertSupportDetail } from '@/lib/transaction-details';
 import { createClient } from '@/lib/supabase/server';
+import { duplicateTransactionKey } from '@/lib/duplicate-transactions';
 
 export async function createQuickTransactionAction(
   _prevState: ActionResult,
@@ -329,4 +330,33 @@ export async function linkRecurringOccurrenceAction(
   }
   revalidatePath('/monthly');
   return ok();
+}
+
+export async function reviewDuplicateTransactionAction(
+  _prevState: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const id = String(formData.get('id') ?? '');
+  const keeperId = String(formData.get('keeperId') ?? '');
+  if (!id || !keeperId || id === keeperId) return fail('중복 후보와 유지할 원본을 확인해 주세요.');
+  try {
+    const householdId = await getCurrentHouseholdId();
+    const supabase = await createClient();
+    const { data, error } = await supabase.from('transactions')
+      .select('id, household_id, transaction_date, transaction_type, amount, description, payment_method_id, created_at, deleted_at')
+      .eq('household_id', householdId).in('id', [id, keeperId]).is('deleted_at', null);
+    if (error) throw new Error(error.message);
+    const keeper = data?.find((row) => row.id === keeperId);
+    const candidate = data?.find((row) => row.id === id);
+    if (!keeper || !candidate || duplicateTransactionKey({ householdId: keeper.household_id, transactionDate: keeper.transaction_date, transactionType: keeper.transaction_type, amount: keeper.amount, description: keeper.description, paymentMethodId: keeper.payment_method_id }) !== duplicateTransactionKey({ householdId: candidate.household_id, transactionDate: candidate.transaction_date, transactionType: candidate.transaction_type, amount: candidate.amount, description: candidate.description, paymentMethodId: candidate.payment_method_id })) return fail('현재 데이터가 중복 후보와 일치하지 않습니다. 목록을 새로고침해 주세요.');
+    if (candidate.created_at < keeper.created_at) return fail('최초 원본보다 오래된 거래는 삭제할 수 없습니다.');
+    const { error: updateError } = await supabase.from('transactions').update({ deleted_at: new Date().toISOString() }).eq('id', id).eq('household_id', householdId).is('deleted_at', null);
+    if (updateError) throw new Error(updateError.message);
+  } catch (error) {
+    return fail(error instanceof Error ? error.message : '중복 거래 처리에 실패했습니다.');
+  }
+  revalidatePath('/settings/data');
+  revalidatePath('/monthly');
+  revalidatePath('/dashboard');
+  return ok('중복 거래를 삭제 처리했습니다.');
 }
