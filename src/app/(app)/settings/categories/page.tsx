@@ -18,10 +18,10 @@ export default async function CategoriesSettingsPage() {
 
       <AddDrawer title="카테고리 추가" description="거래 입력에서 사용할 분류를 추가하세요." triggerLabel="카테고리 추가"><CategoryForm /></AddDrawer>
 
-      <ul className="flex flex-col gap-3">
+      <ul className="settings-resource-list flex flex-col gap-3">
         {categories.map((category) => (
           <li key={category.id}>
-            <div className="flex items-start gap-3">
+            <div className="settings-resource-row flex items-start gap-3">
               <div className="flex-1">
                 <CategoryEditor category={category} />
               </div>

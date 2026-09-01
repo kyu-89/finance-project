@@ -511,6 +511,18 @@ textarea {
   font-weight: 700;
 }
 
+.settings-resource-list { min-width: 0; }
+.settings-resource-row { min-width: 0; }
+.settings-resource-row > :first-child { min-width: 0; }
+.settings-resource-row .status-select,
+.settings-resource-row > form { flex: 0 0 auto; }
+
+@media (max-width: 639px) {
+  .settings-resource-row { gap: 12px; }
+  .settings-resource-row .tds-card { padding: 14px; }
+  .settings-resource-row .flex-1 { min-width: 0; }
+}
+
 .settings-back-link:hover { color: var(--tds-blue-700); }
 .settings-back-link:focus-visible {
   border-radius: 8px;

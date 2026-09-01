@@ -11,7 +11,7 @@ export function StatusSelect({ id, active, action, label = '상태' }: {
   label?: string;
 }) {
   const [state, formAction, pending] = useActionState(action, INITIAL_ACTION_STATE);
-  return <form action={formAction} className="flex min-w-28 flex-col items-stretch gap-1">
+  return <form action={formAction} className="status-select flex min-w-28 flex-col items-stretch gap-1">
     <input type="hidden" name="id" value={id} />
     <label className="sr-only" htmlFor={`status-${id}`}>{label}</label>
     <select id={`status-${id}`} name="isActive" defaultValue={active ? 'true' : 'false'} disabled={pending}
