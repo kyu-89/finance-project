@@ -207,6 +207,40 @@ Phase 10 QA                        — 모바일 기준 전 화면 검수
 
 ---
 
+## 14. Icon Design System (사용자 추가 지시, §37-38 원문 반영)
+
+아이콘은 페이지마다 임의로 고르지 않는다. **Outline / Monoline 하나의 스타일, 하나의 라이브러리**만 쓴다. Emoji, filled/outline 혼용, 3D, 컬러 아이콘 남발, 아이콘+원형배경(circle+color+icon) 남발을 금지한다. 거래 리스트에서 카테고리마다 다른 색 아이콘을 붙이는 "가계부 앱" 패턴은 명시적으로 금지.
+
+**현재 상태 확인**: 아이콘 라이브러리 미설치(`package.json`에 lucide/heroicons/react-icons 등 없음). `MobileBottomNav.tsx`의 `NavIcon`만 인라인 SVG로 손으로 그려져 있음(다행히 stroke/size는 이미 일관적).
+
+**결정**: `lucide-react`를 앱 전체의 유일한 아이콘 라이브러리로 채택한다(사용자 예시와 일치, outline/monoline, tree-shakeable). Phase 3 완료 직후 설치하고 `design-system.css`에 아이콘 크기 토큰을 추가한다:
+```
+--icon-xs: 14px;  --icon-sm: 16px;  --icon-md: 20px;  --icon-lg: 24px;  --icon-xl: 32px;
+```
+기본 UI는 16~20px, 내비게이션/주요 액션은 20~24px. 색상은 `icon-primary/secondary/muted/disabled` + 필요시에만 semantic color(income/expense/warning) — 아이콘마다 다른 색 금지.
+
+**적용 원칙(요약)**: 아이콘은 장식이 아니라 명확화 수단이다. 리스트 전 항목에 아이콘을 붙이지 않는다. 거래 상태(예정/확정/제외)는 아이콘이 아니라 텍스트로 전달한다. 수입/지출은 아이콘(↑↓)이 아니라 `Amount`의 색상/부호로 전달한다(§5 정확히 일치). 정보 위계는 항상 `금액 > 거래내용 > 주요정보 > 보조정보 > 아이콘` 순.
+
+**Icon Audit(향후 각 Phase 진행 시 확인)**: 라이브러리 혼용, filled/outline 혼용, stroke width 불일치, 과도한 크기, emoji, circle+color 남발, 네비게이션 아이콘 불일치 여부를 화면별로 점검하고 새 시스템으로 교체한다.
+
+## 15. 일러스트레이션 원칙 (사용자 추가 지시)
+
+> Decorative illustration should not be used unless it has a clear UX purpose. This is a financial product, not a lifestyle/entertainment app. Prefer typography, whitespace, data visualization, and subtle visual hierarchy over decorative graphics.
+
+빈 상태(`EmptyState`, Phase 3에서 이미 아이콘 없는 텍스트 전용으로 구현함)나 자산 화면 등에 장식용 일러스트를 넣지 않는다 — 이미 Phase 3 구현이 이 원칙을 따르고 있음, 앞으로도 유지.
+
+## 16. 모바일/웹 화면 레퍼런스 (사용자 첨부 이미지, 2026-09-02)
+
+사용자가 첨부한 목업(모바일 7화면 + 웹 4화면)을 Phase 5~8의 구체적 시각 레퍼런스로 채택한다. 확인된 핵심 패턴, 이미 이 문서의 결정과 대조:
+
+- 거래 행: 아이콘(제한적) + 제목 + 서브라벨, 우측 `Amount`(수입 파랑/지출 빨강), 하단에 상태·성격 `Badge` — §6의 `ListItem`+`Amount`+`Badge` 조합으로 정확히 구현 가능, 추가 설계 불필요.
+- 정기거래 관리 화면의 예정 거래 행에 **[확정][이번달 제외] 버튼**이 실제로 쓰임 — §9에서 제안한 "planned 상태에 한해 select 대신 버튼 예외"를 이 레퍼런스로 확정한다.
+- 대시보드 정보 순서(이번 달 요약 3칸 → 예산 대비 지출 바 → 카테고리별 지출 Top5 가로막대 → 최근 거래)가 §7의 우선순위와 일치. 웹은 여기에 수입/지출 추이 라인차트 + 카테고리 도넛을 우측 컬럼에 추가.
+- 자산 요약: 순자산 헤드라인 카드 + 도넛(구성비) + 부채 리스트 + 최근 자산변동 — §10과 일치.
+- 하단 내비게이션 5개 항목(홈/거래/+/자산/설정) — 현재 `MobileBottomNav.tsx`의 5항목(홈/입력/추가/자산/설정)과 거의 동일, "입력"→"거래", "추가"→"+"(라벨 없이 아이콘만) 정도의 라벨 조정만 필요.
+
+---
+
 ## 승인 요청
 
 이 문서 통과 후 **Phase 2(Design Tokens 확장)부터 시작**한다. §9의 "예정거래 버튼화(select 관례의 예외)" 는 명시적 승인이 필요한 디자인 결정이라 별도 표시했다.
