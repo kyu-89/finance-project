@@ -1,0 +1,458 @@
+/*
+ * 우리집 재무 UI foundation
+ *
+ * This file deliberately owns shared layout, control, feedback, and form rules.
+ * Feature-specific styles stay beside their feature; do not add page-specific
+ * spacing overrides here.
+ */
+
+:root {
+  --ui-page-gutter: clamp(20px, 1.5vw, 28px);
+  --ui-page-block: 28px;
+  --ui-control-height: 44px;
+  --ui-control-height-mobile: 48px;
+  --ui-control-radius: 12px;
+  --ui-surface-radius: 18px;
+  --ui-card-padding: 20px;
+  --ui-space-1: 4px;
+  --ui-space-2: 8px;
+  --ui-space-3: 12px;
+  --ui-space-4: 16px;
+  --ui-space-5: 20px;
+  --ui-space-6: 24px;
+  --ui-focus-ring: 0 0 0 3px color-mix(in oklab, var(--tds-blue-500) 24%, transparent);
+  --ui-elevation-1: 0 1px 2px rgb(13 25 43 / 0.04), 0 8px 20px rgb(13 25 43 / 0.04);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.app-main {
+  min-width: 0;
+  background: var(--tds-grey-50);
+}
+
+.tds-page {
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+  padding: var(--ui-page-block) var(--ui-page-gutter) 96px;
+}
+
+/* The page edge stays aligned with every other screen; only the single-task
+ * form itself is constrained to a readable line length. */
+.quick-add-shell {
+  max-width: 720px;
+}
+
+.tds-card,
+.list-surface,
+.table-surface,
+.monthly-section {
+  border-color: var(--tds-grey-200);
+  border-radius: var(--ui-surface-radius);
+  box-shadow: none;
+}
+
+.tds-card,
+.list-surface,
+.table-surface {
+  background: var(--tds-white);
+}
+
+.tds-title {
+  font-size: clamp(25px, 2vw, 30px);
+  font-weight: 750;
+  line-height: 1.3;
+  letter-spacing: -0.028em;
+}
+
+.tds-primary-button,
+.secondary-button,
+.tds-button-secondary {
+  display: inline-flex;
+  min-height: var(--ui-control-height);
+  align-items: center;
+  justify-content: center;
+  gap: var(--ui-space-2);
+  padding: 0 16px;
+  border-radius: var(--ui-control-radius);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, color 160ms ease, opacity 160ms ease;
+}
+
+.tds-primary-button {
+  min-width: 104px;
+  background: var(--tds-blue-500);
+  color: var(--tds-white);
+}
+
+.tds-primary-button:hover:not(:disabled) {
+  background: var(--tds-blue-600);
+  box-shadow: 0 4px 10px color-mix(in oklab, var(--tds-blue-500) 22%, transparent);
+}
+
+.secondary-button,
+.tds-button-secondary {
+  min-width: 88px;
+  border: 1px solid var(--tds-grey-200);
+  background: var(--tds-white);
+  color: var(--tds-grey-900);
+}
+
+.secondary-button:hover:not(:disabled),
+.tds-button-secondary:hover:not(:disabled) {
+  border-color: var(--tds-grey-400);
+  background: var(--tds-grey-100);
+}
+
+:where(button, [role="button"], a):not(:disabled):active {
+  transform: none;
+  opacity: 1;
+}
+
+:where(button, input, select, textarea, a):focus-visible {
+  outline: none;
+  box-shadow: var(--ui-focus-ring);
+}
+
+:where(button:disabled, input:disabled, select:disabled, textarea:disabled) {
+  cursor: not-allowed;
+  opacity: 0.46;
+}
+
+:where(
+  input:not([type]),
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="number"],
+  input[type="date"],
+  input[type="month"],
+  input[type="tel"],
+  select
+) {
+  width: 100%;
+  min-height: var(--ui-control-height);
+  border: 1px solid var(--tds-grey-200);
+  border-radius: var(--ui-control-radius);
+  background: var(--tds-white);
+  color: var(--tds-grey-900);
+  padding: 0 12px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+textarea {
+  width: 100%;
+  min-height: 112px;
+  border: 1px solid var(--tds-grey-200);
+  border-radius: var(--ui-control-radius);
+  background: var(--tds-white);
+  color: var(--tds-grey-900);
+  padding: 12px;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+:where(input, select, textarea):focus {
+  border-color: var(--tds-blue-500);
+  background: var(--tds-white);
+  box-shadow: var(--ui-focus-ring);
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  width: 20px;
+  min-width: 20px;
+  height: 20px;
+  min-height: 20px;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--tds-blue-500);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--tds-grey-500);
+  opacity: 1;
+}
+
+.form-field {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+  color: var(--tds-grey-700);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.35;
+  white-space: normal;
+}
+
+.form-field::after {
+  content: none !important;
+}
+
+.form-field-label,
+.form-field > :first-child:not(input):not(select):not(textarea) {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-2);
+  color: var(--tds-grey-700);
+}
+
+.form-field[data-required="true"] .form-field-label::after,
+.form-field:has(:is(input, select, textarea)[required]) .form-field-label::after,
+.form-field:has(:is(input, select, textarea)[required]) > :first-child:not(input):not(select):not(textarea)::after {
+  flex: 0 0 auto;
+  content: "필수";
+  color: var(--tds-red-500);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.form-field [data-optional],
+.form-field-label em {
+  color: var(--tds-grey-500);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 600;
+}
+
+.form-field-hint {
+  color: var(--tds-grey-500);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+/* Transitional support for older forms while they move to FormField. */
+form label:not(.tds-primary-button):not(.secondary-button):not(.tds-button-secondary):has(> input:not([type="hidden"]):not([type="file"]):not([type="checkbox"]):not([type="radio"]), > select, > textarea) {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+  color: var(--tds-grey-700);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+form label:not(.form-field):has(> :is(input, select, textarea)[required]) {
+  position: relative;
+}
+
+form label:not(.form-field):has(> :is(input, select, textarea)[required])::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  content: "필수";
+  color: var(--tds-red-500);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.tds-chip {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 1px solid var(--tds-grey-200);
+  border-radius: 999px;
+  background: var(--tds-white);
+  padding: 5px 10px;
+  color: var(--tds-grey-700);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+button.tds-chip,
+a.tds-chip {
+  min-height: var(--ui-control-height);
+  padding-inline: 14px;
+}
+
+.tds-chip[data-selected="true"],
+.tds-chip.is-selected {
+  border-color: var(--tds-blue-500);
+  background: var(--tds-blue-50);
+  color: var(--tds-blue-600);
+}
+
+.status-select {
+  width: 128px;
+  min-width: 128px;
+}
+
+.status-select select,
+.transaction-inline-select {
+  min-height: 40px;
+  border-radius: 10px;
+  padding-inline: 10px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.drawer-trigger {
+  min-height: var(--ui-control-height);
+}
+
+.drawer-backdrop,
+.confirm-backdrop {
+  backdrop-filter: blur(2px);
+}
+
+.app-drawer {
+  width: min(640px, 100vw);
+  border-left: 1px solid var(--tds-grey-200);
+}
+
+.app-drawer-header {
+  padding: 24px;
+}
+
+.app-drawer-body {
+  padding: 24px 24px 40px;
+}
+
+.app-toast {
+  right: 24px;
+  bottom: 24px;
+  width: min(400px, calc(100vw - 48px));
+  min-height: 52px;
+  border-radius: 14px;
+}
+
+.table-surface {
+  overflow: clip;
+}
+
+/* A transaction amount is the one deliberate hierarchy exception: it remains
+ * larger than a regular control while retaining the same border and rhythm. */
+input.quick-add-amount {
+  min-height: 64px;
+  font-size: 28px;
+}
+
+@media (max-width: 767px) {
+  .tds-page {
+    width: 100%;
+    max-width: none;
+    padding: 24px 16px calc(96px + env(safe-area-inset-bottom));
+  }
+
+  .quick-add-shell {
+    max-width: none;
+  }
+
+  .tds-primary-button,
+  .secondary-button,
+  .tds-button-secondary {
+    min-height: var(--ui-control-height-mobile);
+    padding-inline: 16px;
+    font-size: 15px;
+  }
+
+  /* A drawer trigger is a primary task on touch devices, not a compact utility. */
+  .drawer-trigger {
+    min-height: var(--ui-control-height-mobile);
+  }
+
+  input:not([type]),
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="number"],
+  input[type="date"],
+  input[type="month"],
+  input[type="tel"],
+  select {
+    min-height: var(--ui-control-height-mobile);
+    font-size: 16px;
+  }
+
+  .tds-card,
+  .list-surface,
+  .table-surface,
+  .monthly-section {
+    border-radius: 16px;
+  }
+
+  .status-select {
+    width: 116px;
+    min-width: 116px;
+  }
+
+  .status-select select,
+  .transaction-inline-select {
+    min-height: 40px;
+    font-size: 13px;
+  }
+
+  .app-drawer {
+    width: 100%;
+    height: min(88dvh, 760px);
+    border: 0;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .app-drawer-header {
+    padding: 20px 20px 16px;
+  }
+
+  .app-drawer-body {
+    padding: 20px 20px calc(28px + env(safe-area-inset-bottom));
+  }
+
+  .app-toast {
+    right: 16px;
+    bottom: calc(84px + env(safe-area-inset-bottom));
+    width: calc(100vw - 32px);
+  }
+
+  .table-surface {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  input.quick-add-amount {
+    min-height: 60px;
+    font-size: 26px;
+  }
+}
+
+/* The legacy navigation action used a translateY active state.  Keep the
+ * feedback perceptible without moving the target under the user's finger. */
+.mobile-lnb-action:active {
+  transform: none;
+  background: transparent;
+  color: var(--tds-blue-600);
+}
+
+.mobile-lnb-action:active .mobile-lnb-icon {
+  background: var(--tds-blue-500);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

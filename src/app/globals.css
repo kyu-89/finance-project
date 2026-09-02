@@ -71,43 +71,6 @@ button {
   cursor: pointer;
 }
 
-button:not(:disabled):active {
-  transform: translateY(1px);
-}
-
-button:disabled,
-input:disabled,
-select:disabled {
-  opacity: 0.3;
-}
-
-input:not([type="hidden"]),
-select,
-textarea {
-  min-height: var(--ui-control-height);
-  border: 1px solid var(--tds-grey-200);
-  border-radius: var(--ui-control-radius);
-  background: var(--tds-grey-100);
-  color: var(--tds-grey-900);
-  outline: none;
-}
-
-input:not([type="hidden"]):focus,
-select:focus,
-textarea:focus {
-  border-color: var(--tds-blue-500);
-  background: var(--tds-white);
-  box-shadow: 0 0 0 3px var(--tds-blue-50);
-}
-
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-select:focus-visible {
-  outline: 3px solid color-mix(in oklab, var(--tds-blue-500) 35%, transparent);
-  outline-offset: 2px;
-}
-
 input:not([type="hidden"]),
 select,
 textarea,
@@ -156,20 +119,6 @@ th {
   font-weight: 600;
 }
 
-.tds-page {
-  width: 100%;
-  max-width: 1120px;
-  margin-inline: auto;
-  padding: 32px 24px 80px;
-}
-
-.tds-card {
-  min-width: 0;
-  border: 1px solid var(--tds-grey-200);
-  border-radius: var(--ui-surface-radius);
-  background: var(--tds-white);
-}
-
 .home-flow-card,
 .home-detail-card,
 .home-networth-card,
@@ -185,53 +134,6 @@ th {
 .home-flow-summary:hover {
   border-color: color-mix(in oklab, var(--tds-blue-500) 28%, var(--tds-grey-200));
   box-shadow: 0 8px 24px rgb(13 25 43 / 0.06);
-}
-
-.tds-title {
-  font-size: 28px;
-  font-weight: 700;
-  line-height: 1.3;
-  letter-spacing: -0.02em;
-}
-
-.tds-primary-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 56px;
-  padding-block: 14px;
-  border-radius: 16px;
-  background: var(--tds-blue-500);
-  color: var(--tds-white);
-  font-size: 17px;
-  font-weight: 700;
-  min-width: 112px;
-  padding-inline: 16px;
-  white-space: nowrap;
-}
-
-.tds-primary-button:hover {
-  background: var(--tds-blue-600);
-}
-
-.tds-chip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding-block: 10px;
-  border: 1px solid var(--tds-grey-200);
-  border-radius: 999px;
-  background: var(--tds-white);
-  color: var(--tds-grey-700);
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.tds-chip[data-selected="true"] {
-  border-color: var(--tds-grey-900);
-  background: var(--tds-grey-900);
-  color: var(--tds-white);
 }
 
 .auth-shell {
@@ -254,47 +156,6 @@ th {
   padding: 32px 28px;
 }
 
-.secondary-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding-block: 10px;
-  border: 1px solid var(--tds-grey-200);
-  border-radius: var(--ui-control-radius);
-  background: var(--tds-grey-100);
-  color: var(--tds-grey-900);
-  font-size: 15px;
-  font-weight: 600;
-  min-width: 88px;
-  white-space: nowrap;
-}
-
-.secondary-button:hover {
-  background: var(--tds-grey-200);
-}
-
-/* Used by upload/export actions across Settings. Keep them visually secondary. */
-.tds-button-secondary {
-  display: inline-flex;
-  min-height: 44px;
-  align-items: center;
-  justify-content: center;
-  padding: 10px 16px;
-  border: 1px solid var(--tds-grey-200);
-  border-radius: var(--ui-control-radius);
-  background: var(--tds-grey-100);
-  color: var(--tds-grey-900);
-  font-size: 14px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.tds-button-secondary:hover {
-  border-color: var(--tds-grey-400);
-  background: var(--tds-grey-200);
-}
-
 .settings-advanced-imports { overflow: hidden; }
 .settings-advanced-imports > summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 20px; cursor: pointer; font-size: 15px; font-weight: 750; list-style: none; }
 .settings-advanced-imports > summary::-webkit-details-marker { display: none; }
@@ -302,23 +163,6 @@ th {
 .settings-advanced-imports[open] > summary::after { content: '−'; }
 .settings-advanced-imports > summary span { margin-left: auto; color: var(--tds-grey-500); font-size: 12px; font-weight: 500; }
 .settings-advanced-imports-body { display: grid; gap: 16px; border-top: 1px solid var(--tds-grey-200); padding: 16px; }
-
-button:active {
-  transform: translateY(1px);
-}
-
-.tds-primary-button:active,
-.secondary-button:active {
-  transform: none;
-  filter: brightness(0.96);
-}
-
-button:not(:disabled):active,
-a:active,
-select:active,
-input:active {
-  opacity: 0.78;
-}
 
 textarea {
   min-height: 112px;
