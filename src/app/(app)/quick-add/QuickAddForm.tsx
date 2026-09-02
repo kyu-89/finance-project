@@ -8,6 +8,7 @@ import {
 import { CategoryPicker } from '@/components/CategoryPicker';
 import { FormField } from '@/components/FormField';
 import { FormMessage } from '@/components/FormMessage';
+import { PaymentMethodPicker } from '@/components/PaymentMethodPicker';
 import { INITIAL_ACTION_STATE } from '@/lib/action-result';
 import type { CategoryWithSubcategories } from '@/lib/categories';
 import type { PaymentMethod } from '@/lib/payment-methods';
@@ -170,19 +171,11 @@ export function QuickAddForm({
 
       {transactionType === 'expense' && (
         <FormField as="div" label="결제수단" required>
-          <div className="flex flex-wrap gap-2">
-            {paymentMethods.map((method) => (
-              <button
-                key={method.id}
-                type="button"
-                onClick={() => setSelectedPaymentMethodId(method.id)}
-                data-selected={selectedPaymentMethodId === method.id}
-                className="tds-chip px-4"
-              >
-                {method.name}
-              </button>
-            ))}
-          </div>
+          <PaymentMethodPicker
+            paymentMethods={paymentMethods}
+            selectedId={selectedPaymentMethodId}
+            onSelect={(method) => setSelectedPaymentMethodId(method?.id ?? null)}
+          />
         </FormField>
       )}
 
