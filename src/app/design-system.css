@@ -33,6 +33,7 @@
   --ui-mobile-transaction-card-padding: 12px;
   --ui-mobile-transaction-card-gap: 8px;
   --ui-mobile-transaction-cell-height: 32px;
+  --ui-mobile-transaction-control-height: 32px;
   --ui-ledger-column-date: 120px;
   --ui-ledger-column-state: 140px;
   --ui-ledger-column-type: 92px;
@@ -173,6 +174,17 @@
 
 .tds-data-table [data-table-align='center'] { justify-content: center; text-align: center; }
 .tds-data-table [data-table-align='right'] { justify-content: flex-end; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Ledger-wide rules, not mobile-only: every screen that renders a
+ * tds-ledger-table (monthly input today; transaction search and future
+ * ledger views per TABLE_SYSTEM.md) shares one color rule for 거래 유형
+ * (income = blue, everything else = red, matching --chart-income/-expense
+ * used everywhere else a transaction's sign is shown) and treats the
+ * description as a tap target, not a link — same color as the row's other
+ * text, at every width. */
+.tds-ledger-table [data-table-field='transactionType'] { color: var(--chart-expense); }
+.tds-ledger-table [data-table-field='transactionType'][data-flow='income'] { color: var(--chart-income); }
+.tds-ledger-table [data-table-field='description'] .monthly-description-button { color: inherit; }
 
 /* Legacy table wrappers are mapped to the same surface anatomy while their
  * feature markup is progressively moved to tds-data-table. */
@@ -703,18 +715,20 @@ input.quick-add-amount {
     padding: var(--ui-mobile-transaction-card-gap);
   }
 
-  /* A card packs its short facts (date, status, type, behavior, category,
-   * subcategory, payment method) onto as few lines as their own content
-   * needs — never a fixed 50/50 split that leaves half a cell empty next to
-   * a two-character value. Only the description (the card's title) and the
-   * amount (its headline number) claim a full line each, in that order,
-   * after the packed facts. Visual order is controlled by `order` below and
-   * is independent of the table's column/DOM order. */
+  /* A card has one fixed field order, in five explicit rows — never a
+   * width-dependent wrap that reorders itself by viewport:
+   *   1) 날짜 · 유형        2) 대분류 · 소분류
+   *   3) 내용 (full width)  4) 금액 (full width, right-aligned)
+   *   5) 결제수단 · 성격 · 상태
+   * Columns hug their own content (`max-content`) instead of stretching to
+   * a fixed 50/50 split, so a two-character value doesn't leave half the
+   * card empty. Row/column placement below sets the actual visual order;
+   * it is independent of the table's column/DOM order. */
   .tds-ledger-table tbody > .tds-table-row {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, max-content));
     align-items: center;
-    column-gap: var(--ui-space-3);
+    column-gap: var(--ui-space-4);
     row-gap: var(--ui-space-2);
     padding: var(--ui-mobile-transaction-card-padding);
     border: 1px solid var(--tds-grey-200);
@@ -724,7 +738,6 @@ input.quick-add-amount {
 
   .tds-ledger-table .tds-table-cell {
     display: flex;
-    flex: 0 0 auto;
     min-width: 0;
     min-height: var(--ui-mobile-transaction-cell-height);
     align-items: center;
@@ -740,43 +753,65 @@ input.quick-add-amount {
     font-weight: 700;
   }
 
-  .tds-ledger-table [data-table-field='transactionDate'] { order: 1; }
+  /* Row 1 */
+  .tds-ledger-table [data-table-field='transactionDate'] { grid-row: 1; grid-column: 1; }
   .tds-ledger-table [data-table-field='transactionDate']::before { content: '날짜'; }
-  .tds-ledger-table [data-table-field='status'] { order: 2; min-width: 104px; min-height: var(--ui-mobile-inline-control-height); }
-  .tds-ledger-table [data-table-field='status']::before { content: '상태'; }
-  .tds-ledger-table [data-table-field='transactionType'] { order: 3; }
+  .tds-ledger-table [data-table-field='transactionType'] { grid-row: 1; grid-column: 2; }
   .tds-ledger-table [data-table-field='transactionType']::before { content: '유형'; }
-  .tds-ledger-table [data-table-field='costBehavior'] { order: 4; min-width: 92px; min-height: var(--ui-mobile-inline-control-height); }
-  .tds-ledger-table [data-table-field='costBehavior']::before { content: '성격'; }
-  .tds-ledger-table [data-table-field='categoryId'] { order: 5; }
-  .tds-ledger-table [data-table-field='categoryId']::before { content: '대분류'; }
-  .tds-ledger-table [data-table-field='subcategoryId'] { order: 6; }
-  .tds-ledger-table [data-table-field='subcategoryId']::before { content: '소분류'; }
-  .tds-ledger-table [data-table-field='paymentMethodId'] { order: 7; }
-  .tds-ledger-table [data-table-field='paymentMethodId']::before { content: '결제'; }
 
+  /* Row 2 */
+  .tds-ledger-table [data-table-field='categoryId'] { grid-row: 2; grid-column: 1; }
+  .tds-ledger-table [data-table-field='categoryId']::before { content: '대분류'; }
+  .tds-ledger-table [data-table-field='subcategoryId'] { grid-row: 2; grid-column: 2; }
+  .tds-ledger-table [data-table-field='subcategoryId']::before { content: '소분류'; }
+
+  /* Row 3 — the card's title; self-evident, no label */
   .tds-ledger-table [data-table-field='description'] {
-    order: 8;
-    flex: 1 1 100%;
+    grid-row: 3;
+    grid-column: 1 / -1;
     overflow: hidden;
     font-weight: 650;
+    font-size: var(--text-body-2);
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .tds-ledger-table [data-table-field='description']::before { content: '내용'; }
+  .tds-ledger-table [data-table-field='description']::before { content: none; }
 
+  /* Row 4 — the card's headline number; self-evident, no label */
   .tds-ledger-table [data-table-field='amount'] {
-    order: 9;
-    flex: 1 1 100%;
-    justify-content: space-between;
+    grid-row: 4;
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+    font-weight: 700;
+    font-size: var(--text-title-3);
     font-variant-numeric: tabular-nums;
   }
-  .tds-ledger-table [data-table-field='amount']::before { content: '금액'; }
+  .tds-ledger-table [data-table-field='amount']::before { content: none; }
+
+  /* Row 5 — payment method is plain text; behavior and status are controls */
+  .tds-ledger-table [data-table-field='paymentMethodId'] { grid-row: 5; grid-column: 1; }
+  .tds-ledger-table [data-table-field='paymentMethodId']::before { content: '결제'; }
+  .tds-ledger-table [data-table-field='costBehavior'] { grid-row: 5; grid-column: 2; min-height: var(--ui-mobile-inline-control-height); }
+  .tds-ledger-table [data-table-field='costBehavior']::before { content: '성격'; }
+  .tds-ledger-table [data-table-field='status'] { grid-row: 5; grid-column: 3; min-height: var(--ui-mobile-inline-control-height); }
+  .tds-ledger-table [data-table-field='status']::before { content: '상태'; }
 
   .tds-ledger-table [data-table-field='status'] form,
   .tds-ledger-table [data-table-field='costBehavior'] form { min-width: 0; flex: 1; }
+
+  /* A 40px control (the standard compact inline-select size elsewhere in the
+   * app) reads oversized against a dense card's small type — the card scales
+   * it down further, on top of `.transaction-inline-select`'s base rule. */
   .tds-ledger-table [data-table-field='status'] select,
-  .tds-ledger-table [data-table-field='costBehavior'] select { width: 100%; min-width: 0; }
+  .tds-ledger-table [data-table-field='costBehavior'] select {
+    width: 100%;
+    min-width: 0;
+    height: var(--ui-mobile-transaction-control-height);
+    min-height: var(--ui-mobile-transaction-control-height);
+    padding-inline: var(--ui-space-2);
+    border-radius: 8px;
+    font-size: var(--text-micro);
+  }
 }
 
 /* The legacy navigation action used a translateY active state.  Keep the
