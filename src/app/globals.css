@@ -418,9 +418,9 @@ textarea {
 }
 
 .home-page { display: flex; flex-direction: column; gap: 28px; }
-.home-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
-.home-eyebrow { color: var(--tds-blue-600); font-size: var(--text-caption); font-weight: 650; }
-.home-subtitle { margin-top: 8px; color: var(--tds-grey-700); font-size: var(--text-body-2); }
+.tds-page-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
+.tds-eyebrow { color: var(--tds-blue-600); font-size: var(--text-caption); font-weight: 650; }
+.tds-page-subtitle { margin-top: 8px; color: var(--tds-grey-700); font-size: var(--text-body-2); }
 .home-record-button { min-height: 48px; white-space: nowrap; }
 .home-filter-bar { display: flex; align-items: center; justify-content: space-between; gap: 18px; border-block: 1px solid var(--tds-grey-200); padding-block: 12px; }
 .home-month-control { display: flex; flex: 0 0 auto; align-items: center; gap: 12px; }
@@ -612,7 +612,7 @@ textarea {
 .home-html-risk-view { display: grid; gap: 16px; }
 .home-risk-intro { display: flex; align-items: end; justify-content: space-between; gap: 16px; padding: 4px 2px; }
 .home-risk-intro h2 { margin-top: 4px; font-size: var(--text-title-2); letter-spacing: -.03em; }
-.home-risk-intro p:not(.home-eyebrow) { margin-top: 6px; color: var(--tds-grey-700); font-size: 13px; }
+.home-risk-intro p:not(.tds-eyebrow) { margin-top: 6px; color: var(--tds-grey-700); font-size: 13px; }
 .home-risk-list { display: grid; gap: 0; margin-top: 12px; }
 .home-risk-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; padding: 14px 0; border-bottom: 1px solid var(--tds-grey-100); }
 .home-risk-item > div { min-width: 0; }
@@ -884,8 +884,8 @@ label:has(> input[required])::after, label:has(> select[required])::after, label
   .monthly-drawer-grid { grid-template-columns: 1fr; }
 
   .home-page { gap: 20px; padding-inline: 16px; }
-  .home-header { align-items: flex-start; }
-  .home-header .tds-title { max-width: 310px; font-size: 25px; }
+  .tds-page-header { align-items: flex-start; }
+  .tds-page-header .tds-title { max-width: 310px; font-size: 25px; }
   .home-arrow { width: 44px; height: 44px; }
   .tds-page > a:first-child,
   .tds-page > div:first-child > a:first-child { display: inline-flex; min-height: 44px; align-items: center; }
