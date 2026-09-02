@@ -347,9 +347,6 @@ textarea {
   min-height: 44px;
   align-items: center;
   gap: 8px;
-  color: var(--tds-blue-600);
-  font-size: 14px;
-  font-weight: 700;
 }
 
 .settings-resource-list { min-width: 0; }
@@ -364,7 +361,6 @@ textarea {
   .settings-resource-row .flex-1 { min-width: 0; }
 }
 
-.settings-back-link:hover { color: var(--tds-blue-700); }
 .settings-back-link:focus-visible {
   border-radius: 8px;
   outline: 2px solid var(--tds-blue-500);
@@ -476,7 +472,7 @@ textarea {
 .home-debt-track { height: 10px; margin-top: 20px; overflow: hidden; border-radius: 999px; background: var(--tds-grey-200); }
 .home-debt-track span { display: block; height: 100%; border-radius: inherit; background: var(--tds-red-500); }
 .home-debt-view p { margin-top: 14px; color: var(--tds-grey-600); font-size: 12px; line-height: 1.6; }
-.home-debt-view a { display: inline-block; margin-top: 14px; color: var(--tds-blue-600); font-size: 13px; font-weight: 700; }
+.home-debt-view a { display: inline-block; margin-top: 14px; }
 .home-flow-list { display: grid; gap: 8px; margin-top: 22px; }
 .home-flow-list > div { display: flex; align-items: center; justify-content: space-between; min-height: 28px; }
 .home-flow-list span { color: rgb(255 255 255 / .7); font-size: 13px; }
@@ -495,7 +491,7 @@ textarea {
 .home-section-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
 .home-section-heading h2 { font-size: var(--text-title-2); font-weight: 750; letter-spacing: -.02em; }
 .home-section-heading p { margin-top: 4px; color: var(--tds-grey-700); font-size: 13px; }
-.home-section-heading > a { flex: 0 0 auto; color: var(--tds-blue-600); font-size: 13px; font-weight: 700; }
+.home-section-heading > a { flex: 0 0 auto; }
 .home-flow-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 .home-flow-card { min-width: 0; border: 1px solid var(--tds-grey-200); border-radius: 18px; background: white; padding: 18px; }
 .home-flow-card p { color: var(--tds-grey-700); font-size: 13px; }
@@ -588,7 +584,7 @@ textarea {
 .home-html-bars i { grid-column: 1 / -1; height: 8px; overflow: hidden; border-radius: 99px; background: var(--tds-grey-100); }
 .home-html-bars em { display: block; height: 100%; border-radius: inherit; background: var(--tds-blue-500); }
 .home-html-note { margin-top: 14px; color: var(--tds-grey-600); font-size: 12px; line-height: 1.55; }
-.home-html-link { display: inline-flex; margin-top: 12px; color: var(--tds-blue-600); font-size: 12px; font-weight: 700; }
+.home-html-link { display: inline-flex; margin-top: 12px; }
 .home-cashflow-chart { display: grid; grid-template-columns: repeat(12, minmax(28px, 1fr)); gap: 8px; height: 210px; align-items: end; margin-top: 20px; border-bottom: 1px solid var(--tds-grey-200); }
 .home-cashflow-chart > div { display: flex; height: 100%; flex-direction: column; justify-content: end; align-items: center; gap: 8px; padding: 8px 4px 0; border-radius: 10px 10px 0 0; }
 .home-cashflow-chart > div.is-current { background: var(--tds-blue-50); }
@@ -1109,7 +1105,7 @@ label:has(> input[required])::after, label:has(> select[required])::after, label
 .dashboard-alert-strip strong, .dashboard-alert-strip p { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dashboard-alert-strip strong { font-size: 13px; }
 .dashboard-alert-strip p { margin-top: 3px; color: var(--tds-grey-700); font-size: 12px; }
-.dashboard-alert-strip a { flex: 0 0 auto; margin-left: auto; color: var(--tds-blue-600); font-size: 12px; font-weight: 750; }
+.dashboard-alert-strip a { flex: 0 0 auto; margin-left: auto; }
 
 @media (max-width: 640px) {
   .dashboard-period-filters { display: block; }

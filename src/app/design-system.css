@@ -135,6 +135,35 @@
   background: var(--tds-grey-100);
 }
 
+.tds-button-ghost {
+  display: inline-flex;
+  min-height: var(--ui-control-height);
+  align-items: center;
+  justify-content: center;
+  gap: var(--ui-space-2);
+  padding: 0 12px;
+  border-radius: var(--ui-control-radius);
+  background: transparent;
+  color: var(--tds-blue-600);
+  font-size: var(--text-body-2);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.tds-button-ghost:hover:not(:disabled) {
+  background: var(--tds-grey-100);
+}
+
+.tds-text-link {
+  color: var(--tds-blue-600);
+  font-size: var(--text-caption);
+  font-weight: 700;
+}
+
+.tds-text-link:hover {
+  color: var(--tds-blue-700);
+}
+
 :where(button, [role="button"], a):not(:disabled):active {
   transform: none;
   opacity: 1;

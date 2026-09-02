@@ -57,7 +57,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   return <div data-page="home" className="tds-page home-page">
     <header className="home-header"><div><p className="home-eyebrow">우리집 재무</p><h1 className="tds-title">가계 재무 대시보드</h1><p className="home-subtitle">기준 월: {monthLabel(month)} · 실제로 확정된 데이터를 기준으로 보여줍니다.</p></div></header>
-    {(summary.reviewCount > 0 || summary.plannedCount > 0) && <aside className="dashboard-alert-strip" aria-label="확인할 알림"><span aria-hidden="true">●</span><div><strong>확인할 일이 있어요</strong><p>{summary.reviewCount > 0 ? `검토가 필요한 거래 ${summary.reviewCount}건` : ''}{summary.reviewCount > 0 && summary.plannedCount > 0 ? ' · ' : ''}{summary.plannedCount > 0 ? `예정 거래 ${summary.plannedCount}건` : ''}</p></div><Link href="/monthly" prefetch>월간관리에서 확인</Link></aside>}
+    {(summary.reviewCount > 0 || summary.plannedCount > 0) && <aside className="dashboard-alert-strip" aria-label="확인할 알림"><span aria-hidden="true">●</span><div><strong>확인할 일이 있어요</strong><p>{summary.reviewCount > 0 ? `검토가 필요한 거래 ${summary.reviewCount}건` : ''}{summary.reviewCount > 0 && summary.plannedCount > 0 ? ' · ' : ''}{summary.plannedCount > 0 ? `예정 거래 ${summary.plannedCount}건` : ''}</p></div><Link href="/monthly" prefetch className="tds-text-link">월간관리에서 확인</Link></aside>}
 
     <DashboardPrimaryTabs
       asset={<>
