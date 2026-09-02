@@ -7,7 +7,10 @@
  */
 
 :root {
-  --ui-page-gutter: clamp(20px, 1.5vw, 28px);
+  --ui-page-gutter: clamp(20px, 2vw, 40px);
+  --bp-md: 768px;
+  --bp-lg: 1280px;
+  --app-max-width: 1920px;
   --ui-page-block: 28px;
   --ui-control-height: 44px;
   --ui-control-height-mobile: 48px;
