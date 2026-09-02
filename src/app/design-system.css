@@ -112,6 +112,15 @@
   --color-surface: var(--tds-white);
   --color-border: var(--tds-grey-200);
   --color-disabled: var(--tds-grey-400);
+
+  /* Icon size scale (lucide-react `size` prop reads these via inline style
+   * or a wrapping class — see §14 of the Phase 1 audit doc). Icons are
+   * outline/monoline only, sized off this scale, never ad hoc pixel values. */
+  --icon-xs: 14px;
+  --icon-sm: 16px;
+  --icon-md: 20px;
+  --icon-lg: 24px;
+  --icon-xl: 32px;
 }
 
 *,
