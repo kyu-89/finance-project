@@ -28,7 +28,7 @@ export function TransactionStatusEditor({ transaction }: { transaction: Transact
         disabled={pending}
         aria-busy={pending}
         onChange={(event) => event.currentTarget.form?.requestSubmit()}
-        className="transaction-inline-select"
+        className="tds-inline-select transaction-inline-select"
       >
         {Object.entries(TRANSACTION_STATUS_LABEL).map(([value, label]) => (
           <option key={value} value={value}>{label}</option>

@@ -22,6 +22,7 @@
   --ui-table-cell-inline: 16px;
   --ui-table-cell-block: 12px;
   --ui-table-control-height: 40px;
+  --ui-inline-select-width: 140px;
   --ui-ledger-column-date: 120px;
   --ui-ledger-column-state: 140px;
   --ui-ledger-column-type: 92px;
@@ -162,6 +163,61 @@
 
 .tds-data-table [data-table-align='center'] { justify-content: center; text-align: center; }
 .tds-data-table [data-table-align='right'] { justify-content: flex-end; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Legacy table wrappers are mapped to the same surface anatomy while their
+ * feature markup is progressively moved to tds-data-table. */
+.tds-card :is(.overflow-x-auto, .overflow-auto, .annual-budget-scroll) {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  border: 1px solid var(--tds-grey-200);
+  border-radius: var(--ui-surface-radius);
+  background: var(--tds-white);
+}
+
+.tds-card :is(.overflow-x-auto, .overflow-auto, .annual-budget-scroll) > table {
+  color: var(--tds-grey-900);
+  font-size: var(--text-caption);
+  line-height: 1.35;
+}
+
+.tds-card :is(.overflow-x-auto, .overflow-auto, .annual-budget-scroll) > table th,
+.tds-card :is(.overflow-x-auto, .overflow-auto, .annual-budget-scroll) > table td {
+  min-height: var(--ui-table-row-min-height);
+  padding: var(--ui-table-cell-block) var(--ui-table-cell-inline);
+  vertical-align: middle;
+}
+
+.tds-card :is(.overflow-x-auto, .overflow-auto, .annual-budget-scroll) > table thead {
+  background: var(--tds-grey-50);
+}
+
+.tds-card :is(.overflow-x-auto, .overflow-auto, .annual-budget-scroll) > table th {
+  color: var(--tds-grey-600);
+  font-size: var(--text-caption);
+  font-weight: 750;
+}
+
+/* Inline state controls retain one compact size wherever they appear in a
+ * resource row or table cell. Feedback lives below the control, not in a
+ * separate action column. */
+.tds-inline-status-select {
+  display: grid;
+  width: var(--ui-inline-select-width);
+  min-width: var(--ui-inline-select-width);
+  gap: var(--ui-space-1);
+}
+
+.tds-inline-status-select > select,
+.tds-inline-select {
+  width: 100%;
+  min-height: var(--ui-table-control-height);
+  height: var(--ui-table-control-height);
+  padding-inline: 10px;
+  border-radius: 10px;
+  font-size: var(--text-caption);
+  font-weight: 700;
+  line-height: 1.2;
+}
 
 /* Ledger tables share a semantic column contract across monthly input, search
  * results, and any future transaction list. Feature CSS must not resize these

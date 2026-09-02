@@ -39,7 +39,7 @@ function CostBehaviorEditor({ transaction }: { transaction: Transaction }) {
           aria-label={`${transaction.description} 비용성격`}
           onChange={(event) => event.currentTarget.form?.requestSubmit()}
           disabled={pending}
-          className="transaction-inline-select"
+          className="tds-inline-select transaction-inline-select"
         >
           <option value="">미지정</option>
           <option value="fixed">{COST_BEHAVIOR_LABEL.fixed}</option>

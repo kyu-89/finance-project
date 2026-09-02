@@ -16,7 +16,7 @@ export function RecurringRuleStatusSelect({ id, status }: { id: string; status: 
   const [state, action, pending] = useActionState(updateRecurringRuleStatusAction, INITIAL_ACTION_STATE);
 
   return (
-    <form action={action} className="flex min-w-32 flex-col items-stretch gap-1">
+    <form action={action} className="tds-inline-status-select">
       <input type="hidden" name="id" value={id} />
       <label className="sr-only" htmlFor={`recurring-status-${id}`}>반복 항목 상태</label>
       <select
@@ -25,7 +25,7 @@ export function RecurringRuleStatusSelect({ id, status }: { id: string; status: 
         defaultValue={status}
         disabled={pending || status === 'ended'}
         onChange={(event) => event.currentTarget.form?.requestSubmit()}
-        className="tds-select min-h-11 w-full px-3 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+        className="tds-select disabled:cursor-not-allowed disabled:opacity-60"
       >
         {(Object.keys(LABEL) as RecurringRuleStatus[]).map((value) => <option key={value} value={value}>{LABEL[value]}</option>)}
       </select>
