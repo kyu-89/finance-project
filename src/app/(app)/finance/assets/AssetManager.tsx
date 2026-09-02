@@ -2,6 +2,10 @@
 
 import { useActionState } from 'react';
 import { createAssetAction, disposeAssetAction, updateAssetValueAction } from '@/actions/asset-actions';
+import { Amount } from '@/components/Amount';
+import { AssetItem, AssetMetric } from '@/components/AssetItem';
+import { Badge } from '@/components/Badge';
+import { Button } from '@/components/Button';
 import { AddDrawer } from '@/components/Drawer';
 import { FormField } from '@/components/FormField';
 import { FormMessage } from '@/components/FormMessage';
@@ -9,7 +13,6 @@ import { ConfirmSubmitButton } from '@/components/ConfirmSubmitButton';
 import { INITIAL_ACTION_STATE } from '@/lib/action-result';
 import type { Asset } from '@/lib/assets';
 
-const won = new Intl.NumberFormat('ko-KR');
 const typeName: Record<Asset['assetType'], string> = { real_estate: '부동산', car: '자동차', precious_metal: '귀금속', other: '기타' };
 
 export function AssetManager({ assets, today }: { assets: Asset[]; today: string }) {
@@ -26,5 +29,19 @@ function AssetCard({ asset }: { asset: Asset }) {
   const [valueState, valueAction, valuePending] = useActionState(updateAssetValueAction, INITIAL_ACTION_STATE);
   const [disposeState, disposeAction, disposePending] = useActionState(disposeAssetAction, INITIAL_ACTION_STATE);
   const active = asset.status === 'active';
-  return <article className={`tds-card flex min-w-0 flex-col gap-4 p-5 ${active ? '' : 'opacity-65'}`}><div className="flex min-w-0 justify-between gap-3"><div className="min-w-0"><h2 className="truncate font-bold">{asset.assetName}</h2><p className="text-sm text-[var(--tds-grey-700)]">{typeName[asset.assetType]} · {asset.valuationDate} 기준</p></div><span className="shrink-0 rounded-full bg-[var(--tds-grey-100)] px-2 py-1 text-xs">{active ? '보유 중' : '처분'}</span></div><div><p className="text-xs text-[var(--tds-grey-500)]">현재 평가액</p><strong className="text-xl tabular-nums">{won.format(asset.currentValue)}원</strong><p className="text-xs text-[var(--tds-grey-500)]">취득가 {won.format(asset.acquisitionCost)}원</p></div>{active && <><form action={valueAction} className="flex min-w-0 gap-2"><input type="hidden" name="id" value={asset.id} /><input name="value" type="number" min="0" step="1" defaultValue={asset.currentValue} className="min-w-0 flex-1 text-right" placeholder="평가액" aria-label="현재 평가액" /><button disabled={valuePending} className="secondary-button shrink-0">{valuePending ? '저장 중…' : '평가액 수정'}</button></form><FormMessage result={valueState} /><form action={disposeAction}><input type="hidden" name="id" value={asset.id} /><ConfirmSubmitButton disabled={disposePending} className="secondary-button w-full text-[var(--tds-red-500)]" title="자산을 처분할까요?" description="처분한 자산은 보유 자산에서 제외됩니다." confirmLabel="처분">{disposePending ? '처리 중…' : '처분 처리'}</ConfirmSubmitButton></form><FormMessage result={disposeState} /></>}</article>;
+  return <AssetItem
+    title={asset.assetName}
+    subtitle={`${typeName[asset.assetType]} · ${asset.valuationDate} 기준`}
+    statusBadge={<Badge variant={active ? 'positive' : 'neutral'}>{active ? '보유 중' : '처분'}</Badge>}
+    primaryLabel="현재 평가액"
+    primaryValue={<Amount value={asset.currentValue} size="medium" />}
+    metrics={<AssetMetric label="취득가" value={asset.acquisitionCost} />}
+    dimmed={!active}
+    actions={active && <>
+      <form action={valueAction} className="flex min-w-0 gap-2"><input type="hidden" name="id" value={asset.id} /><input name="value" type="number" min="0" step="1" defaultValue={asset.currentValue} className="min-w-0 flex-1 text-right" placeholder="평가액" aria-label="현재 평가액" /><Button type="submit" variant="secondary" className="shrink-0" disabled={valuePending}>{valuePending ? '저장 중…' : '평가액 수정'}</Button></form>
+      <FormMessage result={valueState} />
+      <form action={disposeAction}><input type="hidden" name="id" value={asset.id} /><ConfirmSubmitButton disabled={disposePending} className="tds-button-secondary tds-button-danger w-full" title="자산을 처분할까요?" description="처분한 자산은 보유 자산에서 제외됩니다." confirmLabel="처분">{disposePending ? '처리 중…' : '처분 처리'}</ConfirmSubmitButton></form>
+      <FormMessage result={disposeState} />
+    </>}
+  />;
 }

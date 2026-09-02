@@ -5,6 +5,10 @@ import {
   createDepositAction, createSavingsAccountAction, endDepositAction, endSavingsAccountAction,
   updateCurrentSavingsAction,
 } from '@/actions/savings-product-actions';
+import { Amount } from '@/components/Amount';
+import { AssetItem, AssetMetric } from '@/components/AssetItem';
+import { Badge } from '@/components/Badge';
+import { Button } from '@/components/Button';
 import { AddDrawer } from '@/components/Drawer';
 import { FormField } from '@/components/FormField';
 import { FormMessage } from '@/components/FormMessage';
@@ -15,7 +19,6 @@ import type { Deposit } from '@/lib/deposits';
 import { calculateSavings } from '@/lib/savings-calculations';
 import type { SavingsAccount } from '@/lib/savings';
 
-const won = new Intl.NumberFormat('ko-KR');
 const termName = { short: '단기', mid: '중기', long: '장기' };
 const statusName = { active: '유지 중', matured: '만기', terminated: '중도해지' };
 
@@ -74,14 +77,13 @@ function Message({ result }: { result: typeof INITIAL_ACTION_STATE }) { return <
 function AccountSelect({ accounts }: { accounts: Account[] }) { return <Field label="출금 계좌"><select name="withdrawalAccountId" className="px-3"><option value="">지정 안 함</option>{accounts.filter((account) => account.status === 'active').map((account) => <option key={account.id} value={account.id}>{account.bankName} {account.accountName}</option>)}</select></Field>; }
 function Empty({ text }: { text: string }) { return <p className="tds-card p-6 text-sm text-[var(--tds-grey-500)]">{text}</p>; }
 
-function ProductHeader({ name, bank, status }: { name: string; bank: string; status: keyof typeof statusName }) {
-  return <div className="flex items-start justify-between gap-3"><div><h3 className="font-bold">{name}</h3><p className="mt-1 text-sm text-[var(--tds-grey-700)]">{bank}</p></div><span className="rounded-full bg-[var(--tds-grey-100)] px-2 py-1 text-xs">{statusName[status]}</span></div>;
+/* 유지 중은 positive, 만기·중도해지처럼 끝난 상태는 neutral (Phase 7 §2). */
+function StatusBadge({ status }: { status: keyof typeof statusName }) {
+  return <Badge variant={status === 'active' ? 'positive' : 'neutral'}>{statusName[status]}</Badge>;
 }
 
-function Metric({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) { return <div><dt className="text-xs text-[var(--tds-grey-500)]">{label}</dt><dd className={`mt-1 font-semibold tabular-nums ${accent ? 'text-[var(--tds-blue-500)]' : ''}`}>{value}</dd></div>; }
-
 function EndButtons({ id, action, pending }: { id: string; action: (payload: FormData) => void; pending: boolean }) {
-  return <form action={action} className="grid grid-cols-2 gap-2"><input type="hidden" name="id" value={id} /><button name="status" value="matured" disabled={pending} className="secondary-button">만기 처리</button><button name="status" value="terminated" disabled={pending} className="secondary-button text-[var(--tds-red-500)]">중도해지</button></form>;
+  return <form action={action} className="grid grid-cols-2 gap-2"><input type="hidden" name="id" value={id} /><Button type="submit" variant="secondary" name="status" value="matured" disabled={pending}>만기 처리</Button><Button type="submit" variant="danger" name="status" value="terminated" disabled={pending}>중도해지</Button></form>;
 }
 
 function DepositCard({ item, today }: { item: Deposit; today: string }) {
@@ -89,12 +91,21 @@ function DepositCard({ item, today }: { item: Deposit; today: string }) {
   const termMonths = monthsBetween(item.joinedAt, item.maturityDate);
   const remainingMonths = today >= item.maturityDate ? 0 : monthsBetween(today, item.maturityDate);
   const result = calculateDeposit({ principal: item.principal, annualRate: item.annualRate, termMonths, taxRate: item.taxRate });
-  return <article className={`tds-card flex flex-col gap-4 p-5 ${item.status === 'active' ? '' : 'opacity-65'}`}>
-    <ProductHeader name={item.productName} bank={item.bankName} status={item.status} />
-    <p className="text-sm text-[var(--tds-grey-700)]">{item.joinedAt} ~ {item.maturityDate} · {termName[classifyTermLength(termMonths)]} {termMonths}개월 · 남은 {remainingMonths}개월</p>
-    <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4"><Metric label="원금" value={`${won.format(item.principal)}원`} /><Metric label="세전이자" value={`${won.format(result.pretaxInterest)}원`} /><Metric label="세후이자" value={`${won.format(result.aftertaxInterest)}원`} /><Metric label="예상수령액" value={`${won.format(result.maturityAmount)}원`} accent /></dl>
-    {item.status === 'active' && <><EndButtons id={item.id} action={action} pending={pending} /><FormMessage result={state} /></>}
-  </article>;
+  return <AssetItem
+    title={item.productName}
+    subtitle={item.bankName}
+    statusBadge={<StatusBadge status={item.status} />}
+    meta={`${item.joinedAt} ~ ${item.maturityDate} · ${termName[classifyTermLength(termMonths)]} ${termMonths}개월 · 남은 ${remainingMonths}개월`}
+    primaryLabel="예상수령액"
+    primaryValue={<Amount value={result.maturityAmount} type="income" size="medium" />}
+    metrics={<>
+      <AssetMetric label="원금" value={item.principal} />
+      <AssetMetric label="세전이자" value={result.pretaxInterest} />
+      <AssetMetric label="세후이자" value={result.aftertaxInterest} />
+    </>}
+    dimmed={item.status !== 'active'}
+    actions={item.status === 'active' && <><EndButtons id={item.id} action={action} pending={pending} /><FormMessage result={state} /></>}
+  />;
 }
 
 function SavingsCard({ item, today }: { item: SavingsAccount; today: string }) {
@@ -103,11 +114,25 @@ function SavingsCard({ item, today }: { item: SavingsAccount; today: string }) {
   const termMonths = monthsBetween(item.joinedAt, item.maturityDate);
   const remainingMonths = today >= item.maturityDate ? 0 : monthsBetween(today, item.maturityDate);
   const result = calculateSavings({ monthlyAmount: item.monthlyAmount, annualRate: item.annualRate, termMonths, taxRate: item.taxRate, method: item.interestMethod });
-  return <article className={`tds-card flex flex-col gap-4 p-5 ${item.status === 'active' ? '' : 'opacity-65'}`}>
-    <ProductHeader name={item.productName} bank={item.bankName} status={item.status} />
-    <p className="text-sm text-[var(--tds-grey-700)]">{item.joinedAt} ~ {item.maturityDate} · {termName[classifyTermLength(termMonths)]} {termMonths}개월 · 남은 {remainingMonths}개월</p>
-    <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4"><Metric label="만기원금" value={`${won.format(result.maturityPrincipal)}원`} /><Metric label="현재저축액" value={`${won.format(item.currentSavings)}원`} /><Metric label="세후이자" value={`${won.format(result.aftertaxInterest)}원`} /><Metric label="예상수령액" value={`${won.format(result.maturityAmount)}원`} accent /></dl>
-    <p className="text-xs text-[var(--tds-grey-500)]">{item.interestMethod === 'simple' ? '단리' : '월복리'} · 연 {(item.annualRate * 100).toFixed(2)}% · {item.autoRecurring ? `반복납입 ${item.monthlyPaymentDay}일` : '반복납입 꺼짐'}</p>
-    {item.status === 'active' && <><form action={balanceAction} className="flex gap-2"><input type="hidden" name="id" value={item.id} /><input name="amount" type="number" min="0" step="1" defaultValue={item.currentSavings} className="min-w-0 flex-1 px-3 text-right" /><button disabled={balancePending} className="secondary-button px-4">현재액 수정</button></form><FormMessage result={balanceState} /><EndButtons id={item.id} action={endAction} pending={endPending} /><FormMessage result={endState} /></>}
-  </article>;
+  return <AssetItem
+    title={item.productName}
+    subtitle={item.bankName}
+    statusBadge={<StatusBadge status={item.status} />}
+    meta={`${item.joinedAt} ~ ${item.maturityDate} · ${termName[classifyTermLength(termMonths)]} ${termMonths}개월 · 남은 ${remainingMonths}개월`}
+    primaryLabel="예상수령액"
+    primaryValue={<Amount value={result.maturityAmount} type="income" size="medium" />}
+    metrics={<>
+      <AssetMetric label="만기원금" value={result.maturityPrincipal} />
+      <AssetMetric label="현재저축액" value={item.currentSavings} />
+      <AssetMetric label="세후이자" value={result.aftertaxInterest} />
+    </>}
+    footnote={<p className="tds-asset-item-footnote">{item.interestMethod === 'simple' ? '단리' : '월복리'} · 연 {(item.annualRate * 100).toFixed(2)}% · {item.autoRecurring ? `반복납입 ${item.monthlyPaymentDay}일` : '반복납입 꺼짐'}</p>}
+    dimmed={item.status !== 'active'}
+    actions={item.status === 'active' && <>
+      <form action={balanceAction} className="flex gap-2"><input type="hidden" name="id" value={item.id} /><input name="amount" type="number" min="0" step="1" defaultValue={item.currentSavings} className="min-w-0 flex-1 px-3 text-right" /><Button type="submit" variant="secondary" disabled={balancePending}>현재액 수정</Button></form>
+      <FormMessage result={balanceState} />
+      <EndButtons id={item.id} action={endAction} pending={endPending} />
+      <FormMessage result={endState} />
+    </>}
+  />;
 }
