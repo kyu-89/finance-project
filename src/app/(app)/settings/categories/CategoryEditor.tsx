@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from 'react';
 import { INITIAL_ACTION_STATE } from '@/lib/action-result';
+import { FormField } from '@/components/FormField';
 import { FormMessage } from '@/components/FormMessage';
 import {
   createSubcategoryAction,
@@ -42,8 +43,8 @@ export function CategoryEditor({ category }: { category: CategoryWithSubcategori
           <div className="flex flex-col gap-4">
             <form action={editAction} className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(10rem,0.55fr)_auto] sm:items-end">
               <input type="hidden" name="id" value={category.id} />
-              <label className="form-field">이름<input name="name" defaultValue={category.name} required className="px-3 py-2" placeholder="카테고리 이름" /></label>
-              <label className="form-field">기본 비용 성격<select name="defaultCostBehavior" defaultValue={category.defaultCostBehavior ?? ''} className="tds-select px-3 py-2"><option value="">해당 없음</option><option value="fixed">고정비</option><option value="variable">변동비</option></select></label>
+              <FormField label="이름" required><input name="name" defaultValue={category.name} required className="px-3 py-2" placeholder="카테고리 이름" /></FormField>
+              <FormField label="기본 비용 성격"><select name="defaultCostBehavior" defaultValue={category.defaultCostBehavior ?? ''} className="tds-select px-3 py-2"><option value="">해당 없음</option><option value="fixed">고정비</option><option value="variable">변동비</option></select></FormField>
               <button type="submit" disabled={editPending} className="secondary-button px-4">{editPending ? '저장 중…' : '저장'}</button>
             </form>
             <FormMessage result={editState} />
@@ -67,7 +68,7 @@ export function CategoryEditor({ category }: { category: CategoryWithSubcategori
                       <div className="border-t border-[var(--tds-grey-200)] bg-[var(--tds-grey-50)] p-3">
                         <form action={subEditAction} className="flex flex-col gap-2 sm:flex-row sm:items-end">
                           <input type="hidden" name="id" value={sub.id} />
-                          <label className="form-field min-w-0 flex-1">소분류 이름<input name="name" defaultValue={sub.name} required className="px-3 py-2 text-sm" placeholder="소분류 이름" /></label>
+                          <FormField label="소분류 이름" required className="min-w-0 flex-1"><input name="name" defaultValue={sub.name} required className="px-3 py-2 text-sm" placeholder="소분류 이름" /></FormField>
                           <button type="submit" disabled={subEditPending} className="secondary-button shrink-0 px-4">{subEditPending ? '저장 중…' : '저장'}</button>
                         </form>
                         <StatusSelect id={sub.id} active={sub.isActive} action={setSubcategoryActiveAction} label={`${sub.name} 활성 상태`} className="mt-3 w-full sm:w-32" />
@@ -79,7 +80,7 @@ export function CategoryEditor({ category }: { category: CategoryWithSubcategori
               <FormMessage result={subEditState} />
               <form action={subAction} className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
                 <input type="hidden" name="categoryId" value={category.id} />
-                <label className="form-field min-w-0 flex-1">새 소분류<input name="name" placeholder="예: 식재료" required className="px-3 py-2 text-sm" /></label>
+                <FormField label="새 소분류" required className="min-w-0 flex-1"><input name="name" placeholder="예: 식재료" required className="px-3 py-2 text-sm" /></FormField>
                 <button type="submit" disabled={subPending} className="secondary-button shrink-0 px-4">{subPending ? '추가 중…' : '소분류 추가'}</button>
               </form>
               <FormMessage result={subState} />

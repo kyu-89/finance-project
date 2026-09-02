@@ -3,6 +3,7 @@
 import { useActionState } from 'react';
 import { createAssetAction, disposeAssetAction, updateAssetValueAction } from '@/actions/asset-actions';
 import { AddDrawer } from '@/components/Drawer';
+import { FormField } from '@/components/FormField';
 import { FormMessage } from '@/components/FormMessage';
 import { ConfirmSubmitButton } from '@/components/ConfirmSubmitButton';
 import { INITIAL_ACTION_STATE } from '@/lib/action-result';
@@ -19,7 +20,7 @@ export function AssetManager({ assets, today }: { assets: Asset[]; today: string
   </div>;
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="flex min-w-0 flex-col gap-1 text-sm font-medium">{label}{children}</label>; }
+function Field({ label, children }: { label: string; children: React.ReactNode }) { return <FormField label={label} className="min-w-0">{children}</FormField>; }
 
 function AssetCard({ asset }: { asset: Asset }) {
   const [valueState, valueAction, valuePending] = useActionState(updateAssetValueAction, INITIAL_ACTION_STATE);

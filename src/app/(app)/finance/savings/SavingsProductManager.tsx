@@ -6,6 +6,7 @@ import {
   updateCurrentSavingsAction,
 } from '@/actions/savings-product-actions';
 import { AddDrawer } from '@/components/Drawer';
+import { FormField } from '@/components/FormField';
 import { FormMessage } from '@/components/FormMessage';
 import type { Account } from '@/lib/accounts';
 import { INITIAL_ACTION_STATE } from '@/lib/action-result';
@@ -68,7 +69,7 @@ export function SavingsProductManager({ deposits, savings, accounts, today }: Pr
 }
 
 function Heading({ title, description }: { title: string; description: string }) { return <div><h2 className="text-xl font-bold">{title}</h2><p className="mt-1 text-sm text-[var(--tds-grey-700)]">{description}</p></div>; }
-function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="flex flex-col gap-1 text-sm font-medium">{label}{children}</label>; }
+function Field({ label, children }: { label: string; children: React.ReactNode }) { return <FormField label={label}>{children}</FormField>; }
 function Message({ result }: { result: typeof INITIAL_ACTION_STATE }) { return <div className="md:col-span-2 xl:col-span-4"><FormMessage result={result} /></div>; }
 function AccountSelect({ accounts }: { accounts: Account[] }) { return <Field label="출금 계좌"><select name="withdrawalAccountId" className="px-3"><option value="">지정 안 함</option>{accounts.filter((account) => account.status === 'active').map((account) => <option key={account.id} value={account.id}>{account.bankName} {account.accountName}</option>)}</select></Field>; }
 function Empty({ text }: { text: string }) { return <p className="tds-card p-6 text-sm text-[var(--tds-grey-500)]">{text}</p>; }
