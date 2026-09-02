@@ -250,6 +250,17 @@ git commit -m "feat(design-system): unify typography scale to 8 tokens"
 
 (`--ui-elevation-1`은 이미 파일에 정의돼 있으므로 그대로 둔다.)
 
+- [ ] **Step 2.5: `globals.css`의 죽은 중복 `--ui-*` 토큰 제거 (Task 1 리뷰에서 발견)**
+
+`src/app/globals.css`의 `:root` 블록에는 `--ui-control-height: 48px`, `--ui-control-radius: 12px`, `--ui-surface-radius: 20px`, `--ui-space-1`~`--ui-space-6`(4/8/12/16/20/24px)가 정의돼 있다. `design-system.css`가 `globals.css` 다음에 로드되므로(`src/app/layout.tsx`의 import 순서) 이 이름들은 전부 `design-system.css`의 값(`--ui-control-height: 44px`, `--ui-control-radius: 12px`, `--ui-surface-radius: 18px`, 동일한 `--ui-space-*`)으로 덮어써져 실제로는 항상 `design-system.css` 쪽 값이 적용된다 — `globals.css`의 선언은 죽은 코드이며, `--ui-control-height`(48 vs 44)와 `--ui-surface-radius`(20 vs 18)는 값 자체도 서로 다르다. `design-system.css`의 파일 헤더 주석이 이미 "이 파일이 shared layout/control 토큰을 소유한다"고 명시하므로, `globals.css`의 다음 6개 선언을 **삭제**한다(값을 옮기는 게 아니라 삭제만 — `design-system.css`에 이미 있다):
+
+- `--ui-control-height: 48px;`
+- `--ui-control-radius: 12px;`
+- `--ui-surface-radius: 20px;`
+- `--ui-space-1: 4px;` ~ `--ui-space-6: 24px;` (6줄)
+
+삭제 후 `globals.css`의 `:root`에는 `--tds-*` 색상 primitive와 `--background`/`--foreground`/`--tds-font`만 남아야 한다.
+
 - [ ] **Step 3: 검증**
 
 Run: `npx tsc --noEmit && npm run lint`
@@ -577,7 +588,7 @@ git commit -m "feat(design-system): extend spacing scale, snap stray margins"
 
 - [ ] **Step 1: 드로어 폭 620px → 640px로 통일**
 
-`src/app/globals.css`에서 아래 3곳의 `min(620px, 100vw)`를 `min(640px, 100vw)`로 교체:
+`src/app/globals.css`에서 아래 3곳의 `min(620px, 100vw)`를 `min(640px, 100vw)`로 교체. (참고: `design-system.css`가 `globals.css`보다 나중에 로드되고 그쪽 `.app-drawer`가 이미 `width: min(640px, 100vw)`를 선언하고 있어 실제 화면에는 이미 640px가 적용되고 있다 — 이 스텝은 죽은 값처럼 보이는 `globals.css`의 620px를 실제 적용값과 일치시켜 코드를 읽을 때 혼란을 없애는 정리 작업이다. 기능적 변화는 없다.)
 
 - `.app-drawer { width: min(620px, 100vw); ... }`
 - `aside[role="dialog"][aria-modal="true"]:not(.app-drawer) { width: min(620px, 100vw); }`
@@ -590,6 +601,22 @@ git commit -m "feat(design-system): extend spacing scale, snap stray margins"
 - `.app-toast { ... box-shadow: 0 12px 36px rgb(0 0 0 / .2); ... }` → `box-shadow: var(--ui-elevation-toast);`
 - `.confirm-dialog { ... box-shadow: 0 20px 60px rgb(13 25 43 / .22); }` → `box-shadow: var(--ui-elevation-3);`
 
+- [ ] **Step 2.5: 토스트 폭 불일치 정리 (Task 1 리뷰에서 발견)**
+
+`src/app/design-system.css`의 `.app-toast`(약 332번째 줄)가 `width: min(400px, calc(100vw - 48px));`를 선언하고 있는데, 이 파일이 `globals.css`보다 나중에 로드되므로 `globals.css:737`의 `width: min(420px, calc(100vw - 32px))`를 덮어써서 실제로는 400px 쪽이 적용되고 있다. `design-system.css`의 값을 `globals.css`와 동일한 `min(420px, calc(100vw - 32px))`로 맞춘다(어느 쪽이 이겨도 되지만, 토스트 문구가 잘리지 않도록 더 넓은 420px 쪽으로 통일한다):
+
+```css
+.app-toast {
+  right: 24px;
+  bottom: 24px;
+  width: min(420px, calc(100vw - 32px));
+  min-height: 52px;
+  border-radius: 14px;
+}
+```
+
+(`bottom`의 `24px` 고정값과 `globals.css`의 `calc(24px + env(safe-area-inset-bottom))`은 웹(≥768px)에서는 `env()`가 0으로 계산되므로 기능적으로 동일하다 — 모바일 전용 안전영역 보정은 별도의 `@media (max-width: 767px)` 블록에서 이미 처리하고 있으므로 이 스텝에서 손대지 않는다.)
+
 - [ ] **Step 3: 검증**
 
 Run: `npx tsc --noEmit && npm run lint`
@@ -599,8 +626,8 @@ Run: `npx tsc --noEmit && npm run lint`
 - [ ] **Step 4: 커밋**
 
 ```bash
-git add src/app/globals.css
-git commit -m "fix(design-system): unify drawer width to 640px, route overlay shadows through elevation tokens"
+git add src/app/globals.css src/app/design-system.css
+git commit -m "fix(design-system): unify drawer/toast width, route overlay shadows through elevation tokens"
 ```
 
 ---
