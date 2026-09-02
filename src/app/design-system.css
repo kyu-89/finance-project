@@ -277,6 +277,25 @@
   line-height: 1.2;
 }
 
+/* planned 행의 [확정]/[이번달 제외] 버튼 2개는 상태 select가 있던 자리에 그대로 들어가므로
+ * 같은 control 높이를 공유한다(§9) — 데스크톱은 --ui-table-control-height, 모바일 카드에서는
+ * 아래 (max-width: 640px) 블록이 --ui-mobile-transaction-control-height로 한 번 더 줄인다. */
+.transaction-status-actions {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  gap: var(--ui-space-2);
+}
+
+.transaction-status-actions .tds-primary-button,
+.transaction-status-actions .tds-button-secondary {
+  min-width: 0;
+  height: var(--ui-table-control-height);
+  min-height: var(--ui-table-control-height);
+  padding-inline: var(--ui-space-3);
+  font-size: var(--text-caption);
+}
+
 /* Ledger tables share a semantic column contract across monthly input, search
  * results, and any future transaction list. Feature CSS must not resize these
  * columns with nth-child selectors. */
@@ -1230,6 +1249,19 @@ input.quick-add-amount {
     min-height: var(--ui-mobile-transaction-control-height);
     padding-inline: var(--ui-space-2);
     border-radius: 8px;
+    font-size: var(--text-micro);
+  }
+
+  /* [확정]/[이번달 제외] 버튼도 같은 카드에서는 select와 동일하게 더 줄어든다. */
+  .tds-ledger-table [data-table-field='status'] .transaction-status-actions {
+    width: 100%;
+  }
+
+  .tds-ledger-table [data-table-field='status'] .transaction-status-actions .tds-primary-button,
+  .tds-ledger-table [data-table-field='status'] .transaction-status-actions .tds-button-secondary {
+    height: var(--ui-mobile-transaction-control-height);
+    min-height: var(--ui-mobile-transaction-control-height);
+    padding-inline: var(--ui-space-2);
     font-size: var(--text-micro);
   }
 }
