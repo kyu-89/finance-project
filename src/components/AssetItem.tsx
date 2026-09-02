@@ -86,7 +86,7 @@ export function AssetItem({
  */
 export function AssetMetric({ label, value }: { label: string; value: number }) {
   return (
-    <div>
+    <div className="tds-asset-item-metric">
       <dt className="tds-asset-item-metric-label">{label}</dt>
       <dd className="tds-asset-item-metric-value">
         <Amount value={value} size="small" />

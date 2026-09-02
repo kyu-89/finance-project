@@ -1073,8 +1073,21 @@ a.tds-chip {
   margin: 0;
 }
 
+/* Grid items default to `min-width: auto`, which floors their width at the
+ * content's min-content size regardless of `minmax(120px, 1fr)` above. A won
+ * amount (`Amount`, no white-space handling of its own) has no natural break
+ * point, so a large balance (e.g. 억 단위 대출 잔금) would otherwise force
+ * this cell — and the grid track containing it — wider than its column,
+ * pushing the metric grid past the card's edge. `min-width: 0` here lets the
+ * cell shrink to its assigned column; `overflow-wrap` on the value then wraps
+ * the digits onto a second line instead of overflowing past the cell. */
+.tds-asset-item-metric {
+  min-width: 0;
+}
+
 .tds-asset-item-metric-value {
   margin: var(--ui-space-1) 0 0;
+  overflow-wrap: anywhere;
 }
 
 /* 보험 보장내역처럼 카드 안에서 한 문단이 강조되는 자리. */
