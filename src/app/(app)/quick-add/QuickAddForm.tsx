@@ -6,6 +6,7 @@ import {
   undoTransactionAction,
 } from '@/actions/transaction-actions';
 import { CategoryPicker } from '@/components/CategoryPicker';
+import { FormField } from '@/components/FormField';
 import { FormMessage } from '@/components/FormMessage';
 import { INITIAL_ACTION_STATE } from '@/lib/action-result';
 import type { CategoryWithSubcategories } from '@/lib/categories';
@@ -131,8 +132,7 @@ export function QuickAddForm({
       <input type="hidden" name="subcategoryId" value={selectedSubcategoryId ?? ''} />
       <input type="hidden" name="paymentMethodId" value={selectedPaymentMethodId ?? ''} />
 
-      <label className="flex flex-col gap-1">
-        <span className="text-[15px] font-semibold text-[var(--tds-grey-700)]">금액</span>
+      <FormField label="금액">
         <input
           inputMode="numeric"
           autoFocus
@@ -143,22 +143,18 @@ export function QuickAddForm({
         />
         {/* real amount, digits only, submitted alongside the display value */}
         <input type="hidden" name="amount" value={numericAmount} />
-      </label>
+      </FormField>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-[15px] font-semibold text-[var(--tds-grey-700)]">거래 유형</span>
+      <FormField label="거래 유형">
         <select value={transactionType} onChange={(e) => { const next = e.target.value as typeof transactionType; setTransactionType(next); setSelectedCategory(null); setSelectedSubcategoryId(null); setSelectedPaymentMethodId(null); }} className="px-4">
           <option value="expense">지출</option><option value="income">수입</option><option value="saving">저축</option><option value="investment">투자</option><option value="debt_principal">대출 원금상환</option><option value="finance_cost">금융비용</option><option value="transfer">이체</option>
         </select>
-      </label>
+      </FormField>
 
-      {transactionType === 'income' && <><label className="flex flex-col gap-1"><span className="text-[15px] font-semibold text-[var(--tds-grey-700)]">수입 구분</span><select value={incomeGroup} onChange={(e) => setIncomeGroup(e.target.value as typeof incomeGroup)} className="px-4"><option value="fixed">고정수입</option><option value="additional">추가수입</option></select></label><label className="flex flex-col gap-1"><span className="text-[15px] font-semibold text-[var(--tds-grey-700)]">입금계좌</span><select name="accountId" className="px-4"><option value="">선택 안 함</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.bankName} {account.accountName}</option>)}</select></label></>}
+      {transactionType === 'income' && <><FormField label="수입 구분"><select value={incomeGroup} onChange={(e) => setIncomeGroup(e.target.value as typeof incomeGroup)} className="px-4"><option value="fixed">고정수입</option><option value="additional">추가수입</option></select></FormField><FormField label="입금계좌"><select name="accountId" className="px-4"><option value="">선택 안 함</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.bankName} {account.accountName}</option>)}</select></FormField></>}
 
       {(transactionType === 'income' || transactionType === 'expense') && (
-        <div>
-          <span className="mb-2 block text-[15px] font-semibold text-[var(--tds-grey-700)]">
-            대분류 / 소분류 <span className="text-xs font-medium text-[var(--tds-blue-500)]">필수</span>
-          </span>
+        <FormField as="div" label="대분류 / 소분류" required>
           <CategoryPicker
             key={`${saved ?? 'initial'}-${transactionType}`}
             categories={categories.filter((category) => category.transactionType === transactionType)}
@@ -169,12 +165,11 @@ export function QuickAddForm({
               setSelectedSubcategoryId(subcategoryId);
             }}
           />
-        </div>
+        </FormField>
       )}
 
       {transactionType === 'expense' && (
-        <div>
-          <span className="mb-2 block text-[15px] font-semibold text-[var(--tds-grey-700)]">결제수단 <span className="text-xs font-medium text-[var(--tds-blue-500)]">필수</span></span>
+        <FormField as="div" label="결제수단" required>
           <div className="flex flex-wrap gap-2">
             {paymentMethods.map((method) => (
               <button
@@ -188,13 +183,12 @@ export function QuickAddForm({
               </button>
             ))}
           </div>
-        </div>
+        </FormField>
       )}
 
-      <label className="flex flex-col gap-1">
-        <span className="text-[15px] font-semibold text-[var(--tds-grey-700)]">내용</span>
+      <FormField label="내용">
         <input name="description" required className="px-4 py-3" placeholder="예: 저녁 식사" />
-      </label>
+      </FormField>
 
       <button type="button" onClick={() => setShowMore((v) => !v)} className="min-h-11 text-left text-sm font-semibold text-[var(--tds-blue-500)]">
         {showMore ? '접기' : '더보기 (비고/태그)'}
@@ -202,27 +196,24 @@ export function QuickAddForm({
       {showMore && (
         <div className="flex flex-col gap-3">
           {transactionType === 'expense' && (
-            <label className="flex flex-col gap-1">
-              <span className="text-sm font-semibold text-[var(--tds-grey-700)]">비용성격</span>
+            <FormField label="비용성격">
               <select name="costBehaviorOverride" className="px-4 py-2">
                 <option value="">카테고리 기본값 사용</option>
                 <option value="fixed">고정비</option>
                 <option value="variable">변동비</option>
               </select>
-            </label>
+            </FormField>
           )}
-          <label className="flex flex-col gap-1">
-            <span className="text-sm font-semibold text-[var(--tds-grey-700)]">비고</span>
+          <FormField label="비고">
             <input name="memo" className="px-4 py-2" />
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-sm font-semibold text-[var(--tds-grey-700)]">태그</span>
+          </FormField>
+          <FormField label="태그">
             <input name="tags" className="px-4 py-2" placeholder="예: 여행, 교육 (쉼표로 구분)" />
-          </label>
+          </FormField>
         </div>
       )}
 
-      {transactionType === 'income' && <details className="rounded-xl bg-[var(--tds-blue-50)] p-4"><summary className="cursor-pointer text-sm font-semibold">정부지원금 상세 (선택)</summary><div className="mt-3 grid gap-3"><label className="flex flex-col gap-1"><span className="text-sm font-semibold">지원금 종류</span><input name="supportKind" placeholder="예: 아동수당, 주거지원금" /></label></div></details>}
+      {transactionType === 'income' && <details className="rounded-xl bg-[var(--tds-blue-50)] p-4"><summary className="cursor-pointer text-sm font-semibold">정부지원금 상세 (선택)</summary><div className="mt-3 grid gap-3"><FormField label="지원금 종류"><input name="supportKind" placeholder="예: 아동수당, 주거지원금" /></FormField></div></details>}
       <button
         type="submit"
         disabled={pending}
