@@ -53,3 +53,8 @@ supabase/.temp
 
 .vercel
 .env*
+
+# Local QA/debug scratch output (screenshots, CLI logs) — not deliverables
+/output/
+/.artifacts/
+/.playwright-cli/
