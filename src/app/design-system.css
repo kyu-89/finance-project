@@ -404,7 +404,7 @@ a.tds-chip {
 .app-toast {
   right: 24px;
   bottom: 24px;
-  width: min(400px, calc(100vw - 48px));
+  width: min(420px, calc(100vw - 32px));
   min-height: 52px;
   border-radius: 14px;
 }
