@@ -17,6 +17,20 @@
   --ui-control-radius: 12px;
   --ui-surface-radius: 18px;
   --ui-card-padding: 20px;
+  --ui-table-header-height: 44px;
+  --ui-table-row-min-height: 64px;
+  --ui-table-cell-inline: 16px;
+  --ui-table-cell-block: 12px;
+  --ui-table-control-height: 40px;
+  --ui-ledger-column-date: 120px;
+  --ui-ledger-column-state: 140px;
+  --ui-ledger-column-type: 92px;
+  --ui-ledger-column-behavior: 120px;
+  --ui-ledger-column-category: 110px;
+  --ui-ledger-column-subcategory: 110px;
+  --ui-ledger-column-description-min: 140px;
+  --ui-ledger-column-amount: 120px;
+  --ui-ledger-column-payment: 112px;
   --ui-space-1: 4px;
   --ui-space-2: 8px;
   --ui-space-3: 12px;
@@ -38,8 +52,19 @@
   --chart-income: var(--tds-blue-500);
   --chart-expense: var(--tds-red-500);
   --chart-wealth: var(--tds-green-500);
-  --chart-target: oklch(0.75 0.1 254);
+  --chart-income-contrast: var(--tds-blue-300);
+  --chart-expense-contrast: var(--tds-red-300);
+  --chart-wealth-contrast: var(--tds-green-300);
+  --chart-income-gradient-start: #73a8f6;
+  --chart-income-gradient-end: #3182f6;
+  --chart-target: #93c5fd;
   --chart-current-bg: var(--tds-blue-50);
+  --surface-feature-start: #eef5ff;
+  --surface-feature-end: #f8fbff;
+  --surface-feature-border: var(--tds-blue-100);
+  --surface-feature-border-strong: var(--tds-blue-200);
+  --state-warning-bg: var(--tds-red-50);
+  --state-warning-border: var(--tds-red-100);
   --text-display: clamp(28px, 2.4vw, 36px);
   --text-title-1: clamp(25px, 2vw, 30px);
   --text-title-2: 20px;
@@ -87,6 +112,98 @@
 .list-surface,
 .table-surface {
   background: var(--tds-white);
+}
+
+/* Data tables use one anatomy: a fixed header rhythm, matching cell insets,
+ * and a contained horizontal scroll when the available desktop width is small. */
+.table-surface {
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+}
+
+.tds-data-table {
+  width: 100%;
+  color: var(--tds-grey-900);
+  font-size: var(--text-caption);
+  line-height: 1.35;
+}
+
+.tds-data-table thead {
+  background: var(--tds-grey-50);
+}
+
+.tds-data-table th,
+.tds-data-table td {
+  min-width: 0;
+  padding: var(--ui-table-cell-block) var(--ui-table-cell-inline);
+  vertical-align: middle;
+}
+
+.tds-data-table th {
+  min-height: var(--ui-table-header-height);
+  color: var(--tds-grey-600);
+  font-size: var(--text-caption);
+  font-weight: 750;
+  letter-spacing: -0.01em;
+}
+
+.tds-data-table td {
+  min-height: var(--ui-table-row-min-height);
+}
+
+.tds-data-table tbody > tr {
+  border-color: var(--tds-grey-200);
+}
+
+.tds-data-table tbody > tr:hover {
+  background: var(--tds-blue-50);
+}
+
+.tds-data-table [data-table-align='center'] { justify-content: center; text-align: center; }
+.tds-data-table [data-table-align='right'] { justify-content: flex-end; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Ledger tables share a semantic column contract across monthly input, search
+ * results, and any future transaction list. Feature CSS must not resize these
+ * columns with nth-child selectors. */
+@media (min-width: 641px) {
+  .tds-ledger-table {
+    --ui-ledger-columns: var(--ui-ledger-column-date) var(--ui-ledger-column-state) var(--ui-ledger-column-type) var(--ui-ledger-column-behavior) var(--ui-ledger-column-category) var(--ui-ledger-column-subcategory) minmax(var(--ui-ledger-column-description-min), 1fr) var(--ui-ledger-column-amount) var(--ui-ledger-column-payment);
+    display: block;
+    width: 100%;
+    min-width: 1064px;
+  }
+
+  .tds-ledger-table thead,
+  .tds-ledger-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .tds-ledger-table thead > tr,
+  .tds-ledger-table tbody > tr {
+    display: grid;
+    width: 100%;
+    grid-template-columns: var(--ui-ledger-columns);
+  }
+
+  .tds-ledger-table .tds-table-cell {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .tds-ledger-table th.tds-table-cell { min-height: var(--ui-table-header-height); }
+  .tds-ledger-table td.tds-table-cell { min-height: var(--ui-table-row-min-height); font-size: var(--text-caption); }
+  .tds-ledger-table .tds-table-row { content-visibility: auto; contain-intrinsic-size: var(--ui-table-row-min-height); }
+  .tds-ledger-table [data-table-field='status'],
+  .tds-ledger-table [data-table-field='costBehavior'] { overflow: visible; }
+  .tds-ledger-table [data-table-field='status'] form,
+  .tds-ledger-table [data-table-field='costBehavior'] form { width: 100%; min-width: 0; }
+  .tds-ledger-table [data-table-field='amount'] { font-variant-numeric: tabular-nums; }
+  .tds-ledger-table .transaction-inline-select { height: var(--ui-table-control-height); min-height: var(--ui-table-control-height); padding-inline: 10px; }
 }
 
 .tds-title {
@@ -407,10 +524,6 @@ a.tds-chip {
   width: min(420px, calc(100vw - 32px));
   min-height: 52px;
   border-radius: 14px;
-}
-
-.table-surface {
-  overflow: clip;
 }
 
 /* A transaction amount is the one deliberate hierarchy exception: it remains
