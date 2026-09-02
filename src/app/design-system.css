@@ -308,9 +308,9 @@ a.tds-chip {
 
 .tds-chip[data-selected="true"],
 .tds-chip.is-selected {
-  border-color: var(--tds-blue-500);
-  background: var(--tds-blue-50);
-  color: var(--tds-blue-600);
+  border-color: var(--state-selected-border);
+  background: var(--state-selected-bg);
+  color: var(--state-selected-fg);
 }
 
 .status-select {
