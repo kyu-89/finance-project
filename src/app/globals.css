@@ -442,7 +442,7 @@ textarea {
 .home-card-heading p { color: var(--tds-grey-700); font-size: 14px; font-weight: 650; }
 .home-cash-card .home-card-heading p { color: rgb(255 255 255 / .68); }
 .home-flow-summary .home-card-heading p { color: rgb(255 255 255 / .68); }
-.home-card-heading strong { display: block; margin-top: 7px; font-size: var(--text-display); line-height: 1.18; letter-spacing: -.035em; font-variant-numeric: tabular-nums; }
+.home-card-heading strong { display: block; margin-top: var(--ui-space-2); font-size: var(--text-display); line-height: 1.18; letter-spacing: -.035em; font-variant-numeric: tabular-nums; }
 .home-card-heading a { flex: 0 0 auto; color: var(--tds-blue-600); font-size: 13px; font-weight: 700; }
 .home-cash-card .home-card-heading a { color: #8ec5ff; }
 .home-flow-summary .home-card-heading a { color: #8ec5ff; }
@@ -451,7 +451,7 @@ textarea {
 .home-asset-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 24px; padding-top: 20px; border-top: 1px solid rgb(49 130 246 / .13); }
 .home-asset-summary span { display: block; color: var(--tds-grey-500); font-size: 12px; }
 .home-asset-summary strong { display: block; margin-top: 5px; font-size: 14px; font-variant-numeric: tabular-nums; }
-.home-allocation-bar { display: flex; height: 10px; margin-top: 23px; overflow: hidden; border-radius: 999px; background: white; }
+.home-allocation-bar { display: flex; height: 10px; margin-top: var(--ui-space-6); overflow: hidden; border-radius: 999px; background: white; }
 .home-allocation-bar span { min-width: 2px; }
 .home-allocation-legend { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-top: 13px; }
 .home-allocation-legend > div { position: relative; min-width: 0; padding-left: 10px; }
@@ -459,7 +459,7 @@ textarea {
 .home-allocation-legend p { overflow: hidden; color: var(--tds-grey-500); font-size: var(--text-micro); text-overflow: ellipsis; white-space: nowrap; }
 .home-allocation-legend strong { display: block; margin-top: 2px; font-size: 12px; white-space: nowrap; }
 .home-cash-formula { margin-top: 9px; color: rgb(255 255 255 / .52); font-size: 12px; }
-.home-networth-tabs { display: flex; gap: 4px; margin-top: 22px; padding: 4px; border-radius: 12px; background: rgb(49 130 246 / .08); }
+.home-networth-tabs { display: flex; gap: 4px; margin-top: var(--ui-space-6); padding: 4px; border-radius: 12px; background: rgb(49 130 246 / .08); }
 .home-networth-tabs button { min-height: 34px; flex: 1 1 0; border-radius: 9px; color: var(--tds-grey-700); font-size: 12px; font-weight: 700; }
 .home-networth-tabs button.is-selected { background: var(--state-selected-bg); color: var(--state-selected-fg); }
 .home-networth-trend > p { margin-top: 16px; color: var(--tds-grey-600); font-size: 12px; }
@@ -473,7 +473,7 @@ textarea {
 .home-debt-track span { display: block; height: 100%; border-radius: inherit; background: var(--tds-red-500); }
 .home-debt-view p { margin-top: 14px; color: var(--tds-grey-600); font-size: 12px; line-height: 1.6; }
 .home-debt-view a { display: inline-block; margin-top: 14px; }
-.home-flow-list { display: grid; gap: 8px; margin-top: 22px; }
+.home-flow-list { display: grid; gap: 8px; margin-top: var(--ui-space-6); }
 .home-flow-list > div { display: flex; align-items: center; justify-content: space-between; min-height: 28px; }
 .home-flow-list span { color: rgb(255 255 255 / .7); font-size: 13px; }
 .home-flow-list strong { font-size: 14px; font-variant-numeric: tabular-nums; }
@@ -485,7 +485,7 @@ textarea {
 .home-flow-visual .is-income { background: #8ec5ff; }
 .home-flow-visual .is-expense { background: #ff8f95; }
 .home-flow-visual .is-wealth { background: #76dfad; }
-.home-insight { display: flex; gap: 7px; margin-top: 19px; padding-top: 16px; border-top: 1px solid rgb(255 255 255 / .12); font-size: 12px; }
+.home-insight { display: flex; gap: 7px; margin-top: var(--ui-space-5); padding-top: 16px; border-top: 1px solid rgb(255 255 255 / .12); font-size: 12px; }
 .home-insight span { color: rgb(255 255 255 / .58); }
 .home-section { display: flex; flex-direction: column; gap: 14px; }
 .home-section-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
@@ -517,7 +517,7 @@ textarea {
 .home-chart-legend .is-expense::before { background: #ff8f95; }
 .home-chart-legend .is-wealth::before { background: var(--tds-green-500); }
 .home-detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-.home-primary-tabs { margin-top: 22px; }
+.home-primary-tabs { margin-top: var(--ui-space-6); }
 .home-primary-tab-list { display: flex; gap: 4px; padding: 4px; border-radius: 14px; background: var(--tds-grey-100); }
 .home-primary-tab-list button { min-height: 44px; flex: 1 1 0; border-radius: 10px; color: var(--tds-grey-700); font-size: 13px; font-weight: 700; transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease; }
 .home-primary-tab-list button.is-selected { background: var(--state-selected-bg); color: var(--state-selected-fg); }
@@ -779,7 +779,7 @@ button:disabled { cursor: wait; transform: none !important; }
 @keyframes drawer-in { from { opacity: .5; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }
 @keyframes drawer-up { from { opacity: .5; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
 .home-analysis-grid { align-items: stretch; }
-.home-cost-split { display: grid; gap: 17px; margin-top: 22px; }
+.home-cost-split { display: grid; gap: 17px; margin-top: var(--ui-space-6); }
 .home-cost-row { display: grid; grid-template-columns: 76px minmax(0, 1fr) 50px; align-items: center; gap: 10px; }
 .home-cost-row > div:first-child { display: flex; flex-direction: column; gap: 2px; }
 .home-cost-row > div:first-child span, .home-budget-summary span { color: var(--tds-grey-500); font-size: 12px; }
@@ -789,8 +789,8 @@ button:disabled { cursor: wait; transform: none !important; }
 .home-cost-track .is-fixed { background: #7c9cf5; }
 .home-cost-track .is-variable { background: #ff9a9f; }
 .home-cost-row small { color: var(--tds-grey-700); font-size: 11px; text-align: right; }
-.home-analysis-note { margin-top: 18px; color: var(--tds-grey-500); font-size: 12px; }
-.home-budget-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 22px; }
+.home-analysis-note { margin-top: var(--ui-space-4); color: var(--tds-grey-500); font-size: 12px; }
+.home-budget-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: var(--ui-space-6); }
 .home-budget-summary strong { display: block; margin-top: 4px; font-size: 15px; font-variant-numeric: tabular-nums; }
 .home-budget-summary strong.is-negative { color: var(--tds-red-500); }
 .home-budget-track { height: 10px; margin-top: 20px; }

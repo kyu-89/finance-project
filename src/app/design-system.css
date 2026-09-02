@@ -23,6 +23,9 @@
   --ui-space-4: 16px;
   --ui-space-5: 20px;
   --ui-space-6: 24px;
+  --ui-space-7: 32px;
+  --ui-space-8: 40px;
+  --ui-space-9: 48px;
   --ui-focus-ring: 0 0 0 3px color-mix(in oklab, var(--tds-blue-500) 24%, transparent);
   --state-selected-bg: var(--tds-blue-50);
   --state-selected-fg: var(--tds-blue-600);
