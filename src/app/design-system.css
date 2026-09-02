@@ -1359,8 +1359,11 @@ input.quick-add-amount {
   .tds-ledger-table [data-table-field='amount'] {
     grid-row: 2;
     grid-column: 1;
+    overflow: hidden;
     font-weight: 700;
     font-size: var(--text-title-2);
+    text-overflow: ellipsis;
+    white-space: nowrap;
     font-variant-numeric: tabular-nums;
   }
   .tds-ledger-table [data-table-field='amount']::before { content: none; }
