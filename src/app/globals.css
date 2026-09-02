@@ -14,20 +14,17 @@
   --tds-white: oklch(1 0 0);
   --tds-red-500: oklch(0.628 0.218 22);
   --tds-green-500: oklch(0.493 0.143 154);
+  --tds-green-600: oklch(0.438 0.143 154);
+  --tds-red-600: oklch(0.558 0.218 22);
+  --tds-blue-700: oklch(0.462 0.176 258);
+  --tds-yellow-500: oklch(0.795 0.16 92);
+  --tds-yellow-50: oklch(0.97 0.03 92);
+  --tds-yellow-700: oklch(0.52 0.13 78);
   --background: var(--tds-grey-50);
   --foreground: var(--tds-grey-900);
   --tds-font: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
     "SF Pro Text", "Apple SD Gothic Neo", "Noto Sans KR", Roboto, "Helvetica Neue", Arial,
     sans-serif;
-  --ui-space-1: 4px;
-  --ui-space-2: 8px;
-  --ui-space-3: 12px;
-  --ui-space-4: 16px;
-  --ui-space-5: 20px;
-  --ui-space-6: 24px;
-  --ui-control-height: 48px;
-  --ui-control-radius: 12px;
-  --ui-surface-radius: 20px;
 }
 
 @theme inline {
