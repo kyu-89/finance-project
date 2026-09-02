@@ -130,7 +130,7 @@ th {
 .home-cash-card:hover,
 .home-flow-summary:hover {
   border-color: color-mix(in oklab, var(--tds-blue-500) 28%, var(--tds-grey-200));
-  box-shadow: 0 8px 24px rgb(13 25 43 / 0.06);
+  box-shadow: var(--ui-elevation-2);
 }
 
 .auth-shell {
