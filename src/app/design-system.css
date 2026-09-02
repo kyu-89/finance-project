@@ -360,6 +360,10 @@
   background: var(--tds-grey-100);
 }
 
+.tds-button-danger {
+  color: var(--color-negative);
+}
+
 .tds-button-ghost {
   display: inline-flex;
   min-height: var(--ui-control-height);
@@ -586,6 +590,48 @@ a.tds-chip {
 .tds-badge-positive { background: color-mix(in oklab, var(--tds-green-500) 16%, white); color: var(--tds-green-600); }
 .tds-badge-negative { background: color-mix(in oklab, var(--tds-red-500) 14%, white); color: var(--tds-red-600); }
 .tds-badge-warning { background: var(--tds-yellow-50); color: var(--tds-yellow-700); }
+
+.amount {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.amount-large { font-size: var(--amount-large); }
+.amount-medium { font-size: var(--amount-medium); }
+.amount-small { font-size: var(--amount-small); }
+
+.amount-income { color: var(--color-positive); }
+.amount-expense { color: var(--color-negative); }
+.amount-neutral { color: var(--color-text); }
+
+.tds-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ui-space-2);
+  padding: var(--ui-space-8) var(--ui-card-padding);
+  text-align: center;
+}
+
+.tds-empty-state-title {
+  font-size: var(--text-body-2);
+  font-weight: 650;
+  color: var(--color-text-secondary);
+}
+
+.tds-empty-state-description {
+  font-size: var(--text-caption);
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
+.tds-divider {
+  width: 100%;
+  height: 1px;
+  margin: 0;
+  border: none;
+  background: var(--color-border);
+}
 
 .status-select {
   width: 128px;
