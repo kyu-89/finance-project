@@ -4,6 +4,7 @@ import { useActionState } from 'react';
 import { updateTransactionStatusAction } from '@/actions/transaction-actions';
 import { addRecurringPausePeriodAction } from '@/actions/recurring-rule-actions';
 import { Button } from '@/components/Button';
+import { InlineActionSelect } from '@/components/InlineActionSelect';
 import { INITIAL_ACTION_STATE } from '@/lib/action-result';
 import { monthRangeFromSeoulDateString } from '@/lib/date';
 import type { Transaction } from '@/lib/transactions';
@@ -14,6 +15,9 @@ export const TRANSACTION_STATUS_LABEL: Record<Transaction['status'], string> = {
   skipped: '이번 달 제외',
   cancelled: '취소',
 };
+
+const TRANSACTION_STATUS_OPTIONS = (Object.entries(TRANSACTION_STATUS_LABEL) as Array<[Transaction['status'], string]>)
+  .map(([value, label]) => ({ value, label }));
 
 // planned 상태이면서 정기거래 규칙에서 생성된 행에 한해서만 [확정] [이번달 제외] 버튼 2개를
 // 보여준다(§9). 그 외(취소 등 드문 상태, 또는 규칙 없이 수동으로 planned가 된 행)는 기존
@@ -69,34 +73,20 @@ function PlannedRowActions({ transaction }: { transaction: Transaction & { recur
 }
 
 export function TransactionStatusEditor({ transaction }: { transaction: Transaction }) {
-  const [state, formAction, pending] = useActionState(
-    updateTransactionStatusAction,
-    INITIAL_ACTION_STATE,
-  );
-
   if (transaction.status === 'planned' && transaction.recurringRuleId) {
     return <PlannedRowActions transaction={{ ...transaction, recurringRuleId: transaction.recurringRuleId }} />;
   }
 
-  return (
-    <form action={formAction} className="transaction-status-editor transaction-inline-editor">
-      <input type="hidden" name="id" value={transaction.id} />
-      <select
-        name="status"
-        defaultValue={transaction.status}
-        aria-label={`${transaction.description} 상태`}
-        disabled={pending}
-        aria-busy={pending}
-        onChange={(event) => event.currentTarget.form?.requestSubmit()}
-        className="tds-inline-select transaction-inline-select"
-      >
-        {Object.entries(TRANSACTION_STATUS_LABEL).map(([value, label]) => (
-          <option key={value} value={value}>{label}</option>
-        ))}
-      </select>
-      {pending && <span className="transaction-status-feedback" role="status">저장 중</span>}
-      {state.ok === false && <span role="alert" className="transaction-status-feedback is-error">{state.message}</span>}
-      {state.ok === true && <span role="status" className="transaction-status-feedback">저장됨</span>}
-    </form>
-  );
+  return <InlineActionSelect
+    action={updateTransactionStatusAction}
+    id={transaction.id}
+    label={`${transaction.description} 상태`}
+    name="status"
+    value={transaction.status}
+    options={TRANSACTION_STATUS_OPTIONS}
+    hiddenFields={{ id: transaction.id }}
+    className="transaction-status-editor transaction-inline-editor"
+    selectClassName="tds-inline-select transaction-inline-select"
+    feedback="compact"
+  />;
 }

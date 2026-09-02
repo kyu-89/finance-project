@@ -1,12 +1,12 @@
 'use client';
 
-import { useActionState, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { createColumnHelper, tableFeatures, useTable } from '@tanstack/react-table';
 import {
   updateCostBehaviorAction,
 } from '@/actions/transaction-actions';
 import { AddDrawer } from '@/components/Drawer';
-import { INITIAL_ACTION_STATE } from '@/lib/action-result';
+import { InlineActionSelect } from '@/components/InlineActionSelect';
 import type { Transaction } from '@/lib/transactions';
 import type { CategoryWithSubcategories } from '@/lib/categories';
 import type { PaymentMethod } from '@/lib/payment-methods';
@@ -21,44 +21,26 @@ const features = tableFeatures({});
 const columnHelper = createColumnHelper<typeof features, Transaction>();
 const TRANSACTION_TYPE_LABEL: Record<Transaction['transactionType'], string> = { income: '수입', expense: '지출', saving: '저축', investment: '투자', debt_principal: '대출원금', finance_cost: '금융비용', transfer: '이체', asset_adjustment: '자산조정', refund: '환불' };
 const COST_BEHAVIOR_LABEL: Record<NonNullable<Transaction['costBehavior']>, string> = { fixed: '고정비', variable: '변동비' };
+const COST_BEHAVIOR_OPTIONS = [
+  { value: '', label: '미지정' },
+  { value: 'fixed', label: COST_BEHAVIOR_LABEL.fixed },
+  { value: 'variable', label: COST_BEHAVIOR_LABEL.variable },
+] as const;
 
 
 function CostBehaviorEditor({ transaction }: { transaction: Transaction }) {
-  const [state, formAction, pending] = useActionState(
-    updateCostBehaviorAction,
-    INITIAL_ACTION_STATE,
-  );
-
-  return (
-    <form action={formAction} className="transaction-inline-editor">
-      <input type="hidden" name="id" value={transaction.id} />
-      <div className="min-w-0">
-        <select
-          name="costBehavior"
-          defaultValue={transaction.costBehavior ?? ''}
-          aria-label={`${transaction.description} 비용성격`}
-          onChange={(event) => event.currentTarget.form?.requestSubmit()}
-          disabled={pending}
-          className="tds-inline-select transaction-inline-select"
-        >
-          <option value="">미지정</option>
-          <option value="fixed">{COST_BEHAVIOR_LABEL.fixed}</option>
-          <option value="variable">{COST_BEHAVIOR_LABEL.variable}</option>
-        </select>
-        {pending && <span className="transaction-status-feedback" role="status">저장 중</span>}
-      </div>
-      {state.ok === false && (
-        <span role="alert" className="transaction-status-feedback is-error">
-          {state.message}
-        </span>
-      )}
-      {state.ok === true && !pending && (
-        <span role="status" className="transaction-status-feedback">
-          저장됨
-        </span>
-      )}
-    </form>
-  );
+  return <InlineActionSelect
+    action={updateCostBehaviorAction}
+    id={transaction.id}
+    label={`${transaction.description} 비용성격`}
+    name="costBehavior"
+    value={transaction.costBehavior ?? ''}
+    options={COST_BEHAVIOR_OPTIONS}
+    hiddenFields={{ id: transaction.id }}
+    className="transaction-inline-editor"
+    selectClassName="tds-inline-select transaction-inline-select"
+    feedback="compact"
+  />;
 }
 
 // Column order is a shared rule, not a per-screen choice: 날짜 · 유형 · 대분류 ·

@@ -1,9 +1,5 @@
-'use client';
-
-import { useActionState } from 'react';
-import { FormMessage } from '@/components/FormMessage';
-import { INITIAL_ACTION_STATE } from '@/lib/action-result';
 import { updateRecurringRuleStatusAction } from '@/actions/recurring-rule-actions';
+import { InlineActionSelect } from '@/components/InlineActionSelect';
 import type { RecurringRuleStatus } from '@/lib/recurring-rules';
 
 const LABEL: Record<RecurringRuleStatus, string> = {
@@ -12,24 +8,18 @@ const LABEL: Record<RecurringRuleStatus, string> = {
   ended: '종료',
 };
 
-export function RecurringRuleStatusSelect({ id, status }: { id: string; status: RecurringRuleStatus }) {
-  const [state, action, pending] = useActionState(updateRecurringRuleStatusAction, INITIAL_ACTION_STATE);
+const OPTIONS = (Object.entries(LABEL) as Array<[RecurringRuleStatus, string]>)
+  .map(([value, label]) => ({ value, label }));
 
-  return (
-    <form action={action} className="tds-inline-status-select">
-      <input type="hidden" name="id" value={id} />
-      <label className="sr-only" htmlFor={`recurring-status-${id}`}>반복 항목 상태</label>
-      <select
-        id={`recurring-status-${id}`}
-        name="status"
-        defaultValue={status}
-        disabled={pending || status === 'ended'}
-        onChange={(event) => event.currentTarget.form?.requestSubmit()}
-        className="tds-select disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {(Object.keys(LABEL) as RecurringRuleStatus[]).map((value) => <option key={value} value={value}>{LABEL[value]}</option>)}
-      </select>
-      <FormMessage result={state} />
-    </form>
-  );
+export function RecurringRuleStatusSelect({ id, status }: { id: string; status: RecurringRuleStatus }) {
+  return <InlineActionSelect
+    action={updateRecurringRuleStatusAction}
+    id={id}
+    label="반복 항목 상태"
+    name="status"
+    value={status}
+    options={OPTIONS}
+    hiddenFields={{ id }}
+    disabled={status === 'ended'}
+  />;
 }
