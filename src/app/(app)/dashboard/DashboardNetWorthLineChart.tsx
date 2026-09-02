@@ -1,10 +1,40 @@
 'use client';
 
-const won = new Intl.NumberFormat('ko-KR');
-const money = (value: number) => `${won.format(Math.round(value))}원`;
+import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { ChartTooltip, compactAxisValue } from '@/components/ChartCard';
+
+/* §7 item 7 / §8 — the asset trend, same data and props as the hand-drawn SVG
+ * this replaces (rows = month + value, optional target line), now a single
+ * recharts line in the asset color. */
+
+type Row = { month: string; label: string; value: number };
+
+function NetWorthTooltip({ active, payload }: { active?: boolean; payload?: Array<{ payload?: Row }> }) {
+  const row = payload?.[0]?.payload;
+  if (!active || !row) return null;
+  return (
+    <ChartTooltip
+      label={`${row.month.slice(0, 4)}년 ${Number(row.month.slice(5, 7))}월`}
+      rows={[{ label: '자산', value: row.value, type: 'neutral' }]}
+    />
+  );
+}
 
 export function DashboardNetWorthLineChart({ rows, target }: { rows: Array<{ month: string; value: number }>; target?: number }) {
-  const width = 760; const height = 250; const left = 48; const right = 14; const top = 22; const bottom = 36; const innerWidth = width - left - right; const innerHeight = height - top - bottom;
-  const values = rows.map((row) => row.value); const min = Math.min(0, ...values); const max = Math.max(1, ...(target == null ? [] : [target]), ...values); const range = Math.max(1, max - min); const x = (index: number) => left + (rows.length <= 1 ? innerWidth / 2 : index / (rows.length - 1) * innerWidth); const y = (value: number) => top + (max - value) / range * innerHeight; const points = rows.map((row, index) => `${x(index)},${y(row.value)}`).join(' ');
-  return <div className="home-networth-line-chart" role="img" aria-label="월별 순자산 변동 추이"><svg viewBox={`0 0 ${width} ${height}`} className="home-line-chart-svg" preserveAspectRatio="none"><line x1={left} x2={width - right} y1={y(0)} y2={y(0)} className="home-line-axis" /><line x1={left} x2={width - right} y1={top} y2={top} className="home-line-grid" />{target != null && <><line x1={left} x2={width - right} y1={y(target)} y2={y(target)} className="home-line-target" /><text x={width - right} y={y(target) - 6} textAnchor="end" className="home-line-target-label">목표 {money(target)}</text></>}<polyline points={points} className="home-networth-line" />{rows.map((row, index) => <g key={row.month}><circle cx={x(index)} cy={y(row.value)} r="4" className="home-networth-point"><title>{`${row.month.slice(0, 4)}년 ${Number(row.month.slice(5, 7))}월 · 순자산 ${money(row.value)}`}</title></circle><text x={x(index)} y={height - 12} textAnchor="middle" className="home-line-label">{row.month.slice(5, 7)}월</text></g>)}</svg><div className="home-line-chart-meta"><span>월별 포인트에 마우스를 올리면 수치를 확인할 수 있어요.</span><strong>{rows.at(-1) ? money(rows.at(-1)!.value) : '-'}</strong></div></div>;
+  const data: Row[] = rows.map((row) => ({ month: row.month, label: `${Number(row.month.slice(5, 7))}월`, value: row.value }));
+
+  return (
+    <div className="tds-chart-card-body">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+          <CartesianGrid vertical={false} />
+          <XAxis dataKey="label" tickLine={false} axisLine={false} minTickGap={4} />
+          <YAxis width={52} tickCount={4} tickLine={false} axisLine={false} tickFormatter={compactAxisValue} />
+          <Tooltip content={<NetWorthTooltip />} />
+          {target != null && <ReferenceLine className="tds-chart-target" y={target} ifOverflow="extendDomain" />}
+          <Line className="tds-chart-series-asset" type="monotone" dataKey="value" strokeWidth={2} dot={false} activeDot={{ r: 4, strokeWidth: 2 }} isAnimationActive={false} />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
 }
