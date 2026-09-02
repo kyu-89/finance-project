@@ -342,6 +342,26 @@ a.tds-chip {
   color: var(--state-selected-fg);
 }
 
+.tds-badge {
+  display: inline-flex;
+  min-height: 22px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: 6px;
+  padding: 0 8px;
+  font-size: var(--text-micro);
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.tds-badge-neutral { background: var(--tds-grey-100); color: var(--tds-grey-700); }
+.tds-badge-info { background: var(--tds-blue-50); color: var(--tds-blue-600); }
+.tds-badge-positive { background: color-mix(in oklab, var(--tds-green-500) 16%, white); color: var(--tds-green-600); }
+.tds-badge-negative { background: color-mix(in oklab, var(--tds-red-500) 14%, white); color: var(--tds-red-600); }
+.tds-badge-warning { background: var(--tds-yellow-50); color: var(--tds-yellow-700); }
+
 .status-select {
   width: 128px;
   min-width: 128px;

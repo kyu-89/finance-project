@@ -200,7 +200,7 @@ textarea {
 .transaction-inline-editor { position: relative; display: grid; width: 100%; min-width: 0; }
 .transaction-inline-select { box-sizing: border-box; display: block; width: 100%; height: 40px; min-height: 40px; padding: 0 8px; font-size: 13px; line-height: 1.2; }
 .transaction-status-editor select { min-height: 40px; }
-.transaction-status-feedback { flex: 0 0 auto; color: var(--tds-green-500); font-size: 11px; white-space: nowrap; }
+.transaction-status-feedback { flex: 0 0 auto; color: var(--tds-green-600); font-size: 11px; white-space: nowrap; }
 .transaction-status-feedback.is-error { color: var(--tds-red-500); }
 .monthly-report-lead { display: grid; gap: 6px; padding: 20px; border: 1px solid var(--tds-grey-200); border-radius: 18px; background: var(--tds-blue-50); }
 .monthly-report-lead h2 { max-width: 760px; font-size: var(--text-title-2); line-height: 1.45; letter-spacing: -.03em; }
@@ -532,9 +532,9 @@ textarea {
 .home-unified-detail-header { margin-top: 16px; padding: 10px 0; border-bottom: 1px solid var(--tds-grey-200); color: var(--tds-grey-500); font-size: 11px; font-weight: 700; }
 .home-unified-detail-trigger { width: 100%; padding: 12px 0; background: transparent; text-align: left; font-size: 12px; }
 .home-unified-detail-trigger:hover { background: var(--tds-grey-50); }
-.home-flow-kind { font-size: 11px; font-weight: 800; }
-.home-flow-kind.is-income { color: var(--tds-blue-600); }
-.home-flow-kind.is-expense { color: var(--tds-red-500); }
+.home-flow-kind { display: inline-flex; min-height: 22px; align-items: center; border-radius: 6px; padding: 0 8px; font-size: var(--text-micro); font-weight: 800; }
+.home-flow-kind.is-income { background: var(--tds-blue-50); color: var(--tds-blue-600); }
+.home-flow-kind.is-expense { background: color-mix(in oklab, var(--tds-red-500) 14%, white); color: var(--tds-red-600); }
 .home-unified-detail-trigger > span:nth-child(2) { min-width: 0; }
 .home-unified-detail-trigger > span:nth-child(2) i { display: block; height: 5px; margin-top: 6px; overflow: hidden; border-radius: 99px; background: var(--tds-grey-100); }
 .home-unified-detail-trigger > span:nth-child(2) em { display: block; height: 100%; border-radius: inherit; background: var(--tds-blue-400, #60a5fa); }
