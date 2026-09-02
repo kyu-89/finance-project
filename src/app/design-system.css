@@ -637,7 +637,7 @@ a.tds-chip {
   flex-direction: column;
   align-items: center;
   gap: var(--ui-space-2);
-  padding: var(--ui-space-8) var(--ui-card-padding);
+  padding: var(--ui-space-5) var(--ui-card-padding);
   text-align: center;
 }
 
@@ -1157,6 +1157,16 @@ input.quick-add-amount {
 }
 
 @media (max-width: 767px) {
+  /* Density pass (Phase 10 QA): the reference mockup's mobile cards read far
+   * tighter than --ui-card-padding's 20px produces at this width. Redefining
+   * the token here (rather than patching each consumer) compacts every
+   * Phase 3-7 component that reads it — chart/section/asset cards, empty
+   * states — in one place, matching the "common token rule, no per-screen
+   * margin patch" constraint the rest of this redesign has followed. */
+  :root {
+    --ui-card-padding: 16px;
+  }
+
   .tds-page {
     width: 100%;
     max-width: none;
@@ -1242,6 +1252,44 @@ input.quick-add-amount {
   input.quick-add-amount {
     min-height: 60px;
     font-size: 26px;
+  }
+}
+
+/* The 이번 달 요약 StatCard row (§7 item 1): auto-fit's 200px minmax collapses
+ * to a single column below ~430px, stacking 수입/지출/잔액 into three full-width
+ * rows and pushing everything else down a full screen — the reference mockup
+ * keeps these three comparable at a glance in one row. Force 3 columns and
+ * compact the card's own type scale to fit. */
+@media (max-width: 640px) {
+  .tds-summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--ui-space-2);
+  }
+
+  .tds-summary-grid .tds-stat-card {
+    gap: 2px;
+    padding: var(--ui-space-3);
+  }
+
+  .tds-summary-grid .tds-stat-card-label {
+    overflow: hidden;
+    font-size: var(--text-micro);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .tds-summary-grid .tds-stat-card-value {
+    overflow: hidden;
+    font-size: var(--text-title-3);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* A percentage-breakdown meta line ("소비성 68% · 저축·투자·상환 32%") has no
+   * room to stay legible in a ~110px column — truncated it reads as noise.
+   * The reference mockup's mobile summary row shows label + value only. */
+  .tds-summary-grid .tds-stat-card-meta {
+    display: none;
   }
 }
 
