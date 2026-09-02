@@ -4,7 +4,7 @@
 
 ## 0. 한 줄 요약
 
-**12개 태스크 전부 구현 + 개별 리뷰 완료.** 남은 건 마지막 "전체 브랜치 통합 리뷰" 결과 확인과, 거기서 나온 지적 처리뿐이다. 브랜치: `design-system-web` (현재 체크아웃됨). 새로 만들 작업은 없다 — 이미 끝난 작업의 마무리만 남았다.
+**12개 태스크 전부 구현 + 개별 리뷰 완료, 최종 전체 브랜치 리뷰도 완료.** 리뷰 결과는 "Ready to merge — With fixes" — Critical 1건 + Important 7건이 아직 수정 안 된 채로 남아있다. 브랜치: `design-system-web` (현재 체크아웃됨). **새 작업/새 태스크는 없다. 5.1절의 fix wave 1회 + scoped re-review 1회만 하면 끝난다.**
 
 ## 1. 문서 위치 (전부 이 브랜치에 커밋되어 있음)
 
@@ -94,20 +94,34 @@ Task 1 담당 subagent가 계획서 지시대로 `git add src/app/design-system.
 
 ## 5. 남은 작업
 
-### 5.1 최우선 — 최종 전체 브랜치 리뷰 확인
+### 5.1 최우선 — 최종 전체 브랜치 리뷰 결과 처리 (리뷰는 완료됨, 수정은 아직 안 함)
 
-세션 종료 시점에 **최종 리뷰(Opus 모델, subagent)가 백그라운드에서 실행 중**이었다. 이 리뷰는 12개 태스크의 개별 리뷰에서는 안 보였던 "전체 diff 관점" 이슈(토큰 이름 일관성, 파일 간 경계, 문서-코드 불일치 등)를 잡기 위한 것이다.
+**최종 리뷰(Opus)가 완료됐다.** 결과: **"Ready to merge — With fixes."** 전체 리포트는 `.superpowers/sdd/2026-09-02-web-design-system/progress.md` 맨 아래("Final whole-branch review: complete" 항목)에 요약돼 있고, 원본 전체 텍스트는 이 세션의 대화 로그에만 있다(파일로 저장 안 해뒀음 — 아래 요약이 실질적으로 전부다). **아직 아무 수정도 하지 않았다. Codex가 이어서 fix를 진행해야 한다.**
 
-**Codex가 할 일:**
-1. 이 리뷰 subagent가 완료됐는지 확인한다(세션이 끊기면서 결과를 못 받았을 가능성이 높다). 완료 결과가 없으면, `subagent-driven-development` 스킬의 "Final Review" 절차대로 **다시 한 번 최종 리뷰를 돌린다.**
-2. 리뷰용 diff 파일은 이미 만들어져 있다: `.superpowers/sdd/2026-09-02-web-design-system/final-review-d98987e..4c6cf25.diff` (아직 유효함 — 그 이후 이 계획 관련 커밋은 없었음). 이 파일을 그대로 재사용해도 되고, 최신 상태 확인을 위해 새로 만들어도 된다:
-   ```bash
-   git diff -U10 d98987e..HEAD -- src/app/design-system.css src/app/globals.css src/components/nav/AppShell.tsx "src/app/(app)/dashboard/page.tsx" "src/app/(app)/dashboard/DashboardRiskOverview.tsx" docs/DESIGN_SYSTEM.md
-   ```
-   (반드시 경로를 지정할 것 — 4절의 무관한 커밋 `a90228f`가 범위 안에 끼어 있다.)
-3. 리뷰 프롬프트는 `.claude/skills/requesting-code-review/code-reviewer.md` 템플릿 + 아래 "이미 알려진 Minor 항목"을 triage 대상으로 전달한다(구체적 프롬프트 예시는 원장 파일 맨 아래, 또는 이 세션이 마지막으로 던진 프롬프트를 그대로 재사용해도 됨 — 원장에 전체 맥락이 있음).
-4. 리뷰에서 Critical/Important가 나오면: **fix 1회 dispatch + scoped re-review 1회**만 진행한다(2차 fix 라운드 없음 — `subagent-driven-development` 스킬 규칙). 잔여 이슈는 사용자에게 최종 보고.
-5. 리뷰가 깨끗하면(또는 fix까지 끝나면): 이 계획의 워크스페이스(`.superpowers/sdd/2026-09-02-web-design-system/`)를 삭제하고(`rm -rf`), `finishing-a-development-branch` 스킬로 브랜치 통합 방법(merge/PR 등)을 사용자와 결정한다.
+**Critical (반드시 고칠 것) — 1건:**
+- 회색 트랙 위 세그먼트 컨트롤 3곳에서 통일된 선택 상태가 거의 안 보임: `.home-primary-tab-list button.is-selected`(`globals.css:531`), `.home-explorer-tabs button.is-selected`(`:666`), `.monthly-workspace-tabs button[data-selected='true']`(`:1030`). 트랙 배경(`--tds-grey-100`)과 선택 pill 배경(`--tds-blue-50`)의 명도차가 거의 없음(ΔL≈0.008). 이 계획의 핵심 결정("선택 상태 전부 블루로 통일")이 대시보드 메인 탭, explorer 탭, 월간 워크스페이스 탭에서 실질적으로 실패한 상태.
+  - **수정안**: 선택된 pill에 `box-shadow: inset 0 0 0 1px var(--state-selected-border);` 추가하거나, 위 3개 트랙의 배경을 `--tds-grey-100` → `--tds-white`/`--tds-grey-50`로 변경. (리뷰어는 후자를 권장 — 스펙의 "블루만" 규칙을 그대로 유지하면서 컨테이너만 바꾸는 방식.)
+
+**Important (고쳐야 함) — 7건:**
+1. `--tds-red-400`(`globals.css:676`, `.home-monthly-spending-track span`)이 어디에도 정의 안 됨 → 실제로 투명하게 렌더링되어 대시보드 지출 탐색기 막대가 안 보임. Task 3이 놓친 것. `--tds-grey-600`(14곳)·`--tds-grey-800`(1곳)도 미정의 — `color`라 상속되어 조용히 잘못된 색으로 보임. `globals.css:15` 근처에 `--tds-red-400`, `--tds-grey-600: oklch(0.552 0.024 253)`, `--tds-grey-800: oklch(0.34 0.03 254)` 추가 필요.
+2. Task 1/3/8에서 정의한 토큰 9개가 Task 12 시점까지 아무 데서도 안 쓰임: `--text-body-1`, `--chart-target`(스펙 위반 — `globals.css:563` `.home-line-target`은 여전히 정의 안 된 `--tds-blue-300` 폴백 하드코딩 중, `stroke: var(--chart-target);`로 교체 필요), `--ui-space-7/8/9`(Task 8의 존재 이유인데 실제 적용 안 됨 — 적용하거나 삭제 결정 필요), `--ui-elevation-0/1`, `--bp-md`/`--bp-lg`(CSS 커스텀 프로퍼티는 애초에 `@media` 조건에 못 쓰므로 구조적으로 죽은 토큰 — 삭제 권장).
+3. 이번에 정리한 셀렉터의 약 40%가 `src/` 어디에서도 JSX로 안 쓰이는 죽은 CSS(`home-flow-cards`, `home-networth-tabs`, `home-filter-chip`, `home-chart-legend`, `home-flow-trend-*` 전체 등). 계획이 렌더링되는 실제 사용처가 아니라 CSS 파일 텍스트 기준으로 대상 목록을 만들었기 때문. 여러 태스크의 변경이 사실상 화면에 아무 영향 없는 no-op이었음. → 별도 후속 작업으로 죽은 CSS 삭제 필요(이번 fix wave에서는 하지 말 것, 범위 분리).
+4. `font-size: 12px` 선언 49개가 "8단 스케일" 스윕에서 살아남음(12px는 스케일에 없는 값). Task 2의 검증 grep이 애초에 12px를 못 잡는 패턴이었음. → 9번째 단계(`--text-caption-2: 12px`)를 추가할지, 스케일을 "새 화면 한정" 규칙으로 문서화만 할지 결정 필요.
+5. 스펙이 명시한 hex `#76dfad`/`#8ec5ff`가 토큰화 안 됨(`#ff8f95`만 처리됨). `src/app/(app)/dashboard/page.tsx:128`에 인라인 hex 차트 색상이 TSX 안에 그대로 있음(Task 11은 `globals.css`만 봤음).
+6. `docs/DESIGN_SYSTEM.md` 자체 모순: 옛 "tds-chip: 정보 배지는 30px" 문장과 새 "tds-badge/tds-chip 역할 분리" 문장이 3줄 간격으로 공존, 옛 "hover는 색상+그림자만" 문장이 새 hover 분리 규칙(카드=elevation/컨트롤=배경만)과 모순. `tds-page-header`/`tds-eyebrow`/`tds-page-subtitle`, auto-fit 그리드 규칙, `--state-*`/`--ui-elevation-*`/`--chart-*` 토큰이 문서에 전혀 언급 안 됨. 레이아웃 표의 "20~28px" 여백 행도 낡음(현재 `clamp(20px, 2vw, 40px)`).
+
+**Minor (참고, 상세는 원장 참고) — 6건**: `.form-field`가 두 파일에 중복 정의(하나는 죽은 코드), `.home-flow-kind`가 `tds-badge` 변형 2개를 손으로 재구현(사용하면 되는데), elevation 토큰군이 rgb/oklch 표기 혼용, 토큰 접두사 관례(`--tds-`/`--ui-`/`--text-`/`--state-`/`--chart-` 등)가 완전히 통일되진 않음(단, 실제 충돌 없음 확인됨), 모바일 미디어쿼리 안에 82px/84px 토스트 위치 잔여 불일치(범위 밖이라 방치), 문서의 weight 범위 표기가 스펙의 단일 weight와 다르고 새로 추가된 3줄만 문체(한다체/합니다체)가 다름.
+
+**보류 항목 6개 재심사 결과**: 5개는 "그대로 보류" 확정(판단 타당함). 단 **"tds-badge-* 5개 변형이 아직 아무데도 안 쓰임"은 "머지 전에 고치기"로 격상** — `.home-flow-kind`가 실제로 이 변형들을 손으로 복제하고 있어서, `src/app/(app)/dashboard/DashboardMonthlyDetail.tsx:19` 근처에서 className을 `home-flow-kind` → `tds-badge tds-badge-info`/`tds-badge-negative`로 바꾸고 `globals.css`의 중복 CSS 3줄을 지우면 저렴하게 해결됨.
+
+**리뷰 프로세스 참고사항**: 리뷰용 diff 경로 목록(`design-system.css`/`globals.css`/`AppShell.tsx`/`dashboard page.tsx`/`DashboardRiskOverview.tsx`/`DESIGN_SYSTEM.md`)이 Task 6의 실제 JSX 변경 파일(`DashboardAssetOverview.tsx` 등 5개)을 빠뜨려서 리뷰어가 직접 트리를 읽어 확인해야 했다. 이런 종류의 계획에서 리뷰 패키지를 만들 때는 계획 문서의 파일 목록이 아니라 `git log --name-only`로 범위를 훑어서 경로를 뽑아낼 것.
+
+**Codex가 할 일 (순서대로):**
+1. **fix subagent 1회**를 위 Critical 1건 + Important 7건 + 격상된 Minor(badge 미사용) 1건 전체를 한 번에 담아서 dispatch한다 (건별로 나누지 말 것 — `subagent-driven-development` 스킬 규칙: "dispatch ONE fix subagent with the complete findings list"). 문서(#6, `DESIGN_SYSTEM.md`) 수정도 같은 wave에 포함하되, "고치거나 명시적으로 문서화" 방식 중 택1해서 처리(예: 12px 스케일 갭은 토큰 추가 대신 "이 스케일은 신규 화면 기준" 문장을 doc에 추가하는 것도 유효한 해결책).
+2. fix가 끝나면 `scripts/review-package`로 fix 범위만 스코프한 diff를 만들어 **scoped re-review 1회**만 진행한다.
+3. re-review에서 남는 이슈는 "1차 fix wave 이후 잔여 이슈는 2차 fix wave 없이 사용자에게 보고"하는 규칙대로 처리 — park하거나 판단(ruling)만 하고 더 반복하지 않는다.
+4. 죽은 CSS 삭제(Important #3)는 **이번 fix wave에 포함하지 말고 별도 후속 작업으로 남긴다** — 리뷰어의 명시적 권고.
+5. 전부 끝나면 이 계획의 워크스페이스(`.superpowers/sdd/2026-09-02-web-design-system/`)를 삭제하고(`rm -rf`), `finishing-a-development-branch` 스킬로 브랜치 통합 방법을 사용자와 결정한다.
 
 ### 5.2 이미 원장에 기록된, 보류 중인 Minor 항목들 (최종 리뷰에서 triage됨)
 
