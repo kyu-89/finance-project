@@ -471,6 +471,13 @@ textarea {
 .home-primary-tab-list button.is-selected { background: var(--state-selected-bg); color: var(--state-selected-fg); box-shadow: inset 0 0 0 1px var(--state-selected-border); }
 .home-primary-panel { display: grid; min-width: 0; gap: 16px; margin-top: 16px; }
 .home-primary-panel > section { margin: 0; }
+/* Phase 10 — 데스크톱 폭에서 "월별 상세" 탭 콘텐츠를 2컬럼으로 배치한다
+ * (요약/리스트류는 좌측, 차트류는 우측). 모바일/태블릿은 기본값(1열)을 유지. */
+.dashboard-monthly-columns { display: grid; gap: var(--ui-space-4); min-width: 0; }
+.dashboard-monthly-column { display: grid; min-width: 0; gap: var(--ui-space-4); align-content: start; }
+@media (min-width: 1024px) {
+  .dashboard-monthly-columns { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); align-items: start; }
+}
 .home-html-asset-view { display: grid; gap: 16px; }
 .home-html-flow-view { display: grid; gap: 16px; }
 .home-unified-detail { min-width: 0; }

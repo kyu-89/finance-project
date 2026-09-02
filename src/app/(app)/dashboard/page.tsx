@@ -74,12 +74,21 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         <DashboardAssetOverview totalAssets={netWorth.totalAssets} totalDebt={netWorth.totalDebt} netWorth={netWorth.netWorth} debtRatio={debtRatio} assetRows={assetRows} history={history.map((item) => ({ month: item.snapshotMonth, value: item.totalAssets }))} liquidCash={netWorth.cashAssets} monthlyConsumption={current.consumption} realAssets={realAssets.filter((item) => item.status === 'active').map((item) => ({ id: item.id, assetName: item.assetName, currentValue: item.currentValue }))} />
       </>}
       monthly={<>
-        {/* §7 items 2 → 6. 드릴다운(월별 상세)은 요약을 모두 읽은 뒤 마지막에 온다. */}
-        <BudgetMeter total={summary.budgetTotal} actual={summary.budgetActual} />
-        <DashboardCashflowOverview monthly={monthlyTrend} />
-        <DashboardCategoryBarChart rows={categoryRows} />
-        <PlannedTransactions plannedCount={summary.plannedCount} />
-        <RecentTransactions rows={summary.recent} />
+        {/* §7 items 2 → 6, §16 웹 레퍼런스: 데스크톱 폭에서는 요약/리스트류(좌)와
+         * 차트류(우)를 2컬럼으로 나란히 배치해 넓은 화면을 활용한다. 모바일/태블릿
+         * (< 1024px)에서는 .dashboard-monthly-columns가 1열로 접혀 순서가 지금과 동일하다. */}
+        <div className="dashboard-monthly-columns">
+          <div className="dashboard-monthly-column">
+            <BudgetMeter total={summary.budgetTotal} actual={summary.budgetActual} />
+            <PlannedTransactions plannedCount={summary.plannedCount} />
+            <RecentTransactions rows={summary.recent} />
+          </div>
+          <div className="dashboard-monthly-column">
+            <DashboardCashflowOverview monthly={monthlyTrend} />
+            <DashboardCategoryBarChart rows={categoryRows} />
+          </div>
+        </div>
+        {/* 드릴다운은 이미 내부에 여러 섹션을 가진 넓은 컴포넌트라 컬럼에 넣지 않고 전체 폭 유지. */}
         <DashboardMonthlyDetail selectedMonth={month} monthly={monthlyTrend} incomeMonthly={incomeMonthlyDetail} incomeCurrent={incomeCurrentDetail} expenseMonthly={monthlyExpenseDetail} expenseCurrent={categoryRows} expensePayments={paymentRows} transactionDetails={transactionDetails} />
       </>}
       debt={<DashboardDebtOverview totalDebt={netWorth.totalDebt} debtRatio={debtRatio} principal={current.debtPrincipal} financeCost={current.financeCost} annual={annualDebtRows} />}
