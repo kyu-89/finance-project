@@ -170,8 +170,6 @@ type MaterializationRule = {
   category_id: string | null;
   subcategory_id: string | null;
   payment_method_id: string | null;
-  payer_member_id: string | null;
-  beneficiary_member_id: string | null;
   description: string;
   memo: string | null;
   include_in_budget: boolean;
@@ -187,7 +185,7 @@ export async function materializeRecurringRulesForRange(
   const supabase = await createClient();
   const { data: rawRules, error: rulesError } = await supabase
     .from('recurring_rules')
-    .select('id, household_id, start_date, end_date, frequency, interval_count, day_of_month, default_amount, transaction_type, flow_class, cost_behavior, category_id, subcategory_id, payment_method_id, payer_member_id, beneficiary_member_id, description, memo, include_in_budget, source_type, source_id')
+    .select('id, household_id, start_date, end_date, frequency, interval_count, day_of_month, default_amount, transaction_type, flow_class, cost_behavior, category_id, subcategory_id, payment_method_id, description, memo, include_in_budget, source_type, source_id')
     .eq('household_id', householdId)
     .eq('status', 'active')
     .eq('auto_generate', true)
@@ -290,8 +288,6 @@ export async function materializeRecurringRulesForRange(
       category_id: rule.category_id,
       subcategory_id: rule.subcategory_id,
       payment_method_id: rule.payment_method_id,
-      payer_member_id: rule.payer_member_id,
-      beneficiary_member_id: rule.beneficiary_member_id,
       recurring_rule_id: rule.id,
       recurring_occurrence_id: occurrence.id,
       amount: amountFor(rule, occurrence.occurrence_date),
@@ -336,7 +332,6 @@ export async function materializeRecurringRulesForRange(
         issuer: null,
         contact: null,
         sourceUrl: null,
-        beneficiaryMemberId: null,
         memo: null,
       });
     }

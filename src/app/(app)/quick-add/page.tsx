@@ -1,4 +1,4 @@
-import { ensureHouseholdForCurrentUser, listHouseholdMembers } from '@/lib/household';
+import { ensureHouseholdForCurrentUser } from '@/lib/household';
 import { listCategoriesWithSubcategories } from '@/lib/categories';
 import { listPaymentMethods } from '@/lib/payment-methods';
 import { listRecentUsage } from '@/lib/transactions';
@@ -11,11 +11,10 @@ export default async function QuickAddPage({
   searchParams: Promise<{ saved?: string; undo?: string; undone?: string }>;
 }) {
   const household = await ensureHouseholdForCurrentUser();
-  const [categories, paymentMethods, accounts, members, recentUsage, { saved, undo, undone }] = await Promise.all([
+  const [categories, paymentMethods, accounts, recentUsage, { saved, undo, undone }] = await Promise.all([
     listCategoriesWithSubcategories(household.id),
     listPaymentMethods(household.id),
     listAccounts(household.id),
-    listHouseholdMembers(household.id),
     listRecentUsage(household.id),
     searchParams,
   ]);
@@ -37,7 +36,6 @@ export default async function QuickAddPage({
         categories={categories.filter((c) => c.isActive)}
         paymentMethods={activePaymentMethods}
         accounts={accounts.filter((account) => account.status === 'active')}
-        members={members.filter((member) => member.isActive)}
         recentCategoryIds={recentUsage.categoryIds}
         recentSubcategoryIdsByCategory={recentUsage.subcategoryIdsByCategory}
         saved={saved}

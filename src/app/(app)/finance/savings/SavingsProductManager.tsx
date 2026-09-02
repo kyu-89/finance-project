@@ -11,7 +11,6 @@ import type { Account } from '@/lib/accounts';
 import { INITIAL_ACTION_STATE } from '@/lib/action-result';
 import { calculateDeposit, classifyTermLength, monthsBetween } from '@/lib/deposit-calculations';
 import type { Deposit } from '@/lib/deposits';
-import type { HouseholdMember } from '@/lib/household';
 import { calculateSavings } from '@/lib/savings-calculations';
 import type { SavingsAccount } from '@/lib/savings';
 
@@ -19,9 +18,9 @@ const won = new Intl.NumberFormat('ko-KR');
 const termName = { short: '단기', mid: '중기', long: '장기' };
 const statusName = { active: '유지 중', matured: '만기', terminated: '중도해지' };
 
-type Props = { deposits: Deposit[]; savings: SavingsAccount[]; accounts: Account[]; members: HouseholdMember[]; today: string };
+type Props = { deposits: Deposit[]; savings: SavingsAccount[]; accounts: Account[]; today: string };
 
-export function SavingsProductManager({ deposits, savings, accounts, members, today }: Props) {
+export function SavingsProductManager({ deposits, savings, accounts, today }: Props) {
   const [depositState, depositAction, depositPending] = useActionState(createDepositAction, INITIAL_ACTION_STATE);
   const [savingsState, savingsAction, savingsPending] = useActionState(createSavingsAccountAction, INITIAL_ACTION_STATE);
   return <div className="flex flex-col gap-10">
@@ -36,7 +35,6 @@ export function SavingsProductManager({ deposits, savings, accounts, members, to
         <Field label="원금"><input name="principal" type="number" min="1" step="1" required className="px-3 text-right" /></Field>
         <Field label="연이율(%)"><input name="annualRate" type="number" min="0" max="100" step="0.0001" required className="px-3 text-right" /></Field>
         <Field label="과세율(%)"><input name="taxRate" type="number" min="0" max="100" step="0.0001" defaultValue="15.4" required className="px-3 text-right" /></Field>
-        <MemberSelect members={members} />
         <AccountSelect accounts={accounts} />
         <Field label="비고"><input name="memo" className="px-3" /></Field>
         <button disabled={depositPending} className="tds-primary-button md:col-span-2 xl:col-span-4">{depositPending ? '저장 중...' : '예금 추가'}</button>
@@ -58,7 +56,6 @@ export function SavingsProductManager({ deposits, savings, accounts, members, to
         <Field label="과세율(%)"><input name="taxRate" type="number" min="0" max="100" step="0.0001" defaultValue="15.4" required className="px-3 text-right" /></Field>
         <Field label="이자 방식"><select name="interestMethod" className="px-3"><option value="simple">단리</option><option value="monthly_compound">월복리</option></select></Field>
         <Field label="월 납부일"><input name="monthlyPaymentDay" type="number" min="1" max="31" step="1" className="px-3" placeholder="25" /></Field>
-        <MemberSelect members={members} />
         <AccountSelect accounts={accounts} />
         <Field label="비고"><input name="memo" className="px-3" /></Field>
         <label className="flex min-h-12 items-center gap-3 rounded-xl bg-[var(--tds-grey-100)] px-4 text-sm font-medium"><input name="autoRecurring" type="checkbox" className="h-5 w-5" />월간 반복납입 사용</label>
@@ -73,7 +70,6 @@ export function SavingsProductManager({ deposits, savings, accounts, members, to
 function Heading({ title, description }: { title: string; description: string }) { return <div><h2 className="text-xl font-bold">{title}</h2><p className="mt-1 text-sm text-[var(--tds-grey-700)]">{description}</p></div>; }
 function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="flex flex-col gap-1 text-sm font-medium">{label}{children}</label>; }
 function Message({ result }: { result: typeof INITIAL_ACTION_STATE }) { return <div className="md:col-span-2 xl:col-span-4"><FormMessage result={result} /></div>; }
-function MemberSelect({ members }: { members: HouseholdMember[] }) { return <Field label="명의자"><select name="ownerMemberId" className="px-3"><option value="">지정 안 함</option>{members.map((member) => <option key={member.id} value={member.id}>{member.displayName}</option>)}</select></Field>; }
 function AccountSelect({ accounts }: { accounts: Account[] }) { return <Field label="출금 계좌"><select name="withdrawalAccountId" className="px-3"><option value="">지정 안 함</option>{accounts.filter((account) => account.status === 'active').map((account) => <option key={account.id} value={account.id}>{account.bankName} {account.accountName}</option>)}</select></Field>; }
 function Empty({ text }: { text: string }) { return <p className="tds-card p-6 text-sm text-[var(--tds-grey-500)]">{text}</p>; }
 

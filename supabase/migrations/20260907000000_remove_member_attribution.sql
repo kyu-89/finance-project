@@ -1,5 +1,8 @@
 -- The household ledger is a shared source of truth. Personal ownership, payer, and beneficiary
 -- dimensions made balances and reports diverge, so remove them from both writes and aggregates.
+-- The household_members roster itself (Settings > 가족 구성원) is removed along with every
+-- column/index/trigger-check that referenced it. `households` (the tenant/ownership boundary)
+-- and its owner_user_id-based RLS policies are untouched.
 
 drop function if exists public.dashboard_home_summary(uuid, date, date, date, date, uuid, boolean);
 drop function if exists public.dashboard_income_summary(uuid, date, date, date, date, uuid, boolean);
@@ -99,6 +102,17 @@ returns trigger language plpgsql as $$ begin return new; end; $$;
 create or replace function public.asset_tenant_check()
 returns trigger language plpgsql as $$ begin return new; end; $$;
 
+create or replace function public.insurance_tenant_check()
+returns trigger language plpgsql as $$
+begin
+  if new.payment_method_id is not null and not exists (
+    select 1 from public.payment_methods p where p.id = new.payment_method_id and p.household_id = new.household_id
+  ) then raise exception 'insurances.payment_method_id belongs to a different household' using errcode = 'check_violation';
+  end if;
+  return new;
+end;
+$$;
+
 create or replace function public.create_savings_recurring_rule()
 returns trigger language plpgsql as $$
 begin
@@ -167,17 +181,6 @@ begin
 end;
 $$;
 
--- Replace the trigger body before the legacy member column is removed.
-create or replace function public.sync_asset_value_history()
-returns trigger language plpgsql security definer set search_path = public as $$
-begin
-  delete from public.asset_value_history where household_id = new.household_id and snapshot_month = new.snapshot_month;
-  insert into public.asset_value_history (household_id, snapshot_month, total_assets, source)
-  values (new.household_id, new.snapshot_month, new.total_assets, 'snapshot');
-  return new;
-end;
-$$;
-
 -- Per-member snapshot rows are legacy projections. Keep the household rows only.
 delete from public.asset_value_history where member_id is not null;
 delete from public.monthly_asset_snapshots where member_id is not null;
@@ -190,6 +193,7 @@ alter table public.asset_value_history drop column if exists member_id;
 create unique index if not exists monthly_asset_snapshots_household_month_key on public.monthly_asset_snapshots (household_id, snapshot_month);
 create unique index if not exists asset_value_history_household_month_key on public.asset_value_history (household_id, snapshot_month);
 
+-- Replace the trigger body now that the legacy member column is gone.
 create or replace function public.sync_asset_value_history()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
@@ -212,7 +216,17 @@ alter table public.savings_accounts drop column if exists owner_member_id;
 alter table public.loans drop column if exists owner_member_id;
 alter table public.assets drop column if exists owner_member_id;
 alter table public.payment_methods drop column if exists owner_member_id;
+alter table public.insurances drop column if exists insured_member_id;
 alter table public.transaction_support_details drop column if exists beneficiary_member_id;
+alter table public.transaction_event_details drop column if exists related_member_id;
+
+-- The roster itself (Settings > 가족 구성원) is removed. `linked_user_id` was a vestigial,
+-- entirely unused invite/access-sharing column that dies with the table; this app has no
+-- separate multi-user access-control feature. Every FK/column referencing this table has
+-- already been dropped above, and dropping the table cascades away its own indexes,
+-- triggers, and RLS policies (household_members_one_self_per_household,
+-- household_members_set_updated_at, "household_members: owner *").
+drop table if exists public.household_members cascade;
 
 create function public.dashboard_home_summary(
   p_household_id uuid, p_from date, p_to date, p_month_start date, p_month_end date

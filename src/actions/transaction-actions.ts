@@ -31,8 +31,6 @@ export async function createQuickTransactionAction(
   const subcategoryId = String(formData.get('subcategoryId') ?? '') || null;
   const paymentMethodId = String(formData.get('paymentMethodId') ?? '') || null;
   const accountId = String(formData.get('accountId') ?? '') || null;
-  const payerMemberId = String(formData.get('payerMemberId') ?? '') || null;
-  const beneficiaryMemberId = String(formData.get('beneficiaryMemberId') ?? '') || null;
   const tags = String(formData.get('tags') ?? '').split(',').map((tag) => tag.trim()).filter(Boolean).slice(0, 10);
   const incomeGroup = formData.get('incomeGroup') === 'fixed' || formData.get('incomeGroup') === 'additional' ? formData.get('incomeGroup') as 'fixed' | 'additional' : null;
   const description = String(formData.get('description') ?? '').trim();
@@ -81,8 +79,6 @@ export async function createQuickTransactionAction(
       subcategoryId,
       paymentMethodId,
       accountId,
-      payerMemberId,
-      beneficiaryMemberId,
       tags,
       incomeGroup,
       amount,
@@ -91,11 +87,11 @@ export async function createQuickTransactionAction(
     });
     const supportKind = String(formData.get('supportKind') ?? '').trim();
     if (transactionType === 'income' && supportKind) {
-      await upsertSupportDetail(householdId, { transactionId: created.id, supportKind, eligibility: null, applicationPeriod: null, receivingPeriod: null, payoutCycle: 'one_time', expectedDate: null, amountPerOccurrence: amount, totalExpectedAmount: amount, status: 'planned', issuer: null, contact: null, sourceUrl: null, beneficiaryMemberId: null, memo: null });
+      await upsertSupportDetail(householdId, { transactionId: created.id, supportKind, eligibility: null, applicationPeriod: null, receivingPeriod: null, payoutCycle: 'one_time', expectedDate: null, amountPerOccurrence: amount, totalExpectedAmount: amount, status: 'planned', issuer: null, contact: null, sourceUrl: null, memo: null });
     }
     const eventType = String(formData.get('eventType') ?? '');
     if (transactionType === 'expense' && ['wedding', 'condolence', 'gift', 'other'].includes(eventType)) {
-      await upsertEventDetail(householdId, { transactionId: created.id, eventType: eventType as 'wedding' | 'condolence' | 'gift' | 'other', counterparty: String(formData.get('counterparty') ?? '').trim() || null, relationshipGroup: String(formData.get('relationshipGroup') ?? '').trim() || null, eventDescription: String(formData.get('eventDescription') ?? '').trim() || null, relatedMemberId: null, memo: null });
+      await upsertEventDetail(householdId, { transactionId: created.id, eventType: eventType as 'wedding' | 'condolence' | 'gift' | 'other', counterparty: String(formData.get('counterparty') ?? '').trim() || null, relationshipGroup: String(formData.get('relationshipGroup') ?? '').trim() || null, eventDescription: String(formData.get('eventDescription') ?? '').trim() || null, memo: null });
     }
   } catch (error) {
     return fail(error instanceof Error ? error.message : '거래 저장에 실패했습니다.');

@@ -16,8 +16,6 @@ export type Transaction = {
   parentTransactionId?: string | null;
   categoryId: string | null;
   subcategoryId: string | null;
-  payerMemberId: string | null;
-  beneficiaryMemberId: string | null;
   amount: number;
   description: string;
   memo: string | null;
@@ -46,8 +44,8 @@ export const FLOW_CLASS_BY_TRANSACTION_TYPE: Record<TransactionType, string> = {
 function mapRow(row: {
   id: string; household_id: string; transaction_date: string; source_month: string | null; transaction_type: string;
   flow_class: string; cost_behavior: string | null; payment_method_id: string | null;
-  category_id: string | null; subcategory_id: string | null; account_id: string | null; income_group: string | null; parent_transaction_id: string | null; payer_member_id: string | null;
-  beneficiary_member_id: string | null; amount: number; description: string; memo: string | null; tags: string[] | null;
+  category_id: string | null; subcategory_id: string | null; account_id: string | null; income_group: string | null; parent_transaction_id: string | null;
+  amount: number; description: string; memo: string | null; tags: string[] | null;
   include_in_budget: boolean; needs_review: boolean; recurring_rule_id: string | null;
   recurring_occurrence_id: string | null; status: string;
 }): Transaction {
@@ -65,8 +63,6 @@ function mapRow(row: {
     parentTransactionId: row.parent_transaction_id,
     categoryId: row.category_id,
     subcategoryId: row.subcategory_id,
-    payerMemberId: row.payer_member_id,
-    beneficiaryMemberId: row.beneficiary_member_id,
     amount: row.amount,
     description: row.description,
     memo: row.memo,
@@ -83,7 +79,7 @@ function mapRow(row: {
 // this as a literal string type, not a widened `string` — Supabase's `.select()` overloads
 // parse the select-string type at compile time to produce the typed row shape, and a widened
 // `string` makes that parse fail with a generic, untyped `GenericStringError` result.
-const TRANSACTION_COLUMNS = `id, household_id, transaction_date, source_month, transaction_type, flow_class, cost_behavior, payment_method_id, account_id, income_group, parent_transaction_id, category_id, subcategory_id, payer_member_id, beneficiary_member_id, amount, description, memo, tags, include_in_budget, needs_review, recurring_rule_id, recurring_occurrence_id, status`;
+const TRANSACTION_COLUMNS = `id, household_id, transaction_date, source_month, transaction_type, flow_class, cost_behavior, payment_method_id, account_id, income_group, parent_transaction_id, category_id, subcategory_id, amount, description, memo, tags, include_in_budget, needs_review, recurring_rule_id, recurring_occurrence_id, status`;
 
 export async function createTransaction(input: {
   householdId: string;
@@ -102,8 +98,6 @@ export async function createTransaction(input: {
   description: string;
   memo?: string | null;
   tags?: string[];
-  payerMemberId?: string | null;
-  beneficiaryMemberId?: string | null;
   needsReview?: boolean;
 }): Promise<Transaction> {
   if (input.amount <= 0) {
@@ -131,8 +125,6 @@ export async function createTransaction(input: {
       account_id: input.accountId ?? null,
       income_group: input.incomeGroup ?? null,
       parent_transaction_id: input.parentTransactionId ?? null,
-      payer_member_id: input.payerMemberId ?? null,
-      beneficiary_member_id: input.beneficiaryMemberId ?? null,
       amount: input.amount,
       description: input.description,
       memo: input.memo ?? null,

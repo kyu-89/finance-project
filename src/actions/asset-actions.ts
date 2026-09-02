@@ -18,7 +18,7 @@ export async function importAssetsAction(_: ActionResult, form: FormData): Promi
     if (!Array.isArray(rows) || rows.length === 0 || rows.length > 1000) return fail('자산은 한 번에 1~1,000건까지 가져올 수 있어요.');
     const assets = rows.map((row) => {
       const value = (typeof row === 'object' && row !== null ? row : {}) as Record<string, unknown>;
-      return { assetName: String(value.assetName ?? '').trim(), assetType: value.assetType as Asset['assetType'], acquisitionCost: Number(value.acquisitionCost), currentValue: Number(value.currentValue), valuationDate: String(value.valuationDate ?? todayInSeoul()), ownerMemberId: null, memo: 'Excel 가져오기' };
+      return { assetName: String(value.assetName ?? '').trim(), assetType: value.assetType as Asset['assetType'], acquisitionCost: Number(value.acquisitionCost), currentValue: Number(value.currentValue), valuationDate: String(value.valuationDate ?? todayInSeoul()), memo: 'Excel 가져오기' };
     });
     if (assets.some((asset) => !asset.assetName || !assetTypes.includes(asset.assetType) || !validWon(asset.acquisitionCost) || !validWon(asset.currentValue) || !validDate(asset.valuationDate))) return fail('유효하지 않은 자산 행이 포함되어 있어요.');
     const householdId = await getCurrentHouseholdId();
@@ -31,7 +31,7 @@ export async function importAssetsAction(_: ActionResult, form: FormData): Promi
 export async function createAssetAction(_previous: ActionResult, form: FormData): Promise<ActionResult> {
   const assetName = String(form.get('assetName') ?? '').trim(); const assetType = String(form.get('assetType') ?? '') as Asset['assetType']; const acquisitionCost = Number(form.get('acquisitionCost')); const currentValue = Number(form.get('currentValue')); const valuationDate = String(form.get('valuationDate') ?? '');
   if (!assetName || !assetTypes.includes(assetType) || !validWon(acquisitionCost) || !validWon(currentValue) || !validDate(valuationDate)) return fail('자산 정보와 원 단위 금액을 확인해 주세요.');
-  try { await createAsset({ householdId: await getCurrentHouseholdId(), assetName, assetType, acquisitionCost, currentValue, valuationDate, ownerMemberId: String(form.get('ownerMemberId') ?? '') || null, memo: String(form.get('memo') ?? '').trim() || null }); } catch (error) { return fail(error instanceof Error ? error.message : '자산 추가에 실패했어요.'); }
+  try { await createAsset({ householdId: await getCurrentHouseholdId(), assetName, assetType, acquisitionCost, currentValue, valuationDate, memo: String(form.get('memo') ?? '').trim() || null }); } catch (error) { return fail(error instanceof Error ? error.message : '자산 추가에 실패했어요.'); }
   refresh(); return ok();
 }
 

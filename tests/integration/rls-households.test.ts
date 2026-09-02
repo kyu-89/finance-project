@@ -9,7 +9,7 @@ function randomTestEmail(label: string) {
   return `sprint0-rls-${label}-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`;
 }
 
-describe('households/household_members RLS', () => {
+describe('households RLS', () => {
   const admin: SupabaseClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
   let userAId: string;
   let userBId: string;
@@ -37,10 +37,10 @@ describe('households/household_members RLS', () => {
   });
 
   afterAll(async () => {
-    // Deleting the auth users cascades to households (FK on delete cascade),
-    // which cascades to household_members. Isolate each delete so one failure
-    // doesn't block cleanup of the other user, and skip ids that were never
-    // assigned (e.g. user A's createUser succeeded but user B's threw in beforeAll).
+    // Deleting the auth users cascades to households (FK on delete cascade).
+    // Isolate each delete so one failure doesn't block cleanup of the other user,
+    // and skip ids that were never assigned (e.g. user A's createUser succeeded
+    // but user B's threw in beforeAll).
     const results = await Promise.allSettled(
       [userAId, userBId]
         .filter((id): id is string => Boolean(id))
@@ -136,75 +136,6 @@ describe('households/household_members RLS', () => {
       .from('households')
       .update({ name: '해킹당함' })
       .eq('id', userAHouseholdId)
-      .select('id');
-
-    expect(updateError).toBeNull();
-    expect(updated).toEqual([]);
-  });
-
-  it('lets a user insert a member into their own household', async () => {
-    const asUserA = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
-    const { error: signInError } = await asUserA.auth.signInWithPassword({
-      email: userAEmail,
-      password,
-    });
-    expect(signInError).toBeNull();
-
-    const { error: insertError } = await asUserA.from('household_members').insert({
-      household_id: userAHouseholdId,
-      member_type: 'other',
-      display_name: 'Test Member',
-    });
-
-    expect(insertError).toBeNull();
-  });
-
-  it("hides user A's household members from user B", async () => {
-    const asUserB = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
-    const { error: signInError } = await asUserB.auth.signInWithPassword({
-      email: userBEmail,
-      password,
-    });
-    expect(signInError).toBeNull();
-
-    const { data: selected, error: selectError } = await asUserB
-      .from('household_members')
-      .select('id')
-      .eq('household_id', userAHouseholdId);
-
-    expect(selectError).toBeNull();
-    expect(selected).toEqual([]);
-  });
-
-  it("blocks user B from inserting a member into user A's household", async () => {
-    const asUserB = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
-    const { error: signInError } = await asUserB.auth.signInWithPassword({
-      email: userBEmail,
-      password,
-    });
-    expect(signInError).toBeNull();
-
-    const { error: insertError } = await asUserB.from('household_members').insert({
-      household_id: userAHouseholdId,
-      member_type: 'other',
-      display_name: 'Spoofed Member',
-    });
-
-    expect(insertError).not.toBeNull();
-  });
-
-  it("blocks user B from updating a member row belonging to user A's household", async () => {
-    const asUserB = createClient(SUPABASE_URL, PUBLISHABLE_KEY);
-    const { error: signInError } = await asUserB.auth.signInWithPassword({
-      email: userBEmail,
-      password,
-    });
-    expect(signInError).toBeNull();
-
-    const { data: updated, error: updateError } = await asUserB
-      .from('household_members')
-      .update({ display_name: 'Hacked' })
-      .eq('household_id', userAHouseholdId)
       .select('id');
 
     expect(updateError).toBeNull();

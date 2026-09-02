@@ -9,7 +9,6 @@ export type Account = {
   accountNumber: string | null;
   purpose: string | null;
   currentBalance: number;
-  ownerMemberId: string | null;
   memo: string | null;
   status: 'active' | 'closed';
 };
@@ -19,14 +18,14 @@ export type ImportedAccount = Omit<Account, 'id' | 'status'>;
 export async function listAccounts(householdId: string): Promise<Account[]> {
   const supabase = await createClient();
   const { data, error } = await supabase.from('accounts')
-    .select('id, bank_name, account_type, account_name, account_number, purpose, current_balance, owner_member_id, memo, status')
+    .select('id, bank_name, account_type, account_name, account_number, purpose, current_balance, memo, status')
     .eq('household_id', householdId)
     .order('status').order('created_at', { ascending: false });
   if (error) throw new Error(`계좌 목록 조회 실패: ${error.message}`);
   return (data ?? []).map((row) => ({
     id: row.id, bankName: row.bank_name, accountType: row.account_type as Account['accountType'],
     accountName: row.account_name, accountNumber: row.account_number, purpose: row.purpose,
-    currentBalance: row.current_balance, ownerMemberId: row.owner_member_id, memo: row.memo,
+    currentBalance: row.current_balance, memo: row.memo,
     status: row.status as Account['status'],
   }));
 }
@@ -36,7 +35,7 @@ export async function createAccount(input: Omit<Account, 'id' | 'status'> & { ho
   const { error } = await supabase.from('accounts').insert({
     household_id: input.householdId, bank_name: input.bankName, account_type: input.accountType,
     account_name: input.accountName, account_number: input.accountNumber, purpose: input.purpose,
-    current_balance: input.currentBalance, owner_member_id: input.ownerMemberId, memo: input.memo,
+    current_balance: input.currentBalance, memo: input.memo,
   });
   if (error) throw new Error(`계좌 추가 실패: ${error.message}`);
 }
@@ -61,7 +60,7 @@ export async function importAccounts(input: { householdId: string; accounts: Imp
   const keys = new Set((existing ?? []).map((account) => key({ bankName: account.bank_name, accountType: account.account_type, accountName: account.account_name, accountNumber: account.account_number })));
   const rows = input.accounts.filter((account) => { const accountKey = key(account); if (keys.has(accountKey)) return false; keys.add(accountKey); return true; });
   if (rows.length === 0) return 0;
-  const { error } = await supabase.from('accounts').insert(rows.map((account) => ({ household_id: input.householdId, bank_name: account.bankName, account_type: account.accountType, account_name: account.accountName, account_number: account.accountNumber, purpose: account.purpose, current_balance: account.currentBalance, owner_member_id: account.ownerMemberId, memo: account.memo })));
+  const { error } = await supabase.from('accounts').insert(rows.map((account) => ({ household_id: input.householdId, bank_name: account.bankName, account_type: account.accountType, account_name: account.accountName, account_number: account.accountNumber, purpose: account.purpose, current_balance: account.currentBalance, memo: account.memo })));
   if (error) throw new Error(error.message);
   return rows.length;
 }

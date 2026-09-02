@@ -12,46 +12,6 @@ export type Household = {
   initializedAt: string | null;
 };
 
-export type HouseholdMember = {
-  id: string;
-  displayName: string;
-  memberType: 'self' | 'spouse' | 'child' | 'other';
-  isActive: boolean;
-};
-
-export async function listHouseholdMembers(householdId: string): Promise<HouseholdMember[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase.from('household_members')
-    .select('id, display_name, member_type, is_active')
-    .eq('household_id', householdId)
-    .order('created_at');
-  if (error) throw new Error(`구성원 조회 실패: ${error.message}`);
-  return (data ?? []).map((row) => ({ id: row.id, displayName: row.display_name, memberType: row.member_type as HouseholdMember['memberType'], isActive: row.is_active }));
-}
-
-export async function createHouseholdMember(input: { householdId: string; displayName: string; memberType: HouseholdMember['memberType'] }): Promise<void> {
-  const supabase = await createClient();
-  const { error } = await supabase.from('household_members').insert({ household_id: input.householdId, display_name: input.displayName, member_type: input.memberType });
-  if (error) throw new Error(`구성원 추가 실패: ${error.message}`);
-}
-
-export async function updateHouseholdMember(input: { id: string; displayName: string; memberType: HouseholdMember['memberType']; isActive: boolean }): Promise<void> {
-  const supabase = await createClient();
-  const { error } = await supabase.from('household_members').update({ display_name: input.displayName, member_type: input.memberType, is_active: input.isActive }).eq('id', input.id).select('id').single();
-  if (error) throw new Error(`구성원 수정 실패: ${error.message}`);
-}
-
-export async function updateHouseholdMemberStatus(input: { id: string; householdId: string; isActive: boolean }): Promise<void> {
-  const supabase = await createClient();
-  const { data: member, error: memberError } = await supabase.from('household_members')
-    .select('member_type').eq('id', input.id).eq('household_id', input.householdId).single();
-  if (memberError || !member) throw new Error('구성원을 찾을 수 없습니다.');
-  if (member.member_type === 'self' && !input.isActive) throw new Error('본인 구성원은 비활성화할 수 없습니다.');
-  const { error } = await supabase.from('household_members').update({ is_active: input.isActive })
-    .eq('id', input.id).eq('household_id', input.householdId);
-  if (error) throw new Error(`구성원 상태 변경 실패: ${error.message}`);
-}
-
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
 const UNIQUE_VIOLATION = '23505';
@@ -109,7 +69,6 @@ export const ensureHouseholdForCurrentUser = cache(async (): Promise<Household> 
   // three serial Supabase round trips for nothing; running them together pays one.
   if (!household.initializedAt) {
     await Promise.all([
-      ensureSelfMember(supabase, household.id),
       ensureDefaultCategoriesSeeded(household.id),
       ensureDefaultPaymentMethodsSeeded(household.id),
     ]);
@@ -161,45 +120,4 @@ async function selectHousehold(
   }
 
   return data ? { id: data.id, ownerUserId: data.owner_user_id, name: data.name, initializedAt: data.initialized_at } : null;
-}
-
-async function ensureSelfMember(supabase: SupabaseServerClient, householdId: string): Promise<void> {
-  const { data: existingMember, error: selectError } = await supabase
-    .from('household_members')
-    .select('id')
-    .eq('household_id', householdId)
-    .eq('member_type', 'self')
-    .maybeSingle();
-
-  if (selectError) {
-    throw new Error(`기본 구성원 조회 실패: ${selectError.message}`);
-  }
-
-  if (existingMember) {
-    return;
-  }
-
-  const { error: memberError } = await supabase.from('household_members').insert({
-    household_id: householdId,
-    member_type: 'self',
-    display_name: '본인',
-  });
-
-  if (memberError) {
-    // household_members has no unique constraint on (household_id, member_type) yet
-    // (tracked as a follow-up), so we can't tell a concurrent-insert race apart from a
-    // real failure by error code alone. Re-check presence before treating it as fatal —
-    // if a row now exists (this insert's own race partner won), we recovered; otherwise
-    // this is a genuine, un-self-healed failure and the caller needs to know.
-    const { data: recheck } = await supabase
-      .from('household_members')
-      .select('id')
-      .eq('household_id', householdId)
-      .eq('member_type', 'self')
-      .maybeSingle();
-
-    if (!recheck) {
-      throw new Error(`기본 구성원 생성 실패: ${memberError.message}`);
-    }
-  }
 }

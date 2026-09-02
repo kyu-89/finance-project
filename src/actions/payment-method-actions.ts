@@ -18,7 +18,6 @@ export async function createPaymentMethodAction(
   const rawCardNumber = String(formData.get('cardNumber') ?? '').replace(/\D/g, '');
   const cardNumberLast4 = rawCardNumber ? rawCardNumber.slice(-4) : null;
   const expiresAt = String(formData.get('expiresAt') ?? '').trim() || null;
-  const ownerMemberId = String(formData.get('ownerMemberId') ?? '').trim() || null;
 
   if (!name) {
     return fail('결제수단 이름을 입력해주세요.');
@@ -26,7 +25,7 @@ export async function createPaymentMethodAction(
 
   try {
     const household = await ensureHouseholdForCurrentUser();
-    await createPaymentMethod({ householdId: household.id, name, methodType, providerName, accountNumber, cardNumberLast4, expiresAt, ownerMemberId });
+    await createPaymentMethod({ householdId: household.id, name, methodType, providerName, accountNumber, cardNumberLast4, expiresAt });
   } catch (error) {
     return fail(error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.');
   }

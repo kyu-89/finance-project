@@ -49,7 +49,7 @@ export async function createDepositAction(_previous: ActionResult, formData: For
   try {
     await createDeposit({
       householdId: await getCurrentHouseholdId(), bankName, productName, ...period, principal, annualRate, taxRate,
-      ownerMemberId: optional(formData, 'ownerMemberId'), withdrawalAccountId: optional(formData, 'withdrawalAccountId'),
+      withdrawalAccountId: optional(formData, 'withdrawalAccountId'),
       memo: optional(formData, 'memo'),
     });
   } catch (error) { return fail(error instanceof Error ? error.message : '예금 추가에 실패했어요.'); }
@@ -77,7 +77,7 @@ export async function createSavingsAccountAction(_previous: ActionResult, formDa
     await createSavingsAccount({
       householdId: await getCurrentHouseholdId(), bankName, productName, ...period, monthlyAmount,
       currentSavings, annualRate, taxRate, interestMethod, monthlyPaymentDay, autoRecurring,
-      ownerMemberId: optional(formData, 'ownerMemberId'), withdrawalAccountId: optional(formData, 'withdrawalAccountId'),
+      withdrawalAccountId: optional(formData, 'withdrawalAccountId'),
       memo: optional(formData, 'memo'),
     });
   } catch (error) { return fail(error instanceof Error ? error.message : '적금 추가에 실패했어요.'); }

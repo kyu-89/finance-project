@@ -25,10 +25,10 @@ const monthLabel = (month: string) => `${Number(month.slice(0, 4))}년 ${Number(
 const monthBounds = (month: string) => { const range = monthRangeFromSeoulDateString(`${month}-01`); return { from: range.fromDate, to: range.toDate }; };
 const shiftMonth = (month: string, offset: number) => { const d = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)) - 1 + offset, 1)); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`; };
 
-export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ month?: string; member?: string; preset?: string; customFrom?: string; customTo?: string }> }) {
-  const query = await searchParams; const today = todayInSeoul(); const currentMonth = today.slice(0, 7); const month = query.month && monthPattern.test(query.month) ? query.month : currentMonth; const trendStart = shiftMonth(month, -23); const bounds = monthBounds(month); const preset: DashboardPreset = 'month'; const dashboardRange = resolveDashboardRange(bounds.to, preset); const memberForQuery = undefined; const household = await ensureHouseholdForCurrentUser();
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ month?: string; preset?: string; customFrom?: string; customTo?: string }> }) {
+  const query = await searchParams; const today = todayInSeoul(); const currentMonth = today.slice(0, 7); const month = query.month && monthPattern.test(query.month) ? query.month : currentMonth; const trendStart = shiftMonth(month, -23); const bounds = monthBounds(month); const preset: DashboardPreset = 'month'; const dashboardRange = resolveDashboardRange(bounds.to, preset); const household = await ensureHouseholdForCurrentUser();
   const referenceDataPromise = Promise.all([
-    computeCurrentNetWorth(household.id, today, memberForQuery),
+    computeCurrentNetWorth(household.id, today),
     listAssetValueHistory(household.id, 36),
     listInsurances(household.id),
     listAssets(household.id),
@@ -39,7 +39,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   // entire 24-month chart range made every visit perform avoidable database writes.
   await materializeRecurringRulesForRange(household.id, bounds.from, bounds.to);
   const [summary, transactions, referenceData] = await Promise.all([
-    getDashboardHomeSummary({ householdId: household.id, from: dashboardRange.from < `${trendStart}-01` ? dashboardRange.from : `${trendStart}-01`, to: bounds.to, monthStart: dashboardRange.from, monthEnd: dashboardRange.to, memberId: memberForQuery }),
+    getDashboardHomeSummary({ householdId: household.id, from: dashboardRange.from < `${trendStart}-01` ? dashboardRange.from : `${trendStart}-01`, to: bounds.to, monthStart: dashboardRange.from, monthEnd: dashboardRange.to }),
     listTransactions({ householdId: household.id, fromDate: `${trendStart}-01`, toDate: bounds.to, reportMonthFrom: trendStart, reportMonthTo: month }),
     referenceDataPromise,
   ]);
