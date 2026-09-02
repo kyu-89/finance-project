@@ -1274,9 +1274,22 @@ input.quick-add-amount {
  * keeps these three comparable at a glance in one row. Force 3 columns and
  * compact the card's own type scale to fit. */
 @media (max-width: 640px) {
+  /* A real render at 375px (3 equal columns, --text-title-3=16px, ~85px of
+   * usable width per card) proved won amounts with 6-7 digits ("4,350,000원")
+   * don't fit and were being ellipsis-truncated to "4,3…" — reading the
+   * headline number is the entire point of a StatCard, so silently hiding it
+   * is worse than the stacked-column bug this was meant to fix. The reference
+   * mockup's actual mobile layout isn't 3 equal columns either: 수입/지출 sit
+   * side by side and 잔액 spans the full row below — doubling the width
+   * available to every value. MonthSummary renders 수입/지출/잔액 in that
+   * order, so the 3rd StatCard is 잔액; no JSX change needed. */
   .tds-summary-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--ui-space-2);
+  }
+
+  .tds-summary-grid .tds-stat-card:nth-child(3) {
+    grid-column: 1 / -1;
   }
 
   .tds-summary-grid .tds-stat-card {
@@ -1291,15 +1304,25 @@ input.quick-add-amount {
     white-space: nowrap;
   }
 
+  /* The actual number is rendered by <Amount size="large">, whose own
+   * .amount-large class sets font-size:34px directly on the <strong> it
+   * renders — a font-size set here on the wrapping .tds-stat-card-value <p>
+   * never reaches it (an explicit font-size on a descendant always wins over
+   * inheriting one from an ancestor). Confirmed live: without this override
+   * every mobile summary value rendered at the full 34px regardless of the
+   * rule above, and even a 2-column card (~143px usable) isn't wide enough
+   * for a 7-digit 원 amount at that size. Target the inner element directly. */
+  .tds-summary-grid .tds-stat-card-value .amount-large {
+    font-size: var(--amount-medium);
+  }
+
   .tds-summary-grid .tds-stat-card-value {
-    overflow: hidden;
-    font-size: var(--text-title-3);
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
+    white-space: normal;
   }
 
   /* A percentage-breakdown meta line ("소비성 68% · 저축·투자·상환 32%") has no
-   * room to stay legible in a ~110px column — truncated it reads as noise.
+   * room to stay legible in a ~160px column — truncated it reads as noise.
    * The reference mockup's mobile summary row shows label + value only. */
   .tds-summary-grid .tds-stat-card-meta {
     display: none;
@@ -1339,7 +1362,15 @@ input.quick-add-amount {
    * visual grouping differs from the desktop column sequence. */
   .tds-ledger-table tbody > .tds-table-row {
     display: grid;
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, max-content) minmax(0, max-content);
+    /* Column 1 carries 유형/금액/내용 — the row's primary content — but a bare
+     * minmax(0, …) floor loses that fight every time against two max-content
+     * tracks that always claim their full content width first (confirmed
+     * live: column 1 measured ~31px wide once a legacy conflicting rule that
+     * had been silently zeroing this grid was removed, truncating the amount
+     * to "1,2…"). A fixed minimum floor guarantees the money and description
+     * stay legible even if that leaves less room for column 2/3, which can
+     * wrap or compress without losing meaning. */
+    grid-template-columns: minmax(100px, 1.1fr) minmax(0, max-content) minmax(0, max-content);
     align-items: center;
     column-gap: var(--ui-space-3);
     row-gap: var(--ui-space-3);
@@ -1408,6 +1439,22 @@ input.quick-add-amount {
   .tds-ledger-table [data-table-field='costBehavior']::before { content: '성격'; }
   .tds-ledger-table [data-table-field='status'] { grid-row: 1; min-height: var(--ui-mobile-inline-control-height); }
   .tds-ledger-table [data-table-field='status']::before { content: '상태'; }
+
+  /* The [확정]/[이번달 제외] button pair (Phase 6) needs more room than a
+   * select-sized column-3 slot can give it — confirmed live: crammed into
+   * that slot it squeezed columns 1/2 down to the point of truncating the
+   * amount and cutting select text entirely. "이번달 제외" is fixed-length
+   * button copy, not user data, so this isn't a rare-long-value edge case;
+   * it happens on every planned+recurring row. Give the pair its own
+   * full-width row instead of fighting column 3 for space. */
+  .tds-ledger-table [data-table-field='status']:has(.transaction-status-actions) {
+    grid-row: 4;
+    grid-column: 1 / -1;
+    min-height: 0;
+  }
+  .tds-ledger-table [data-table-field='status']:has(.transaction-status-actions)::before {
+    content: none;
+  }
 
   .tds-ledger-table [data-table-field='transactionDate'] { grid-row: 2; }
   .tds-ledger-table [data-table-field='transactionDate']::before { content: '날짜'; }
