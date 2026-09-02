@@ -2,6 +2,7 @@ import { ensureHouseholdForCurrentUser } from '@/lib/household';
 import { listPaymentMethods } from '@/lib/payment-methods';
 import { PaymentMethodForm } from './PaymentMethodForm';
 import { AddDrawer } from '@/components/Drawer';
+import { Badge } from '@/components/Badge';
 import { StatusSelect } from '@/components/StatusSelect';
 import { setPaymentMethodActiveAction } from '@/actions/payment-method-actions';
 import { SettingsBackLink } from '../SettingsBackLink';
@@ -20,7 +21,7 @@ export default async function PaymentMethodsSettingsPage() {
       <ul className="settings-resource-list list-surface flex flex-col divide-y divide-[var(--tds-grey-200)]">
         {paymentMethods.map((method) => (
           <li key={method.id} className="settings-resource-row flex min-h-16 items-center justify-between px-5">
-            <div className={method.isActive ? '' : 'text-gray-400'}><div className="flex items-center gap-2"><span className={method.isActive ? 'font-semibold' : 'font-semibold line-through'}>{method.name}</span><span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${method.isActive ? 'bg-[var(--tds-blue-50)] text-[var(--tds-blue-600)]' : 'bg-[var(--tds-grey-100)] text-[var(--tds-grey-500)]'}`}>{method.isActive ? '사용 중' : '사용 안 함'}</span></div><p className="mt-1 text-xs text-[var(--tds-grey-500)]">{[method.providerName, method.accountNumber ? `계좌 ${method.accountNumber}` : null, method.cardNumberLast4 ? `카드 •••• ${method.cardNumberLast4}` : null, method.expiresAt ? `만료 ${method.expiresAt.slice(0, 7)}` : null].filter(Boolean).join(' · ')}</p></div>
+            <div className={method.isActive ? '' : 'text-gray-400'}><div className="flex items-center gap-2"><span className={method.isActive ? 'font-semibold' : 'font-semibold line-through'}>{method.name}</span><Badge variant={method.isActive ? 'info' : 'neutral'}>{method.isActive ? '사용 중' : '사용 안 함'}</Badge></div><p className="mt-1 text-xs text-[var(--tds-grey-500)]">{[method.providerName, method.accountNumber ? `계좌 ${method.accountNumber}` : null, method.cardNumberLast4 ? `카드 •••• ${method.cardNumberLast4}` : null, method.expiresAt ? `만료 ${method.expiresAt.slice(0, 7)}` : null].filter(Boolean).join(' · ')}</p></div>
             <StatusSelect id={method.id} active={method.isActive} action={setPaymentMethodActiveAction} label={`${method.name} 활성 상태`} />
           </li>
         ))}

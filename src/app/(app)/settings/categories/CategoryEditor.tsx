@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from 'react';
 import { INITIAL_ACTION_STATE } from '@/lib/action-result';
+import { Badge } from '@/components/Badge';
 import { FormField } from '@/components/FormField';
 import { FormMessage } from '@/components/FormMessage';
 import {
@@ -33,7 +34,7 @@ export function CategoryEditor({ category }: { category: CategoryWithSubcategori
           <span className="shrink-0 text-xs font-semibold text-[var(--tds-blue-600)]">{typeLabel}</span>
           <span className="truncate text-[15px] font-semibold">{category.name}</span>
           {category.defaultCostBehavior && <span className="hidden shrink-0 text-xs text-[var(--tds-grey-500)] sm:inline">{category.defaultCostBehavior === 'fixed' ? '고정비' : '변동비'}</span>}
-          <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${category.isActive ? 'bg-[var(--tds-blue-50)] text-[var(--tds-blue-600)]' : 'bg-[var(--tds-grey-100)] text-[var(--tds-grey-600)]'}`}>{category.isActive ? '활성' : '비활성'}</span>
+          <Badge variant={category.isActive ? 'info' : 'neutral'} className="shrink-0">{category.isActive ? '활성' : '비활성'}</Badge>
         </span>
         <span className="shrink-0 text-sm font-medium text-[var(--tds-grey-600)]">{expanded ? '접기' : '상세'}</span>
       </button>
@@ -63,7 +64,7 @@ export function CategoryEditor({ category }: { category: CategoryWithSubcategori
                     <details className="group">
                       <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--tds-blue-500)]">
                         <span className={`min-w-0 truncate font-medium ${sub.isActive ? '' : 'text-[var(--tds-grey-500)] line-through'}`}>{sub.name}</span>
-                        <span className="flex shrink-0 items-center gap-2"><span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${sub.isActive ? 'bg-[var(--tds-blue-50)] text-[var(--tds-blue-600)]' : 'bg-[var(--tds-grey-100)] text-[var(--tds-grey-600)]'}`}>{sub.isActive ? '활성' : '비활성'}</span><span className="text-xs text-[var(--tds-grey-600)] group-open:hidden">수정</span><span className="hidden text-xs text-[var(--tds-grey-600)] group-open:inline">접기</span></span>
+                        <span className="flex shrink-0 items-center gap-2"><Badge variant={sub.isActive ? 'info' : 'neutral'}>{sub.isActive ? '활성' : '비활성'}</Badge><span className="text-xs text-[var(--tds-grey-600)] group-open:hidden">수정</span><span className="hidden text-xs text-[var(--tds-grey-600)] group-open:inline">접기</span></span>
                       </summary>
                       <div className="border-t border-[var(--tds-grey-200)] bg-[var(--tds-grey-50)] p-3">
                         <form action={subEditAction} className="flex flex-col gap-2 sm:flex-row sm:items-end">
