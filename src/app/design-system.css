@@ -246,7 +246,7 @@
  * columns with nth-child selectors. */
 @media (min-width: 641px) {
   .tds-ledger-table {
-    --ui-ledger-columns: var(--ui-ledger-column-date) var(--ui-ledger-column-state) var(--ui-ledger-column-type) var(--ui-ledger-column-behavior) var(--ui-ledger-column-category) var(--ui-ledger-column-subcategory) minmax(var(--ui-ledger-column-description-min), 1fr) var(--ui-ledger-column-amount) var(--ui-ledger-column-payment);
+    --ui-ledger-columns: var(--ui-ledger-column-date) var(--ui-ledger-column-type) var(--ui-ledger-column-category) var(--ui-ledger-column-subcategory) minmax(var(--ui-ledger-column-description-min), 1fr) var(--ui-ledger-column-amount) var(--ui-ledger-column-payment) var(--ui-ledger-column-behavior) var(--ui-ledger-column-state);
     display: block;
     width: 100%;
     min-width: 1064px;
@@ -715,20 +715,24 @@ input.quick-add-amount {
     padding: var(--ui-mobile-transaction-card-gap);
   }
 
-  /* A card has one fixed field order, in five explicit rows — never a
+  /* A card has one fixed field order, in four explicit rows — never a
    * width-dependent wrap that reorders itself by viewport:
-   *   1) 날짜 · 유형        2) 대분류 · 소분류
-   *   3) 내용 (full width)  4) 금액 (full width, right-aligned)
-   *   5) 결제수단 · 성격 · 상태
-   * Columns hug their own content (`max-content`) instead of stretching to
-   * a fixed 50/50 split, so a two-character value doesn't leave half the
-   * card empty. Row/column placement below sets the actual visual order;
-   * it is independent of the table's column/DOM order. */
+   *   1) 날짜 · 유형 · 대분류 · 소분류   2) 내용 (full width)
+   *   3) 금액 · 결제수단 (spread to the row's full width)
+   *   4) 성격 · 상태 (spread to the row's full width)
+   * Row 1's four items each hug their own content (`max-content`) instead
+   * of stretching to a fixed split, so short values don't leave the card
+   * half-empty. Rows 3–4 pin their second item to the row's right edge
+   * (`grid-column: -2 / -1`) so a 2-item row still uses the full card width
+   * instead of clumping left with empty space trailing it. Row/column
+   * placement below sets the actual visual order; it is independent of the
+   * table's column/DOM order (which follows the same 날짜·유형·대분류·소분류·
+   * 내용·금액·결제수단·성격·상태 sequence on the desktop table). */
   .tds-ledger-table tbody > .tds-table-row {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, max-content));
     align-items: center;
-    column-gap: var(--ui-space-4);
+    column-gap: var(--ui-space-3);
     row-gap: var(--ui-space-2);
     padding: var(--ui-mobile-transaction-card-padding);
     border: 1px solid var(--tds-grey-200);
@@ -737,7 +741,7 @@ input.quick-add-amount {
   }
 
   .tds-ledger-table .tds-table-cell {
-    display: flex;
+    display: inline-flex;
     min-width: 0;
     min-height: var(--ui-mobile-transaction-cell-height);
     align-items: center;
@@ -758,16 +762,14 @@ input.quick-add-amount {
   .tds-ledger-table [data-table-field='transactionDate']::before { content: '날짜'; }
   .tds-ledger-table [data-table-field='transactionType'] { grid-row: 1; grid-column: 2; }
   .tds-ledger-table [data-table-field='transactionType']::before { content: '유형'; }
-
-  /* Row 2 */
-  .tds-ledger-table [data-table-field='categoryId'] { grid-row: 2; grid-column: 1; }
+  .tds-ledger-table [data-table-field='categoryId'] { grid-row: 1; grid-column: 3; }
   .tds-ledger-table [data-table-field='categoryId']::before { content: '대분류'; }
-  .tds-ledger-table [data-table-field='subcategoryId'] { grid-row: 2; grid-column: 2; }
+  .tds-ledger-table [data-table-field='subcategoryId'] { grid-row: 1; grid-column: 4; }
   .tds-ledger-table [data-table-field='subcategoryId']::before { content: '소분류'; }
 
-  /* Row 3 — the card's title; self-evident, no label */
+  /* Row 2 — the card's title; self-evident, no label */
   .tds-ledger-table [data-table-field='description'] {
-    grid-row: 3;
+    grid-row: 2;
     grid-column: 1 / -1;
     overflow: hidden;
     font-weight: 650;
@@ -777,27 +779,26 @@ input.quick-add-amount {
   }
   .tds-ledger-table [data-table-field='description']::before { content: none; }
 
-  /* Row 4 — the card's headline number; self-evident, no label */
+  /* Row 3 — 금액 is the headline number, left; 결제수단 pinned right */
   .tds-ledger-table [data-table-field='amount'] {
-    grid-row: 4;
-    grid-column: 1 / -1;
-    justify-content: flex-end;
+    grid-row: 3;
+    grid-column: 1 / 3;
     font-weight: 700;
     font-size: var(--text-title-3);
     font-variant-numeric: tabular-nums;
   }
   .tds-ledger-table [data-table-field='amount']::before { content: none; }
-
-  /* Row 5 — payment method is plain text; behavior and status are controls */
-  .tds-ledger-table [data-table-field='paymentMethodId'] { grid-row: 5; grid-column: 1; }
+  .tds-ledger-table [data-table-field='paymentMethodId'] { grid-row: 3; grid-column: -2 / -1; justify-content: flex-end; }
   .tds-ledger-table [data-table-field='paymentMethodId']::before { content: '결제'; }
-  .tds-ledger-table [data-table-field='costBehavior'] { grid-row: 5; grid-column: 2; min-height: var(--ui-mobile-inline-control-height); }
+
+  /* Row 4 — 성격 left, 상태 pinned right (both are controls) */
+  .tds-ledger-table [data-table-field='costBehavior'] { grid-row: 4; grid-column: 1 / 3; min-height: var(--ui-mobile-inline-control-height); }
   .tds-ledger-table [data-table-field='costBehavior']::before { content: '성격'; }
-  .tds-ledger-table [data-table-field='status'] { grid-row: 5; grid-column: 3; min-height: var(--ui-mobile-inline-control-height); }
+  .tds-ledger-table [data-table-field='status'] { grid-row: 4; grid-column: -2 / -1; justify-content: flex-end; min-height: var(--ui-mobile-inline-control-height); }
   .tds-ledger-table [data-table-field='status']::before { content: '상태'; }
 
   .tds-ledger-table [data-table-field='status'] form,
-  .tds-ledger-table [data-table-field='costBehavior'] form { min-width: 0; flex: 1; }
+  .tds-ledger-table [data-table-field='costBehavior'] form { min-width: 0; flex: 0 1 auto; }
 
   /* A 40px control (the standard compact inline-select size elsewhere in the
    * app) reads oversized against a dense card's small type — the card scales
