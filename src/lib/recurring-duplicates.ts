@@ -1,7 +1,7 @@
 export type DuplicateCandidateTransaction = {
   id: string;
   transactionDate: string;
-  transactionType: 'income' | 'expense';
+  transactionType: 'income' | 'expense' | 'reference';
   flowClass?: string;
   amount: number;
   description: string;

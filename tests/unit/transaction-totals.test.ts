@@ -36,6 +36,15 @@ describe('calculateTransactionTotals', () => {
     ]);
     expect(totals.consumptionTotal).toBe(50_000);
   });
+
+  // 참고 거래는 posted 상태여도 flow_class가 'excluded'라 소비성지출 합계에 안 잡힌다.
+  it('excludes posted reference transactions (flow_class=excluded) from the confirmed consumption total', () => {
+    const totals = calculateTransactionTotals([
+      { amount: 50_000, flowClass: 'consumption', status: 'posted' },
+      { amount: 30_000, flowClass: 'excluded', status: 'posted' },
+    ]);
+    expect(totals.consumptionTotal).toBe(50_000);
+  });
 });
 
 describe('calculateTransactionTotals — planned rows must not mix inflow and outflow', () => {

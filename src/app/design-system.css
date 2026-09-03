@@ -227,6 +227,7 @@
  * carry the income/expense color. */
 .tds-ledger-table tbody [data-table-field='transactionType'] { color: var(--chart-expense); }
 .tds-ledger-table tbody [data-table-field='transactionType'][data-flow='income'] { color: var(--chart-income); }
+.tds-ledger-table tbody [data-table-field='transactionType'][data-flow='reference'] { color: var(--tds-grey-600); }
 .tds-ledger-table [data-table-field='description'] .monthly-description-button { color: inherit; }
 
 /* 행 전체가 클릭 가능한 영역이다(상세 드로어 열기) — 성격/상태 칸의 select 등 자체 조작

@@ -137,6 +137,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   return <div data-page="home" className="tds-page home-page">
     <header className="tds-page-header"><div><p className="tds-eyebrow">우리집 재무</p><h1 className="tds-title">가계 재무 대시보드</h1><p className="tds-page-subtitle">기준 월: {monthLabel(month)} · 실제로 확정된 데이터를 기준으로 보여줍니다.</p></div></header>
     {(summary.reviewCount > 0 || summary.plannedCount > 0) && <aside className="dashboard-alert-strip" aria-label="확인할 알림"><span aria-hidden="true">●</span><div><strong>확인할 일이 있어요</strong><p>{summary.reviewCount > 0 ? `검토가 필요한 거래 ${summary.reviewCount}건` : ''}{summary.reviewCount > 0 && summary.plannedCount > 0 ? ' · ' : ''}{summary.plannedCount > 0 ? `예정 거래 ${summary.plannedCount}건` : ''}</p></div><Link href="/monthly" prefetch className="tds-text-link">월간관리에서 확인</Link></aside>}
+    {/* §8: 참고 거래는 수입·지출·순현금흐름에 포함되지 않는다는 점을 문구로 명확히 한다. */}
+    {summary.referenceCount > 0 && <aside className="dashboard-alert-strip is-neutral" aria-label="참고 거래 요약"><span aria-hidden="true">●</span><div><strong>참고 거래 {summary.referenceCount}건 · 카드 사용액 {money(summary.referenceCardAmount)}</strong><p>수입·지출·순현금흐름에는 포함되지 않은 금액이에요.</p></div><Link href="/monthly" prefetch className="tds-text-link">월간관리에서 확인</Link></aside>}
 
     {/* §7 item 1 — 이번 달 요약은 탭 안이 아니라 페이지 최상단에 고정한다. */}
     <MonthSummary current={current} />

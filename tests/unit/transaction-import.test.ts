@@ -41,4 +41,25 @@ describe('transaction import normalization', () => {
     ], ['date', 'description', 'amount', 'type'], { date: 'date', description: 'description', amount: 'amount', status: 'type' });
     expect(rows[0]).toMatchObject({ transactionType: 'income', amount: 3000000, errors: [] });
   });
+
+  // 2026-09: 참고 거래(사용자 지시 §5) — 상태/구분 컬럼과 카테고리 둘 다 완전히 비어 있는 행만
+  // 참고 거래로 본다. 카드 대납·현금 환급처럼 원본에 수입/지출 신호가 전혀 없는 행을 위한 규칙.
+  it('marks a row with no status and no category as a reference transaction', () => {
+    const rows = mapImportRows([
+      ['이용일', '가맹점', '승인금액', '승인상태', '카테고리'],
+      ['2026-08-29', '엄마 대신 결제', '50,000', '', ''],
+    ], ['이용일', '가맹점', '승인금액', '승인상태', '카테고리'], { date: '이용일', amount: '승인금액', description: '가맹점', status: '승인상태', category: '카테고리' });
+    expect(rows[0]).toMatchObject({ transactionType: 'reference', amount: 50000, errors: [] });
+  });
+
+  // 회귀 가드: 상태 컬럼에 인식 못 하는 값이라도 뭔가 들어있으면(빈 값이 아니면) 여전히 지출로
+  // 본다 — "구분이 없는" 행만 참고 거래가 되어야 하고, 그냥 카테고리가 안 붙은 정상 지출까지
+  // 참고 거래로 잘못 분류되면 안 된다.
+  it('still treats a row with an unrecognized (non-empty) status as an ordinary expense', () => {
+    const rows = mapImportRows([
+      ['이용일', '가맹점', '승인금액', '승인상태'],
+      ['2026-08-29', '커피', '3,000', '정상'],
+    ], ['이용일', '가맹점', '승인금액', '승인상태'], { date: '이용일', amount: '승인금액', description: '가맹점', status: '승인상태' });
+    expect(rows[0]).toMatchObject({ transactionType: 'expense', amount: 3000, errors: [] });
+  });
 });

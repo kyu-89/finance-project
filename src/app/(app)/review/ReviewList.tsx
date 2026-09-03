@@ -16,6 +16,7 @@ const PAGE_SIZE = 20;
 const TYPE_LABEL: Record<Transaction['transactionType'], string> = {
   income: '수입',
   expense: '지출',
+  reference: '참고 거래',
 };
 
 export function ReviewList({ transactions, categories, paymentMethods }: { transactions: Transaction[]; categories: CategoryWithSubcategories[]; paymentMethods: PaymentMethod[] }) {

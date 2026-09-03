@@ -628,6 +628,13 @@ textarea {
 .confirm-dialog-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 20px; }
 .confirm-dialog-actions button { min-height: 48px; }
 .drawer-trigger { min-height: 44px; padding: 10px 16px; font-size: 14px; }
+/* 월간관리의 수입/지출/참고 거래 추가 버튼 — 크기·스타일은 동일하게 두고 왼쪽 강조선 색으로만
+ * 거래 유형을 구분한다(사용자 지시: "동일한 크기·높이·스타일 체계를 사용하되 시각적 구분은
+ * 명확히"). 색은 다른 화면의 수입/지출 색상(--chart-income/--chart-expense)과 맞췄다. */
+.drawer-trigger.is-income, .drawer-trigger.is-expense, .drawer-trigger.is-reference { box-shadow: inset 3px 0 0 0 var(--cta-accent); }
+.drawer-trigger.is-income { --cta-accent: var(--chart-income); }
+.drawer-trigger.is-expense { --cta-accent: var(--chart-expense); }
+.drawer-trigger.is-reference { --cta-accent: var(--tds-grey-500); }
 .drawer-backdrop { position: fixed; z-index: 70; inset: 0; display: flex; justify-content: flex-end; background: rgb(13 25 43 / .32); }
 .app-drawer { width: min(640px, 100vw); height: 100%; overflow-y: auto; background: var(--tds-white); box-shadow: -12px 0 40px rgb(0 0 0 / .16); animation: drawer-in 180ms ease-out; }
 .app-drawer-header { position: sticky; z-index: 1; top: 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 22px 24px 18px; border-bottom: 1px solid var(--tds-grey-200); background: rgb(255 255 255 / .94); backdrop-filter: blur(12px); }
@@ -895,3 +902,6 @@ button:disabled { cursor: wait; transform: none !important; }
 .dashboard-alert-strip strong { font-size: 13px; }
 .dashboard-alert-strip p { margin-top: 3px; color: var(--tds-grey-700); font-size: 12px; }
 .dashboard-alert-strip a { flex: 0 0 auto; margin-left: auto; }
+/* 참고 거래 요약(§8)은 "확인할 일이 있어요"(파란색, 행동 필요)와 달리 정보성 안내라 중립 톤을 쓴다. */
+.dashboard-alert-strip.is-neutral { border-color: var(--tds-grey-200); background: var(--tds-grey-50); }
+.dashboard-alert-strip.is-neutral > span { color: var(--tds-grey-500); }

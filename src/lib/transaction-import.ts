@@ -6,7 +6,7 @@ export type ParsedImportRow = {
   rowNumber: number;
   transactionDate: string | null;
   amount: number | null;
-  transactionType: 'income' | 'expense' | 'refund';
+  transactionType: 'income' | 'expense' | 'refund' | 'reference';
   description: string;
   categoryName: string | null;
   subcategoryName: string | null;
@@ -121,17 +121,25 @@ export function mapImportRows(rows: unknown[][], headers: string[], mapping: Imp
     const parsedAmount = normalizeImportAmount(valueAt(row, headers, mapping.amount));
     const description = String(valueAt(row, headers, mapping.description) ?? '').trim();
     const status = valueAt(row, headers, mapping.status);
+    const categoryName = String(valueAt(row, headers, mapping.category) ?? '').trim() || null;
     const errors: string[] = [];
     if (!date) errors.push('날짜를 읽지 못했어요.');
     if (parsedAmount.amount === null || parsedAmount.amount <= 0) errors.push('금액을 읽지 못했어요.');
     if (!description) errors.push('가맹점/내용이 비어 있어요.');
+    // 수입·지출 구분(상태/구분 컬럼)이 아예 비어 있고 카테고리도 없는 행은 참고 거래로 가져온다
+    // (사용자 지시 §5) — 상태 컬럼에 뭔가 값이 있으면(인식 못 한 값이라도) 기존처럼 지출로 본다.
+    // 카드 대납·현금 환급처럼 원본에 수입/지출 신호가 전혀 없는 행이 여기 해당한다.
+    const noTypeSignal = !String(status ?? '').trim();
     result.push({
       rowNumber: index + 1,
       transactionDate: date,
       amount: parsedAmount.amount,
-      transactionType: parsedAmount.negative || isRefund(status) ? 'refund' : isIncome(status) ? 'income' : 'expense',
+      transactionType: parsedAmount.negative || isRefund(status) ? 'refund'
+        : isIncome(status) ? 'income'
+        : noTypeSignal && !categoryName ? 'reference'
+        : 'expense',
       description,
-      categoryName: String(valueAt(row, headers, mapping.category) ?? '').trim() || null,
+      categoryName,
       subcategoryName: null,
       memo: String(valueAt(row, headers, mapping.memo) ?? '').trim() || null,
       cardLabel: String(valueAt(row, headers, mapping.card) ?? '').trim() || null,

@@ -157,7 +157,7 @@ export async function createMonthlyRowAction(
 
     revalidatePath('/monthly');
     revalidatePath('/dashboard');
-  return ok('지출 내역을 추가했어요.');
+  return ok(transactionType === 'income' ? '수입 내역을 추가했어요.' : transactionType === 'reference' ? '참고 거래를 추가했어요.' : '지출 내역을 추가했어요.');
 }
 
 export async function undoTransactionAction(

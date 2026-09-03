@@ -77,4 +77,18 @@ describe('calculateMonthlyClosing', () => {
     expect(result.consumption).toBe(500000);
     expect(result.spentByCategory.food).toBe(500000);
   });
+
+  // 2026-09: 참고 거래(flow_class='excluded', 사용자 지시)는 posted 상태여도 income/consumption
+  // 어느 쪽에도 더해지지 않는다 — cash_in/consumption과 완전히 분리된 축이기 때문.
+  it('excludes reference transactions (flow_class=excluded) from income, consumption, and cash remaining', () => {
+    const result = calculateMonthlyClosing([
+      { amount: 3_000_000, flowClass: 'cash_in', status: 'posted', includeInBudget: true, categoryId: null },
+      { amount: 700_000, flowClass: 'consumption', status: 'posted', includeInBudget: true, categoryId: 'food' },
+      { amount: 350_000, flowClass: 'excluded', status: 'posted', includeInBudget: false, categoryId: null },
+    ], []);
+    expect(result.income).toBe(3_000_000);
+    expect(result.consumption).toBe(700_000);
+    expect(result.cashRemaining).toBe(2_300_000);
+    expect(result.spentByCategory).toEqual({ food: 700_000 });
+  });
 });

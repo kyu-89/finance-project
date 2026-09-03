@@ -6,11 +6,15 @@ export function AddDrawer({
   title,
   description,
   triggerLabel,
+  triggerClassName,
   children,
 }: {
   title: string;
   description?: string;
   triggerLabel: string;
+  // 월간관리의 수입/지출/참고 거래 추가 버튼처럼, 같은 크기·스타일 체계 안에서 거래 유형별 시각적
+  // 구분(강조색)만 다르게 줄 때 쓰는 선택적 클래스 — 대부분의 호출부는 생략한다.
+  triggerClassName?: string;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -63,7 +67,7 @@ export function AddDrawer({
 
   return (
     <>
-      <button ref={triggerRef} type="button" className="tds-primary-button drawer-trigger" onClick={() => setOpen(true)}>
+      <button ref={triggerRef} type="button" className={`tds-primary-button drawer-trigger ${triggerClassName ?? ''}`.trim()} onClick={() => setOpen(true)}>
         + {triggerLabel}
       </button>
       {open && (

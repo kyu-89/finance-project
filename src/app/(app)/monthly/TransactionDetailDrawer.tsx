@@ -38,7 +38,13 @@ export function TransactionDetailDrawer({ transaction, support, event, categorie
   const [subcategoryId, setSubcategoryId] = useState(transaction.subcategoryId ?? '');
   const [paymentMethodId, setPaymentMethodId] = useState(transaction.paymentMethodId ?? '');
   const selectedCategory = categories.find((category) => category.id === categoryId);
-  const missingRequiredPick = !categoryId || (transactionType === 'expense' && !paymentMethodId);
+  // 참고 거래는 대분류·소분류가 필수가 아니다(사용자 지시) — 수입·지출로 전환하면 그 즉시 다시
+  // 필수 검증이 걸린다(isCategoryRequired가 transactionType을 그대로 따라가므로).
+  const isCategoryRequired = transactionType !== 'reference';
+  const missingRequiredPick = (isCategoryRequired && !categoryId) || (transactionType === 'expense' && !paymentMethodId);
+  const availableCategories = transactionType === 'reference'
+    ? categories.filter((category) => category.isActive || category.id === categoryId)
+    : categories.filter((category) => category.transactionType === transactionType && (category.isActive || category.id === categoryId));
 
   function resetClassification() {
     setCategoryId('');
@@ -53,16 +59,17 @@ export function TransactionDetailDrawer({ transaction, support, event, categorie
       <div className="monthly-drawer-section">
         <h3>기본 정보</h3>
         <div className="monthly-drawer-grid">
-          <label className="form-field"><span>거래 유형</span><select value={transactionType} onChange={(event) => { setTransactionType(event.target.value as Transaction['transactionType']); resetClassification(); }}><option value="expense">지출</option><option value="income">수입</option></select></label>
+          <label className="form-field"><span>거래 유형</span><select value={transactionType} onChange={(event) => { setTransactionType(event.target.value as Transaction['transactionType']); resetClassification(); }}><option value="expense">지출</option><option value="income">수입</option><option value="reference">참고 거래</option></select></label>
           <label className="form-field"><span>거래일</span><input type="date" name="transactionDate" defaultValue={transaction.transactionDate} required /></label>
-          <FormField as="div" label="대분류 / 소분류" required className="[grid-column:1/-1]">
+          <FormField as="div" label="대분류 / 소분류" required={isCategoryRequired} className="[grid-column:1/-1]">
             <CategoryPicker
               // 거래 유형이 바뀌면 후보 대분류 목록 자체가 달라지므로 피커 내부 선택 상태도
               // 버려야 한다 — resetClassification()이 비우는 폼 상태와 짝을 맞춘다.
               key={transactionType}
-              categories={categories.filter((category) => category.transactionType === transactionType && (category.isActive || category.id === categoryId))}
+              categories={availableCategories}
               initialCategoryId={categoryId || null}
               initialSubcategoryId={subcategoryId || null}
+              allowClearCategory={!isCategoryRequired}
               allowClearSubcategory
               onSelect={(category, pickedSubcategoryId) => {
                 setCategoryId(category?.id ?? '');
@@ -78,11 +85,12 @@ export function TransactionDetailDrawer({ transaction, support, event, categorie
           <label className="form-field"><span>내용</span><input name="description" defaultValue={transaction.description} placeholder="예: 장보기, 급여" required /></label>
           <label className="form-field"><span>금액</span><AmountInput name="amount" defaultValue={transaction.amount} required /></label>
           <label className="form-field [grid-column:1/-1]"><span>비고</span><input name="memo" defaultValue={transaction.memo ?? ''} placeholder="메모를 입력하세요" /></label>
-          {transactionType === 'expense' && (
-            <FormField as="div" label="결제 수단" required className="[grid-column:1/-1]">
+          {transactionType !== 'income' && (
+            <FormField as="div" label="결제 수단" required={transactionType === 'expense'} className="[grid-column:1/-1]">
               <PaymentMethodPicker
                 paymentMethods={paymentMethods}
                 selectedId={paymentMethodId}
+                allowClear={transactionType === 'reference'}
                 onSelect={(method) => setPaymentMethodId(method?.id ?? '')}
               />
             </FormField>
@@ -93,7 +101,7 @@ export function TransactionDetailDrawer({ transaction, support, event, categorie
       <input type="hidden" name="transactionType" value={transactionType} />
       <input type="hidden" name="categoryId" value={categoryId} />
       <input type="hidden" name="subcategoryId" value={subcategoryId} />
-      <input type="hidden" name="paymentMethodId" value={transactionType === 'expense' ? paymentMethodId : ''} />
+      <input type="hidden" name="paymentMethodId" value={transactionType !== 'income' ? paymentMethodId : ''} />
       <input type="hidden" name="categoryDefaultCostBehavior" value={selectedCategory?.defaultCostBehavior ?? ''} />
       <Button type="submit" variant="primary" disabled={updatePending || missingRequiredPick} className="monthly-drawer-submit">{updatePending ? '저장 중…' : '정보 수정'}</Button>
     </form>

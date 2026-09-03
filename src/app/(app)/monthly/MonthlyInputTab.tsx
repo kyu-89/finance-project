@@ -19,7 +19,7 @@ import { findRecurringDuplicateCandidates, type DuplicateCandidate } from '@/lib
 // table, so the feature registry is empty — the core row model is automatic in v9.
 const features = tableFeatures({});
 const columnHelper = createColumnHelper<typeof features, Transaction>();
-const TRANSACTION_TYPE_LABEL: Record<Transaction['transactionType'], string> = { income: '수입', expense: '지출' };
+const TRANSACTION_TYPE_LABEL: Record<Transaction['transactionType'], string> = { income: '수입', expense: '지출', reference: '참고 거래' };
 const COST_BEHAVIOR_LABEL: Record<NonNullable<Transaction['costBehavior']>, string> = { fixed: '고정비', variable: '변동비' };
 const COST_BEHAVIOR_OPTIONS = [
   { value: '', label: '미지정' },
@@ -82,7 +82,7 @@ function MonthlyTransactionTable({ transactions, categories, paymentMethods, dup
           if ((event.target as HTMLElement).closest('select, button, a, input, textarea, label')) return;
           setSelected(transaction);
         };
-        return <tr key={row.id} className="tds-table-row border-b last:border-b-0" data-row-status={transaction.status === 'cancelled' || transaction.status === 'refunded' ? transaction.status : undefined} onClick={openDetail}>{row.getAllCells().map((cell) => { const value = cell.column.id === 'categoryId' ? categoryById.get(transaction.categoryId ?? '') ?? '미분류' : cell.column.id === 'subcategoryId' ? categoryById.get(transaction.subcategoryId ?? '') ?? '없음' : cell.column.id === 'paymentMethodId' ? paymentMethodById.get(transaction.paymentMethodId ?? '') ?? '미지정' : null; return <td key={cell.id} data-table-field={cell.column.id} data-table-align={cell.column.id === 'amount' ? 'right' : ['transactionDate', 'status', 'transactionType', 'costBehavior'].includes(cell.column.id) ? 'center' : undefined} data-flow={cell.column.id === 'transactionType' ? (transaction.transactionType === 'income' ? 'income' : 'expense') : undefined} className={`tds-table-cell ${['amount', 'transactionType'].includes(cell.column.id) ? 'font-semibold' : ''}`}>{cell.column.id === 'description' ? <button type="button" className="monthly-description-button" onClick={() => setSelected(transaction)}>{transaction.description}</button> : <><table.FlexRender cell={cell} />{value}</>}</td>; })}</tr>;
+        return <tr key={row.id} className="tds-table-row border-b last:border-b-0" data-row-status={transaction.status === 'cancelled' || transaction.status === 'refunded' ? transaction.status : undefined} onClick={openDetail}>{row.getAllCells().map((cell) => { const value = cell.column.id === 'categoryId' ? categoryById.get(transaction.categoryId ?? '') ?? '미분류' : cell.column.id === 'subcategoryId' ? categoryById.get(transaction.subcategoryId ?? '') ?? '없음' : cell.column.id === 'paymentMethodId' ? paymentMethodById.get(transaction.paymentMethodId ?? '') ?? '미지정' : null; return <td key={cell.id} data-table-field={cell.column.id} data-table-align={cell.column.id === 'amount' ? 'right' : ['transactionDate', 'status', 'transactionType', 'costBehavior'].includes(cell.column.id) ? 'center' : undefined} data-flow={cell.column.id === 'transactionType' ? transaction.transactionType : undefined} className={`tds-table-cell ${['amount', 'transactionType'].includes(cell.column.id) ? 'font-semibold' : ''}`}>{cell.column.id === 'description' ? <button type="button" className="monthly-description-button" onClick={() => setSelected(transaction)}>{transaction.description}</button> : <><table.FlexRender cell={cell} />{value}</>}</td>; })}</tr>;
       })}</tbody></table>{pageCount > 1 && <nav className="monthly-table-pagination" aria-label="거래 목록 페이지 이동"><span>{(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, transactions.length)} / {transactions.length}건</span><div><button type="button" disabled={currentPage === 1} onClick={() => setPage((current) => current - 1)}><span className="sr-only">이전 페이지</span>이전</button><strong>{currentPage} / {pageCount}</strong><button type="button" disabled={currentPage === pageCount} onClick={() => setPage((current) => current + 1)}><span className="sr-only">다음 페이지</span>다음</button></div></nav>}{selected && <TransactionDetailDrawer key={selected.id} transaction={selected} candidates={duplicateCandidates[selected.id] ?? []} categories={categories} paymentMethods={paymentMethods} onClose={() => setSelected(null)} />}</div>;
 }
 
@@ -100,13 +100,16 @@ export function MonthlyInputTab({
   const [query, setQuery] = useState('');
   // 유형 → 대분류 → 소분류는 서로 종속된 필터다: 유형을 좁히면 대분류 후보가, 대분류를 고르면
   // 소분류 후보가 그 안에서만 걸러진다(카테고리 자체가 income/expense 중 하나에만 속하므로).
-  const [type, setType] = useState<'all' | 'income' | 'expense'>('all');
+  const [type, setType] = useState<'all' | 'income' | 'expense' | 'reference'>('all');
   const [category, setCategory] = useState('all');
   const [subcategory, setSubcategory] = useState('all');
   const [costBehavior, setCostBehavior] = useState<'all' | 'fixed' | 'variable'>('all');
   const [status, setStatus] = useState<'all' | Transaction['status']>('all');
+  // 참고 거래는 categories 테이블에 자기 유형이 없어(income/expense만 있음) 대분류를 아예 안
+  // 고르거나 두 유형 중 아무거나 골랐을 수 있다 — 필터에서도 '참고 거래' 선택 시 대분류 후보를
+  // 전체로 보여준다.
   const availableCategories = useMemo(
-    () => categories.filter((item) => type === 'all' || item.transactionType === type),
+    () => categories.filter((item) => type === 'all' || type === 'reference' || item.transactionType === type),
     [categories, type],
   );
   const selectedCategory = availableCategories.find((item) => item.id === category);
@@ -133,10 +136,10 @@ export function MonthlyInputTab({
 
   return (
     <div className="monthly-input-panel flex flex-col gap-4">
-      <div className="monthly-cta monthly-quick-actions"><AddDrawer title="수입 추가" description="이번 달에 들어온 돈을 기록하세요." triggerLabel="수입 추가"><MonthlyRowForm initialTransactionType="income" categories={categories} paymentMethods={paymentMethods} /></AddDrawer><AddDrawer title="지출 추가" description="이번 달에 쓴 돈을 기록하세요." triggerLabel="지출 추가"><MonthlyRowForm initialTransactionType="expense" categories={categories} paymentMethods={paymentMethods} /></AddDrawer></div>
+      <div className="monthly-cta monthly-quick-actions"><AddDrawer title="수입 추가" description="이번 달에 들어온 돈을 기록하세요." triggerLabel="수입 추가" triggerClassName="is-income"><MonthlyRowForm initialTransactionType="income" categories={categories} paymentMethods={paymentMethods} /></AddDrawer><AddDrawer title="지출 추가" description="이번 달에 쓴 돈을 기록하세요." triggerLabel="지출 추가" triggerClassName="is-expense"><MonthlyRowForm initialTransactionType="expense" categories={categories} paymentMethods={paymentMethods} /></AddDrawer><AddDrawer title="참고 거래 추가" description="수입·지출로 보기 어렵지만 기록은 남겨야 하는 거래를 등록하세요." triggerLabel="참고 거래 추가" triggerClassName="is-reference"><MonthlyRowForm initialTransactionType="reference" categories={categories} paymentMethods={paymentMethods} /></AddDrawer></div>
       <section className="monthly-ledger-filters" aria-label="이번 달 거래 필터"><div className="monthly-ledger-filter-heading"><div><span className="monthly-kicker">거래 조회</span><strong>{selectedMonth.replace('-', '년 ')}월 거래</strong></div></div><div className="monthly-ledger-filter-grid">
         <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="내용·메모 검색" aria-label="내용·메모 검색" />
-        <select value={type} onChange={(event) => { const next = event.target.value as typeof type; setType(next); setCategory('all'); setSubcategory('all'); }} aria-label="유형"><option value="all">모든 유형</option><option value="income">수입</option><option value="expense">지출</option></select>
+        <select value={type} onChange={(event) => { const next = event.target.value as typeof type; setType(next); setCategory('all'); setSubcategory('all'); }} aria-label="유형"><option value="all">모든 유형</option><option value="income">수입</option><option value="expense">지출</option><option value="reference">참고 거래</option></select>
         <select value={category} onChange={(event) => { setCategory(event.target.value); setSubcategory('all'); }} aria-label="대분류"><option value="all">모든 대분류</option>{availableCategories.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
         <select value={subcategory} onChange={(event) => setSubcategory(event.target.value)} aria-label="소분류" disabled={!selectedCategory}><option value="all">모든 소분류</option>{selectedCategory?.subcategories.map((sub) => <option key={sub.id} value={sub.id}>{sub.name}</option>)}</select>
         <select value={costBehavior} onChange={(event) => setCostBehavior(event.target.value as typeof costBehavior)} aria-label="비용성격"><option value="all">모든 비용성격</option><option value="fixed">고정비</option><option value="variable">변동비</option></select>

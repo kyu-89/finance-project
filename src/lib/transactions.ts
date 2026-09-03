@@ -35,6 +35,7 @@ export type Transaction = {
 export const FLOW_CLASS_BY_TRANSACTION_TYPE: Record<TransactionType, string> = {
   income: 'cash_in',
   expense: 'consumption',
+  reference: 'excluded',
 };
 
 function mapRow(row: {
@@ -125,6 +126,9 @@ export async function createTransaction(input: {
       description: input.description,
       memo: input.memo ?? null,
       tags: input.tags ?? [],
+      // 참고 거래는 예산 집계 대상이 아니다(사용자 지시) — flow_class가 이미 'excluded'라
+      // include_in_budget 필터를 쓰는 집계 어디서도 안 걸리지만, 명시적으로도 false로 남긴다.
+      include_in_budget: input.transactionType !== 'reference',
       needs_review: input.needsReview ?? false,
       status: 'posted',
     })
@@ -141,7 +145,7 @@ export async function createTransaction(input: {
 export type ImportedTransactionInput = {
   transactionDate: string;
   sourceMonth?: string | null;
-  transactionType: 'income' | 'expense';
+  transactionType: 'income' | 'expense' | 'reference';
   // 환불/취소로 감지된 원본 행은 이제 transactionType='refund'가 아니라 status='refunded'로
   // 들어온다(호출부인 TransactionImport.tsx/WorkbookMonthlyImport.tsx가 변환).
   status?: 'posted' | 'refunded';
@@ -471,6 +475,8 @@ export async function updateTransaction(input: {
     category_id: input.categoryId,
     subcategory_id: input.subcategoryId,
     payment_method_id: input.paymentMethodId,
+    // 참고 거래로 전환하면 예산 집계 대상에서 빠지고, 수입/지출로 되돌리면 다시 포함된다.
+    include_in_budget: input.transactionType !== 'reference',
   }).eq('id', input.id).is('deleted_at', null).select('id');
   if (error) throw new Error(`거래 수정 실패: ${error.message}`);
   if (data.length !== 1) throw new Error('수정할 거래를 찾지 못했어요.');

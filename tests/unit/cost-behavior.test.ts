@@ -7,6 +7,12 @@ describe('resolveCostBehavior', () => {
     expect(resolveCostBehavior('income', null, 'fixed')).toBeNull();
   });
 
+  // 참고 거래는 지출 전용 개념인 비용성격을 강제하지 않는다(사용자 지시).
+  it('returns null for reference transactions regardless of inputs', () => {
+    expect(resolveCostBehavior('reference', 'fixed', 'variable')).toBeNull();
+    expect(resolveCostBehavior('reference', null, null)).toBeNull();
+  });
+
   it('uses the explicit override when provided for an expense', () => {
     expect(resolveCostBehavior('expense', 'variable', 'fixed')).toBe('fixed');
   });

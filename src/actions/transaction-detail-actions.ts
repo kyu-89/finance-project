@@ -23,11 +23,12 @@ export async function updateTransactionAction(_p: ActionResult, f: FormData): Pr
   const rawCostBehavior = f.get('costBehaviorOverride');
   const costBehaviorOverride = rawCostBehavior === 'fixed' || rawCostBehavior === 'variable' ? rawCostBehavior : null;
   if (!id) return fail('거래 id가 없습니다.');
-  if (transactionType !== 'income' && transactionType !== 'expense') return fail('거래 유형을 확인해 주세요.');
+  if (transactionType !== 'income' && transactionType !== 'expense' && transactionType !== 'reference') return fail('거래 유형을 확인해 주세요.');
   if (!transactionDate) return fail('날짜를 확인해 주세요.');
   if (amount === null || amount <= 0) return fail('금액은 0보다 큰 정수여야 해요.');
   if (!description) return fail('내용을 입력해 주세요.');
-  if (!categoryId) return fail('대분류를 선택해 주세요.');
+  // 참고 거래는 대분류가 필수가 아니다(사용자 지시) — 수입/지출로 전환하면 다시 필수가 된다.
+  if (transactionType !== 'reference' && !categoryId) return fail('대분류를 선택해 주세요.');
   if (transactionType === 'expense' && !paymentMethodId) return fail('결제수단을 선택해 주세요.');
   try {
     await getCurrentHouseholdId();
