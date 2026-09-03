@@ -229,6 +229,14 @@
 .tds-ledger-table tbody [data-table-field='transactionType'][data-flow='income'] { color: var(--chart-income); }
 .tds-ledger-table [data-table-field='description'] .monthly-description-button { color: inherit; }
 
+/* 행 전체가 클릭 가능한 영역이다(상세 드로어 열기) — 성격/상태 칸의 select 등 자체 조작
+ * 요소 위에서는 그 기본 커서를 유지한다. */
+.tds-ledger-table.monthly-input-table tbody tr.tds-table-row { cursor: pointer; }
+.tds-ledger-table.monthly-input-table tbody tr.tds-table-row select,
+.tds-ledger-table.monthly-input-table tbody tr.tds-table-row button {
+  cursor: pointer;
+}
+
 /* 취소/환불 처리된 거래 행 전체에 취소선(사용자 지시: "해당 항목에 전체 취소선이 그어지면서
  * 지출 취소 처리"). 상태 셀 자체(select/버튼)는 조작 가능해야 하므로 제외한다. */
 .tds-ledger-table tbody tr[data-row-status='cancelled'] td:not([data-table-field='status']),
