@@ -69,7 +69,12 @@ function MonthlyTransactionTable({ transactions, categories, paymentMethods, dup
   const pageCount = Math.max(1, Math.ceil(transactions.length / pageSize));
   const currentPage = Math.min(page, pageCount);
   const pageTransactions = useMemo(() => transactions.slice((currentPage - 1) * pageSize, currentPage * pageSize), [transactions, currentPage]);
-  const table = useTable({ features, columns, data: pageTransactions });
+  // getRowId 없이는 tanstack-table이 배열 인덱스를 row.id로 쓴다 — 반복항목 자동 생성으로
+  // 새 예정 거래가 앞쪽 날짜에 끼어들면 그 뒤 모든 행의 인덱스가 밀리면서, 같은 표 위치(같은
+  // key)가 다른 거래를 가리키게 된다. 그 결과 방금 상태를 바꾼 행의 select가 실제로는 그
+  // 자리로 밀려온 "새로 생성된 예정 거래"를 보여주는 것처럼 보여서 "무슨 상태로 바꿔도 예정으로
+  // 되돌아간다"는 버그로 나타났다(사용자 지시로 조사·수정). 거래의 실제 id를 행 식별자로 고정한다.
+  const table = useTable({ features, columns, data: pageTransactions, getRowId: (row: Transaction) => row.id });
   const categoryById = useMemo(() => new Map(categories.flatMap((category) => [category, ...category.subcategories]).map((item) => [item.id, item.name])), [categories]);
   const paymentMethodById = useMemo(() => new Map(paymentMethods.map((method) => [method.id, method.name])), [paymentMethods]);
   const [selected, setSelected] = useState<Transaction | null>(null);
