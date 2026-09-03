@@ -644,19 +644,12 @@ aside[role="dialog"][aria-modal="true"]:not(.app-drawer) { width: min(640px, 100
 .recurring-rule-card form { align-items: center; }
 .recurring-rule-card input:not([type='hidden']), .recurring-rule-card select { min-height: 40px; }
 .recurring-rule-card > div:last-child { min-width: 132px; }
-.recurring-form { display: flex; flex-direction: column; gap: 22px; }
-.recurring-form fieldset { display: flex; flex-direction: column; gap: 12px; min-width: 0; border: 0; padding: 0; }
-.recurring-form legend { margin-bottom: 2px; color: var(--tds-grey-900); font-size: var(--text-body-2); font-weight: 750; }
-.recurring-form legend span { color: var(--tds-grey-500); font-size: 12px; font-weight: 500; }
-.recurring-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .form-field { display: flex; min-width: 0; flex-direction: column; gap: 6px; color: var(--tds-grey-700); font-size: 13px; font-weight: 650; }
-.recurring-form > .tds-primary-button { width: 100%; min-height: 48px; }
-.recurring-rule-edit { margin-top: 16px; border-top: 1px solid var(--tds-grey-200); padding-top: 12px; }
-.recurring-rule-edit summary { cursor: pointer; color: var(--tds-blue-600); font-size: 13px; font-weight: 700; }
-.recurring-rule-edit-body { display: grid; gap: 12px; margin-top: 12px; }
-.recurring-rule-edit-body form { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; }
-.recurring-rule-edit-body form > input:not([type='hidden']), .recurring-rule-edit-body form > select { min-height: 40px; }
-.recurring-rule-edit-body form button { min-height: 40px; white-space: nowrap; }
+/* 반복 항목 추가/수정 드로워는 이제 RecurringRuleForm이 MonthlyDrawerForm과 같은
+ * .monthly-drawer-form/-section/-grid 클래스를 쓴다(사용자 지시: 워딩·레이아웃 통일) — 예전의
+ * .recurring-form/.recurring-rule-edit-body 전용 스타일은 더 이상 어디서도 쓰이지 않아 제거했다.
+ * 남은 RecurringRuleAmountForm/RecurringPauseForm은 .recurring-rule-card의 input/select
+ * min-height(위 645번째 줄)와 form(644번째 줄) 규칙을 그대로 물려받는다. */
 input[type='date'], input[type='month'] { color-scheme: light; padding-right: 40px; }
 input[type='date']::-webkit-calendar-picker-indicator, input[type='month']::-webkit-calendar-picker-indicator { cursor: pointer; opacity: .62; }
 input[type='date']:user-invalid, input[type='month']:user-invalid { border-color: var(--tds-red-500); background: oklch(0.98 0.01 22); }
@@ -811,7 +804,6 @@ button:disabled { cursor: wait; transform: none !important; }
   .recurring-rule-card > div:last-child > div { justify-content: stretch; }
   .recurring-rule-card > div:last-child form { flex: 1; }
   .recurring-rule-card > div:last-child button { width: 100%; }
-  .recurring-form-grid { grid-template-columns: 1fr; }
   .home-action-links { display: grid; grid-template-columns: repeat(2, 1fr); }
   .home-action-links a { text-align: center; }
 }

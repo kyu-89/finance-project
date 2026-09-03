@@ -15,6 +15,11 @@ export type RecurringRule = {
   description: string;
   defaultAmount: number;
   transactionType: TransactionType;
+  categoryId: string | null;
+  subcategoryId: string | null;
+  paymentMethodId: string | null;
+  costBehavior: CostBehavior;
+  memo: string | null;
   frequency: RecurrenceFrequency;
   intervalCount: number;
   dayOfMonth: number | null;
@@ -33,7 +38,7 @@ export type RecurringPause = {
 };
 export type RecurringRuleChange = { id: string; recurringRuleId: string; changedAt: string; oldAmount: number; newAmount: number; oldStatus: string; newStatus: string; oldFrequency: string; newFrequency: string; oldIntervalCount: number; newIntervalCount: number; oldDayOfMonth: number | null; newDayOfMonth: number | null };
 
-const RULE_COLUMNS = `id, source_id, description, default_amount, transaction_type, frequency, interval_count, day_of_month, start_date, end_date, status, source_type`;
+const RULE_COLUMNS = `id, source_id, description, default_amount, transaction_type, category_id, subcategory_id, payment_method_id, cost_behavior, memo, frequency, interval_count, day_of_month, start_date, end_date, status, source_type`;
 
 export async function listRecurringRules(householdId: string): Promise<RecurringRule[]> {
   const supabase = await createClient();
@@ -52,6 +57,11 @@ export async function listRecurringRules(householdId: string): Promise<Recurring
     description: row.description,
     defaultAmount: row.default_amount,
     transactionType: row.transaction_type as TransactionType,
+    categoryId: row.category_id,
+    subcategoryId: row.subcategory_id,
+    paymentMethodId: row.payment_method_id,
+    costBehavior: row.cost_behavior as CostBehavior,
+    memo: row.memo,
     frequency: row.frequency as RecurrenceFrequency,
     intervalCount: row.interval_count,
     dayOfMonth: row.day_of_month,
@@ -139,6 +149,85 @@ export async function createRecurringRule(input: {
   });
 
   if (error) throw new Error(`반복항목 생성 실패: ${error.message}`);
+}
+
+// 2026-09: 반복 항목 추가/수정 드로워를 하나의 컴포넌트로 통일하면서(사용자 지시), 항목명·거래
+// 유형·대분류·소분류·비용성격·결제수단·시작일·종료일·반복주기를 한 번에 저장하는 수정 액션을
+// 새로 만들었다 — 예전에는 금액/주기만 따로 고칠 수 있었고 나머지는 수정 자체가 불가능했다.
+//
+// 대출·적금 상품이 자동으로 만든 반복항목(source_id가 있는 행)은 여기서 손대지 않는다 —
+// amountFor()가 subcategory_id로 원금/이자를 구분하고, 상품의 실제 상환 일정과 반복 일정이
+// 정확히 일치해야 하므로, 분류·일정을 이 화면에서 자유롭게 바꾸면 이후 회차 금액이 조용히
+// 0원이 될 수 있다(§ recurring-rules.ts의 amountFor 참고). `.is('source_id', null)`이 UI가
+// 이 경로를 막아주는 것과 무관하게 서버에서도 이를 강제한다 — 상품 연동 항목은 대출/적금
+// 상품 화면에서만 관리된다.
+export async function updateRecurringRule(input: {
+  ruleId: string;
+  description: string;
+  transactionType: TransactionType;
+  amount: number;
+  categoryId: string | null;
+  categoryDefaultCostBehavior: 'fixed' | 'variable' | null;
+  costBehaviorOverride?: 'fixed' | 'variable' | null;
+  subcategoryId: string | null;
+  paymentMethodId: string | null;
+  memo: string | null;
+  startDate: string;
+  endDate: string | null;
+  frequency: RecurrenceFrequency;
+  intervalCount: number;
+  dayOfMonth: number | null;
+}): Promise<void> {
+  const supabase = await createClient();
+  let costBehavior = input.costBehaviorOverride ?? null;
+  if (costBehavior === null && input.transactionType === 'expense' && input.categoryId) {
+    const { data: category, error: categoryError } = await supabase
+      .from('categories')
+      .select('default_cost_behavior')
+      .eq('id', input.categoryId)
+      .single();
+    if (categoryError) throw new Error(`카테고리 확인 실패: ${categoryError.message}`);
+    costBehavior = category.default_cost_behavior as CostBehavior;
+  }
+  if (input.transactionType !== 'expense') costBehavior = null;
+
+  const patch = {
+    description: input.description,
+    default_amount: input.amount,
+    transaction_type: input.transactionType,
+    flow_class: FLOW_CLASS_BY_TRANSACTION_TYPE[input.transactionType],
+    cost_behavior: costBehavior,
+    category_id: input.categoryId,
+    subcategory_id: input.subcategoryId,
+    payment_method_id: input.paymentMethodId,
+    memo: input.memo,
+    start_date: input.startDate,
+    end_date: input.endDate,
+    frequency: input.frequency,
+    interval_count: input.intervalCount,
+    day_of_month: input.frequency === 'monthly' ? input.dayOfMonth : null,
+  };
+
+  const { data, error } = await supabase.from('recurring_rules').update(patch)
+    .eq('id', input.ruleId).is('source_id', null).neq('status', 'ended').select('id');
+  if (error) throw new Error(`반복항목 수정 실패: ${error.message}`);
+  if (data.length !== 1) throw new Error('수정할 반복항목을 찾지 못했어요.');
+
+  // 이미 확정된(posted) 과거 거래는 손대지 않고, 아직 예정(planned) 상태인 미래 거래만 새 값으로
+  // 맞춘다(§4 사용자 지시) — 다음 materializeRecurringRulesForRange 실행을 기다릴 필요 없이 화면에
+  // 바로 반영되고, recurring_occurrence_id 기준 upsert(ignoreDuplicates)라 중복도 생기지 않는다.
+  const { error: syncError } = await supabase.from('transactions').update({
+    description: input.description,
+    amount: input.amount,
+    transaction_type: input.transactionType,
+    flow_class: FLOW_CLASS_BY_TRANSACTION_TYPE[input.transactionType],
+    cost_behavior: costBehavior,
+    category_id: input.categoryId,
+    subcategory_id: input.subcategoryId,
+    payment_method_id: input.paymentMethodId,
+    memo: input.memo,
+  }).eq('recurring_rule_id', input.ruleId).eq('status', 'planned').is('deleted_at', null);
+  if (syncError) throw new Error(`예정 거래 반영 실패: ${syncError.message}`);
 }
 
 export async function updateRecurringRuleStatus(
@@ -409,24 +498,4 @@ export async function addRecurringPausePeriod(input: {
     p_reason: input.reason,
   });
   if (error) throw new Error(`일시중지 기간 추가 실패: ${error.message}`);
-}
-
-export async function updateRecurringRuleSchedule(input: {
-  ruleId: string;
-  frequency: RecurrenceFrequency;
-  intervalCount: number;
-  dayOfMonth: number | null;
-}): Promise<void> {
-  const supabase = await createClient();
-  const { data, error } = await supabase.from('recurring_rules')
-    .update({
-      frequency: input.frequency,
-      interval_count: input.intervalCount,
-      day_of_month: input.frequency === 'monthly' ? input.dayOfMonth : null,
-    })
-    .eq('id', input.ruleId)
-    .neq('status', 'ended')
-    .select('id');
-  if (error) throw new Error(`반복 주기 변경 실패: ${error.message}`);
-  if (data.length !== 1) throw new Error('변경할 반복항목을 찾지 못했어요.');
 }

@@ -6,7 +6,6 @@ import { RecurringRuleForm } from './RecurringRuleForm';
 import { RecurringRuleStatusSelect } from './RecurringRuleStatusSelect';
 import { RecurringRuleAmountForm } from './RecurringRuleAmountForm';
 import { RecurringPauseForm } from './RecurringPauseForm';
-import { RecurringRuleScheduleForm } from './RecurringRuleScheduleForm';
 import { AddDrawer } from '@/components/Drawer';
 import { SettingsBackLink } from '../SettingsBackLink';
 
@@ -26,16 +25,26 @@ export default async function RecurringSettingsPage() {
     <div className="flex justify-end"><AddDrawer title="반복 항목 추가" description="월세·급여·구독처럼 반복되는 거래를 한 번만 등록하세요." triggerLabel="반복 항목 추가"><RecurringRuleForm categories={categories} paymentMethods={paymentMethods} /></AddDrawer></div>
     <ul className="settings-resource-list recurring-rule-list">
       {rules.length === 0 && <li className="px-5 py-8 text-center text-sm text-[var(--tds-grey-500)]">아직 반복항목이 없어요.</li>}
-      {rules.map((rule) => <li key={rule.id} className="recurring-rule-card">
-        <div><div className="flex items-center gap-2"><span className="font-semibold">{rule.description}</span>
-          <span className="tds-chip">{STATUS_LABEL[rule.status]}</span></div>
-              <p className="mt-1 text-sm text-[var(--tds-grey-700)]">
-            {rule.defaultAmount.toLocaleString('ko-KR')}원 · {rule.intervalCount}{FREQUENCY_LABEL[rule.frequency]}마다 · {rule.startDate}부터
-          </p><AddDrawer title={`${rule.description} 수정`} description="금액과 반복 주기를 바꾸면 이후 예정 거래에 반영됩니다." triggerLabel="정보 수정"><div className="recurring-rule-edit-body"><RecurringRuleAmountForm id={rule.id} amount={rule.defaultAmount} ended={rule.status === 'ended'} />
-          <RecurringRuleScheduleForm id={rule.id} frequency={rule.frequency} intervalCount={rule.intervalCount} day={rule.dayOfMonth ?? 1} ended={rule.status === 'ended'} />
-          <RecurringPauseForm id={rule.id} ended={rule.status === 'ended'} pauses={pauses.filter((pause) => pause.recurringRuleId === rule.id)} /></div></AddDrawer></div>
-        <RecurringRuleStatusSelect id={rule.id} status={rule.status} />
-      </li>)}
+      {rules.map((rule) => {
+        // 대출·적금 상품이 자동 생성한 반복항목(source_id 있음)은 여기서 분류·일정을 자유롭게
+        // 고칠 수 없게 한다 — amountFor()가 subcategory_id로 원금/이자를 구분하고, 반복 일정이
+        // 상품의 실제 상환 일정과 일치해야 하기 때문(사용자 확인). 대신 이번 달 금액 예외
+        // 변경·일시중지·상태 변경은 그대로 둔다.
+        const isProductLinked = rule.sourceId !== null;
+        return <li key={rule.id} className="recurring-rule-card">
+          <div><div className="flex items-center gap-2"><span className="font-semibold">{rule.description}</span>
+            <span className="tds-chip">{STATUS_LABEL[rule.status]}</span></div>
+                <p className="mt-1 text-sm text-[var(--tds-grey-700)]">
+              {rule.defaultAmount.toLocaleString('ko-KR')}원 · {rule.intervalCount}{FREQUENCY_LABEL[rule.frequency]}마다 · {rule.startDate}부터
+            </p>
+            {isProductLinked
+              ? <p className="mt-2 text-xs text-[var(--tds-grey-500)]">대출·적금 상품에서 자동으로 관리돼요 — 금액·분류·일정은 해당 상품 화면에서 수정하세요.</p>
+              : <AddDrawer title="반복 항목 수정" description="금액·분류·주기를 바꾸면 이후 예정 거래에 반영됩니다." triggerLabel="정보 수정"><RecurringRuleForm categories={categories} paymentMethods={paymentMethods} rule={rule} /></AddDrawer>}
+            <RecurringRuleAmountForm id={rule.id} amount={rule.defaultAmount} ended={rule.status === 'ended'} />
+            <RecurringPauseForm id={rule.id} ended={rule.status === 'ended'} pauses={pauses.filter((pause) => pause.recurringRuleId === rule.id)} /></div>
+          <RecurringRuleStatusSelect id={rule.id} status={rule.status} />
+        </li>;
+      })}
     </ul>
   </div>;
 }
