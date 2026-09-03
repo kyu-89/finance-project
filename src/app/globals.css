@@ -272,8 +272,8 @@ textarea {
 }
 
 .mobile-lnb-action .mobile-lnb-icon {
-  min-height: 30px;
-  width: 30px;
+  min-height: 44px;
+  width: 44px;
   border-radius: 50%;
   background: var(--tds-blue-500);
   color: white;
@@ -283,8 +283,8 @@ textarea {
 }
 
 .mobile-lnb-action .mobile-lnb-icon svg {
-  width: 30px;
-  height: 30px;
+  width: 22px;
+  height: 22px;
   stroke-width: 1.8;
 }
 
@@ -724,7 +724,7 @@ button:disabled { cursor: wait; transform: none !important; }
   .mobile-lnb-item { min-height: 58px; border-radius: 12px; font-size: 11px; }
   .mobile-lnb-icon { min-height: 24px; font-size: 20px; }
   .mobile-lnb-action { min-height: 58px; border-radius: 12px; }
-  .mobile-lnb-action .mobile-lnb-icon { min-height: 30px; width: 30px; font-size: 24px; }
+  .mobile-lnb-action .mobile-lnb-icon { min-height: 44px; width: 44px; font-size: 24px; }
 
   .table-surface {
     overflow-x: auto;
