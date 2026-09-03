@@ -34,8 +34,6 @@ describe('Sprint 4 finance table RLS', () => {
 
     const account = await insert('accounts', { household_id: householdA, bank_name: '은행', account_name: '계좌', account_type: 'checking', current_balance: 1_000_000 });
     cases.push({ table: 'accounts', id: account.id, spoof: { household_id: householdA, bank_name: 'B', account_name: 'B', account_type: 'checking' }, update: { memo: 'B update' } });
-    const card = await insert('cards', { household_id: householdA, issuer: '카드사', card_type: 'credit', card_name: '카드' });
-    cases.push({ table: 'cards', id: card.id, spoof: { household_id: householdA, issuer: 'B', card_type: 'check', card_name: 'B' }, update: { memo: 'B update' } });
     const deposit = await insert('deposits', { household_id: householdA, bank_name: '은행', product_name: '예금', joined_at: '2026-01-01', maturity_date: '2026-12-31', principal: 1_000_000, annual_rate: 0.03 });
     cases.push({ table: 'deposits', id: deposit.id, spoof: { household_id: householdA, bank_name: 'B', product_name: 'B', joined_at: '2026-01-01', maturity_date: '2026-12-31', principal: 1, annual_rate: 0 }, update: { memo: 'B update' } });
     const savings = await insert('savings_accounts', { household_id: householdA, bank_name: '은행', product_name: '적금', joined_at: '2026-01-01', maturity_date: '2026-12-31', monthly_amount: 100_000, annual_rate: 0.03 });

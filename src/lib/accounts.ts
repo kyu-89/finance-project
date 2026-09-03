@@ -40,6 +40,33 @@ export async function createAccount(input: Omit<Account, 'id' | 'status'> & { ho
   if (error) throw new Error(`계좌 추가 실패: ${error.message}`);
 }
 
+// 이미 등록된 계좌의 은행명/계좌명/종류/현재 잔액/계좌번호/용도/메모를 한 번에 수정한다(§7,
+// 사용자 지시: 신규 등록과 같은 필드·검증). id로만 대상을 찾아 UPDATE하므로 거래의
+// transactions.account_id 참조는 그대로 유지된다 — 계좌를 새로 만들거나 지우지 않는다.
+export async function updateAccount(input: {
+  id: string;
+  bankName: string;
+  accountName: string;
+  accountType: Account['accountType'];
+  currentBalance: number;
+  accountNumber: string | null;
+  purpose: string | null;
+  memo: string | null;
+}): Promise<void> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from('accounts').update({
+    bank_name: input.bankName,
+    account_name: input.accountName,
+    account_type: input.accountType,
+    current_balance: input.currentBalance,
+    account_number: input.accountNumber,
+    purpose: input.purpose,
+    memo: input.memo,
+  }).eq('id', input.id).eq('status', 'active').select('id');
+  if (error) throw new Error(`계좌 수정 실패: ${error.message}`);
+  if (data.length !== 1) throw new Error('수정할 계좌를 찾지 못했어요.');
+}
+
 export async function updateAccountBalance(id: string, amount: number): Promise<void> {
   const supabase = await createClient();
   const { error } = await supabase.from('accounts').update({ current_balance: amount }).eq('id', id).eq('status', 'active').select('id').single();

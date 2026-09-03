@@ -6,7 +6,7 @@ import { parseAccountRows } from '@/lib/excel-account-import';
 import { parseDepositRows, parseSavingsRows } from '@/lib/excel-savings-import';
 import { parseLoanRows, parseInsuranceRows } from '@/lib/excel-loan-insurance-import';
 import { parseInvestmentTradeRows } from '@/lib/excel-investment-import';
-import { parseAssetRows } from '@/lib/excel-asset-card-import';
+import { parseAssetRows } from '@/lib/excel-asset-import';
 
 type SourceItem = { name: string; amount: number };
 type SourceGroup = { count: number; amount: number; records: SourceItem[] };

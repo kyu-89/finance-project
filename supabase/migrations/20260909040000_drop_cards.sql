@@ -1,0 +1,15 @@
+-- 자산/금융 메뉴의 "카드" 기능 완전 제거 (사용자 지시).
+--
+-- 조사 결과:
+--   - public.cards를 참조하는 다른 테이블은 없다(confrelid = 'public.cards' 조회 결과 0건) —
+--     cards 자신이 households/payment_methods/auth.users를 참조하는 쪽이라, 이 테이블을 지워도
+--     payment_methods/transactions에는 어떤 영향도 없다.
+--   - 삭제 시점 34건(가구 6곳 — 실제 가구 1곳 29건 + tests/integration/rls-finance.test.ts가 남긴
+--     "Finance A" 테스트 가구 5곳 각 1건)을 삭제 전 .superpowers/cards-removal/cards-backup.json
+--     으로 백업해뒀다(운영 DB 밖, 로컬 파일).
+--   - "설정 > 결제수단 관리" 기능은 별개 테이블(payment_methods, card_number_last4 컬럼 포함)이라
+--     이 마이그레이션과 무관하며 그대로 유지된다.
+--
+-- 기능을 완전히 뺀 뒤에는 이 테이블을 다시 채울 코드가 남지 않으므로 테이블 자체를 제거한다
+-- (사용자 확인: 참조 관계·마이그레이션 이력 점검 후 스키마 제거를 권장, 승인받음).
+drop table if exists public.cards;

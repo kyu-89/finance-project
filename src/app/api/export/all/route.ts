@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getCurrentHouseholdId } from '@/lib/household';
 import { createClient } from '@/lib/supabase/server';
 
-const TABLES = ['transactions', 'accounts', 'cards', 'deposits', 'savings_accounts', 'loans', 'loan_payments', 'insurances', 'assets', 'monthly_asset_snapshots', 'investment_transactions', 'budgets', 'recurring_rules', 'financial_goals', 'financial_tasks'] as const;
+const TABLES = ['transactions', 'accounts', 'deposits', 'savings_accounts', 'loans', 'loan_payments', 'insurances', 'assets', 'monthly_asset_snapshots', 'investment_transactions', 'budgets', 'recurring_rules', 'financial_goals', 'financial_tasks'] as const;
 
 export async function GET() {
   const supabase = await createClient();
