@@ -112,6 +112,7 @@ export async function createMonthlyRowAction(
   const amount = Number(formData.get('amount'));
   const transactionDate = String(formData.get('transactionDate') ?? '');
   const description = String(formData.get('description') ?? '').trim();
+  const memo = String(formData.get('memo') ?? '').trim() || null;
   const categoryId = String(formData.get('categoryId') ?? '') || null;
   const categoryDefaultCostBehavior = (formData.get('categoryDefaultCostBehavior') || null) as
     'fixed' | 'variable' | null;
@@ -170,6 +171,7 @@ export async function createMonthlyRowAction(
       paymentMethodId: inheritedPaymentMethodId,
       amount,
       description,
+      memo,
       parentTransactionId,
     });
   } catch (error) {

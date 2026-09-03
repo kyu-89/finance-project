@@ -44,8 +44,8 @@ function CostBehaviorEditor({ transaction }: { transaction: Transaction }) {
 }
 
 // Column order is a shared rule, not a per-screen choice: 날짜 · 유형 · 대분류 ·
-// 소분류 · 내용 · 금액 · 결제수단 · 성격 · 상태. The desktop table's columns and the
-// mobile card's row groups (see .tds-ledger-table in design-system.css) both
+// 소분류 · 내용 · 금액 · 결제수단 · 비고 · 성격 · 상태. The desktop table's columns and
+// the mobile card's row groups (see .tds-ledger-table in design-system.css) both
 // follow this order; --ui-ledger-columns there must stay in this same sequence.
 function makeColumns() {
   return columnHelper.columns([
@@ -56,6 +56,7 @@ function makeColumns() {
     columnHelper.accessor('description', { header: '내용' }),
     columnHelper.accessor('amount', { header: '금액', cell: (info) => `${info.getValue().toLocaleString('ko-KR')}원` }),
     columnHelper.accessor('paymentMethodId', { header: '결제수단', cell: () => null }),
+    columnHelper.accessor('memo', { header: '비고', cell: (info) => info.getValue() ?? '' }),
     columnHelper.accessor('costBehavior', { header: '성격', cell: (info) => <CostBehaviorEditor transaction={info.row.original} /> }),
     columnHelper.accessor('status', { header: '상태', cell: (info) => <TransactionStatusEditor transaction={info.row.original} /> }),
   ]);

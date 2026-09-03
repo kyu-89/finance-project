@@ -43,6 +43,7 @@
   --ui-ledger-column-description-min: 140px;
   --ui-ledger-column-amount: 120px;
   --ui-ledger-column-payment: 112px;
+  --ui-ledger-column-memo: 140px;
   --ui-space-1: 4px;
   --ui-space-2: 8px;
   --ui-space-3: 12px;
@@ -307,10 +308,10 @@
  * columns with nth-child selectors. */
 @media (min-width: 641px) {
   .tds-ledger-table {
-    --ui-ledger-columns: var(--ui-ledger-column-date) var(--ui-ledger-column-type) var(--ui-ledger-column-category) var(--ui-ledger-column-subcategory) minmax(var(--ui-ledger-column-description-min), 1fr) var(--ui-ledger-column-amount) var(--ui-ledger-column-payment) var(--ui-ledger-column-behavior) var(--ui-ledger-column-state);
+    --ui-ledger-columns: var(--ui-ledger-column-date) var(--ui-ledger-column-type) var(--ui-ledger-column-category) var(--ui-ledger-column-subcategory) minmax(var(--ui-ledger-column-description-min), 1fr) var(--ui-ledger-column-amount) var(--ui-ledger-column-payment) var(--ui-ledger-column-memo) var(--ui-ledger-column-behavior) var(--ui-ledger-column-state);
     display: block;
     width: 100%;
-    min-width: 1064px;
+    min-width: 1204px;
   }
 
   .tds-ledger-table thead,
@@ -1508,7 +1509,8 @@ input.quick-add-amount {
    * 대분류·소분류를 나열하고, 결제는 그 아래 행 전체를 쓴다. */
   .tds-ledger-table [data-table-field='costBehavior'],
   .tds-ledger-table [data-table-field='categoryId'],
-  .tds-ledger-table [data-table-field='paymentMethodId'] {
+  .tds-ledger-table [data-table-field='paymentMethodId'],
+  .tds-ledger-table [data-table-field='memo'] {
     grid-column: 2;
     border-left: 1px solid var(--tds-grey-100);
     padding-left: var(--ui-space-3);
@@ -1564,12 +1566,25 @@ input.quick-add-amount {
   }
   .tds-ledger-table [data-table-field='paymentMethodId']::before { content: none; }
 
-  /* 대분류/소분류/결제는 플레인 텍스트 노드라 원래 overflow 지정이 전혀 없었다
-   * (넘치면 clip 없이 그냥 옆 영역을 침범). amount/내용과 같은 이유로 clip 대신
-   * 스크롤 — 이 셋은 감싸는 요소가 없어 셀 자신에 바로 적용한다. */
+  /* 비고: 결제수단 요청("결제수단 우측")을 모바일 1열 카드에서는 "그 값 바로
+   * 다음"으로 옮겨 담는다 — 내용(row 4, col 1)과 같은 행의 우측 영역 전체
+   * (col 2/-1)를 써서, 결제(row 3, col 2/-1) 바로 아래에 자연스럽게 이어진다.
+   * 새 행을 늘리지 않아 [확정]/[이번달 제외] 버튼의 row 5는 그대로 유지된다. */
+  .tds-ledger-table [data-table-field='memo'] {
+    grid-row: 4;
+    grid-column: 2 / -1;
+    font-size: var(--text-caption);
+    color: var(--tds-grey-700);
+  }
+  .tds-ledger-table [data-table-field='memo']::before { content: none; }
+
+  /* 대분류/소분류/결제/비고는 플레인 텍스트 노드라 원래 overflow 지정이 전혀
+   * 없었다(넘치면 clip 없이 그냥 옆 영역을 침범). amount/내용과 같은 이유로 clip
+   * 대신 스크롤 — 이 넷은 감싸는 요소가 없어 셀 자신에 바로 적용한다. */
   .tds-ledger-table [data-table-field='categoryId'],
   .tds-ledger-table [data-table-field='subcategoryId'],
-  .tds-ledger-table [data-table-field='paymentMethodId'] {
+  .tds-ledger-table [data-table-field='paymentMethodId'],
+  .tds-ledger-table [data-table-field='memo'] {
     overflow-x: auto;
     overflow-y: hidden;
     white-space: nowrap;
@@ -1578,7 +1593,8 @@ input.quick-add-amount {
   }
   .tds-ledger-table [data-table-field='categoryId']::-webkit-scrollbar,
   .tds-ledger-table [data-table-field='subcategoryId']::-webkit-scrollbar,
-  .tds-ledger-table [data-table-field='paymentMethodId']::-webkit-scrollbar {
+  .tds-ledger-table [data-table-field='paymentMethodId']::-webkit-scrollbar,
+  .tds-ledger-table [data-table-field='memo']::-webkit-scrollbar {
     display: none;
   }
 
