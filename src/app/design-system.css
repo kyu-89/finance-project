@@ -106,6 +106,15 @@
   --color-asset: var(--chart-wealth);
   --color-liability: var(--tds-red-600);
   --color-warning: var(--tds-yellow-700);
+
+  /* 예산 소진율처럼 "안정→주의→임박→초과" 4단계로 escalate하는 상태 축. 거래 유형(수입=파랑/
+   * 지출=빨강, --chart-income/-expense 위)과는 다른 축이라 절대 그 토큰을 재사용하지 않는다 —
+   * 특히 "안정"을 파랑으로 칠하면 "수입"으로 오해된다. 새 상태 배지·게이지를 추가할 때는 항상
+   * 이 4개 토큰을 쓰고, 임의로 Tailwind 색(amber-600 등)을 직접 쓰지 않는다. */
+  --color-status-safe: var(--tds-green-600);
+  --color-status-caution: var(--tds-yellow-700);
+  --color-status-near: var(--tds-orange-500);
+  --color-status-over: var(--tds-red-600);
   --color-primary: var(--tds-grey-900);
   --color-text: var(--tds-grey-900);
   --color-text-secondary: var(--tds-grey-700);
@@ -1659,18 +1668,6 @@ input.quick-add-amount {
     padding-inline: var(--ui-space-2);
     font-size: var(--text-micro);
   }
-}
-
-/* The legacy navigation action used a translateY active state.  Keep the
- * feedback perceptible without moving the target under the user's finger. */
-.mobile-lnb-action:active {
-  transform: none;
-  background: transparent;
-  color: var(--tds-blue-600);
-}
-
-.mobile-lnb-action:active .mobile-lnb-icon {
-  background: var(--tds-blue-500);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -63,8 +63,11 @@ export function AddDrawer({
 
   return (
     <>
+      {/* 2026-09(사용자 지시): "+"는 이제 모바일 하단의 플로팅 추가 버튼 하나만 쓴다 — 이 컴포넌트가
+          add와 edit 두 용도(예: 투자거래 "수정" 트리거)로 함께 쓰이는데, "+ 수정"처럼 편집 버튼
+          앞에 "+"가 붙는 게 의미상 맞지 않았다. CTA 전역에서 "+"를 제거하고 라벨 텍스트만 남긴다. */}
       <button ref={triggerRef} type="button" className="tds-primary-button drawer-trigger" onClick={() => setOpen(true)}>
-        + {triggerLabel}
+        {triggerLabel}
       </button>
       {open && (
         <div

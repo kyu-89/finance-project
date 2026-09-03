@@ -5,14 +5,16 @@ import type { Transaction } from '@/lib/transactions';
 import type { Budget } from '@/lib/budgets';
 import type { CategoryWithSubcategories } from '@/lib/categories';
 import { budgetStatus } from '@/lib/budget-calculations';
-import { summarizeExpenseByCategory, type AnalysisRow } from '@/lib/analysis';
-import { AnalysisBarChart } from './AnalysisBarChart';
-import { ExpenseDrilldown } from './AnalysisDrilldown';
+import { summarizeExpenseByCategory } from '@/lib/analysis';
+import { ExpenseDrilldown, type TransactionExtraColumn } from './AnalysisDrilldown';
 
 const won = (value: number) => `${value.toLocaleString('ko-KR')}원`;
 const percent = (value: number | null) => value === null ? '-' : `${(value * 100).toFixed(1)}%`;
 const STATUS_LABEL = { safe: '안정', caution: '주의 · 70% 이상', near: '임박 · 90% 이상', over: '초과 · 100% 이상' } as const;
-const STATUS_COLOR = { safe: 'text-[var(--tds-blue-500)]', caution: 'text-amber-600', near: 'text-orange-600', over: 'text-[var(--tds-red-500)]' } as const;
+// 예산 소진율 상태는 거래 유형(수입=파랑/지출=빨강)과 다른 축이라 design-system.css의 전용
+// --color-status-* 토큰을 쓴다(사용자 지시: "공통 디자인 규칙에 의해서 수정, 없으면 추가") —
+// 전에는 --tds-blue-500(수입 색과 동일)을 "안정"에 재사용해서 혼동을 줬었다.
+const STATUS_COLOR = { safe: 'text-[var(--color-status-safe)]', caution: 'text-[var(--color-status-caution)]', near: 'text-[var(--color-status-near)]', over: 'text-[var(--color-status-over)]' } as const;
 
 // §8 — 지출 > 대분류 > 소분류 > 개별 거래. 저축성지출은 다른 대분류와 같은 층위의 항목 하나일
 // 뿐이다(별도 계층·탭·차트 시리즈로 만들지 않음). 월간 화면에서는 예산 대비 실제 지출도 여기서
@@ -25,8 +27,8 @@ export function AnalysisExpenseView({ scope, month, periodTransactions, category
   totals: { expense: number };
 }) {
   const rows = useMemo(() => summarizeExpenseByCategory(periodTransactions, categoryNames, subcategoryNames), [periodTransactions, categoryNames, subcategoryNames]);
-  const flatRows: AnalysisRow[] = rows.map((r) => ({ id: r.id, label: r.label, value: r.value, count: r.count }));
   const transactionsFor = (categoryId: string, subcategoryId: string) => periodTransactions.filter((t) => t.status === 'posted' && t.flowClass === 'consumption' && (t.categoryId ?? 'unassigned') === categoryId && (t.subcategoryId ?? 'unassigned') === subcategoryId);
+  const extraColumn: TransactionExtraColumn = { label: '소분류', valueFor: (t) => (t.subcategoryId ? subcategoryNames.get(t.subcategoryId) ?? '기타' : '-') };
 
   const budgetMonth = Number(month.slice(5, 7));
   const budgetByCategory = new Map(budgets.filter((b) => b.month === budgetMonth && b.transactionType === 'expense' && b.categoryId).map((b) => [b.categoryId!, b.amount]));
@@ -36,8 +38,7 @@ export function AnalysisExpenseView({ scope, month, periodTransactions, category
   const budgetedSpent = [...spentByCategory.values()].reduce((sum, v) => sum + v, 0);
 
   return <div className="analysis-view flex flex-col gap-4">
-    <AnalysisBarChart title="지출 구성" description="대분류별 금액과 비중이에요." rows={flatRows} tone="expense" />
-    <section className="tds-card p-5"><h2 className="text-lg font-bold">지출 대분류</h2><p className="mt-1 text-sm text-[var(--tds-grey-700)]">대분류를 누르면 소분류가, 소분류를 누르면 개별 거래가 펼쳐져요.</p><div className="mt-4"><ExpenseDrilldown rows={rows} total={totals.expense} transactionsFor={transactionsFor} /></div></section>
+    <section className="tds-card p-5"><h2 className="text-lg font-bold">지출 대분류</h2><p className="mt-1 text-sm text-[var(--tds-grey-700)]">대분류를 누르면 소분류가, 소분류를 누르면 개별 거래가 펼쳐져요.</p><div className="mt-4"><ExpenseDrilldown rows={rows} total={totals.expense} transactionsFor={transactionsFor} extraColumn={extraColumn} /></div></section>
     {scope === 'month' && <section className="tds-card p-5">
       <div className="flex flex-wrap items-end justify-between gap-2"><div><h2 className="text-lg font-bold">예산 대비 실제 지출</h2><p className="mt-1 text-sm text-[var(--tds-grey-700)]">예산 {won(budgetTotal)} · 실제 {won(budgetedSpent)}</p></div><strong className="text-lg tabular-nums">소진율 {percent(budgetTotal > 0 ? budgetedSpent / budgetTotal : null)}</strong></div>
       <ul className="mt-4 flex flex-col divide-y divide-[var(--tds-grey-200)]">{categories.filter((c) => c.transactionType === 'expense').map((category) => {

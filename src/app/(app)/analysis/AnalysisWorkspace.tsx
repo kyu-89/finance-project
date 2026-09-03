@@ -95,7 +95,7 @@ export function AnalysisWorkspace({ initialScope, year, initialMonth, initialTyp
 
     {type === 'income' && <AnalysisIncomeView scope={scope} year={year} months={months} periodTransactions={periodTransactions} allTransactions={transactions} subcategoryNames={incomeSubcategoryNames} />}
     {type === 'expense' && <AnalysisExpenseView scope={scope} year={year} month={month} months={months} periodTransactions={periodTransactions} allTransactions={transactions} categoryNames={expenseCategoryNames} subcategoryNames={expenseSubcategoryNames} savingsCategoryId={savingsCategoryId} budgets={budgets} categories={categories} totals={totals} />}
-    {type === 'reference' && <AnalysisReferenceView scope={scope} year={year} months={months} periodTransactions={periodTransactions} allTransactions={transactions} paymentMethodNames={paymentMethodNames} />}
+    {type === 'reference' && <AnalysisReferenceView scope={scope} year={year} months={months} periodTransactions={periodTransactions} allTransactions={transactions} paymentMethodNames={paymentMethodNames} subcategoryNames={expenseSubcategoryNames} />}
     {type === 'card' && <AnalysisCardView scope={scope} year={year} months={months} periodTransactions={periodTransactions} allTransactions={transactions} paymentMethods={paymentMethods} />}
   </div>;
 }

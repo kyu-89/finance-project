@@ -264,41 +264,30 @@ textarea {
   line-height: 1;
 }
 
-.mobile-lnb-action {
-  min-height: 64px;
-  margin: 0;
-  border-radius: 14px;
-  color: var(--tds-blue-600);
-  background: transparent;
-  box-shadow: none;
-  font-size: 12px;
-}
-
-.mobile-lnb-action .mobile-lnb-icon {
-  min-height: 44px;
-  width: 44px;
+/* 2026-09(사용자 지시): "+"(거래 추가)를 LNB 줄에서 빼서 화면 전체 기준 우하단, LNB 영역 위에
+ * 떠 있는 플로팅 버튼으로 뺐다 — LNB 자체가 z-20이라 FAB는 그 위(z-30)에 오도록 하고, LNB의
+ * 실제 높이(item min-height + safe-area) 위에 여백을 두고 띄운다. */
+.mobile-fab {
+  position: fixed;
+  right: 16px;
+  bottom: calc(64px + env(safe-area-inset-bottom) + 16px);
+  z-index: 30;
+  display: grid;
+  width: 56px;
+  height: 56px;
+  place-items: center;
   border-radius: 50%;
   background: var(--tds-blue-500);
   color: white;
-  font-size: 24px;
-  font-weight: 300;
-  box-shadow: 0 5px 12px oklch(0.522 0.176 257 / 0.24);
+  box-shadow: 0 8px 20px oklch(0.522 0.176 257 / 0.32);
+  -webkit-tap-highlight-color: transparent;
 }
-
-.mobile-lnb-action .mobile-lnb-icon svg {
-  width: 22px;
-  height: 22px;
-  stroke-width: 1.8;
-}
-
-.mobile-lnb-action:active {
+.mobile-fab:active {
   background: var(--tds-blue-600);
-  color: white;
   transform: translateY(1px);
 }
-
-.mobile-lnb-action:active .mobile-lnb-icon {
-  background: var(--tds-blue-700);
+@media (max-width: 640px) {
+  .mobile-fab { bottom: calc(76px + env(safe-area-inset-bottom) + 16px); }
 }
 
 .list-surface {
@@ -739,8 +728,6 @@ button:disabled { cursor: wait; transform: none !important; }
   .mobile-lnb { min-height: 76px; padding-top: 6px; }
   .mobile-lnb-item { min-height: 58px; border-radius: 12px; font-size: 11px; }
   .mobile-lnb-icon { min-height: 24px; font-size: 20px; }
-  .mobile-lnb-action { min-height: 58px; border-radius: 12px; }
-  .mobile-lnb-action .mobile-lnb-icon { min-height: 44px; width: 44px; font-size: 24px; }
 
   .table-surface {
     overflow-x: auto;
@@ -939,13 +926,22 @@ button:disabled { cursor: wait; transform: none !important; }
 .analysis-drilldown-label em { display: block; height: 100%; border-radius: inherit; background: var(--tds-blue-400); }
 .analysis-drilldown-row b { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .analysis-drilldown-sub { margin-left: 4px; border-left: 2px solid var(--tds-grey-200); padding-left: 12px; }
-.analysis-transaction-list { display: flex; min-width: 0; flex-direction: column; gap: 2px; padding: 4px 0 12px 32px; }
-.analysis-transaction-row { display: flex; align-items: center; gap: 12px; padding: 6px 0; color: var(--tds-grey-700); font-size: 12px; }
-.analysis-transaction-desc { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.analysis-transaction-note { padding: 4px 0; color: var(--tds-grey-500); font-size: 11px; }
+.analysis-transaction-note { padding: 4px 0 4px 32px; color: var(--tds-grey-500); font-size: 11px; }
+/* 2026-09(사용자 지시): 개별 거래는 엑셀 같은 표로, 항상 각 드릴다운 그룹의 가장 아래에 위치.
+ * 수입/지출/참고거래/카드 사용 4개 탭이 전부 이 표 하나만 쓴다(디자인 시스템 통일). */
+.analysis-transaction-table-wrap { min-width: 0; padding: 4px 0 12px 32px; overflow-x: auto; }
+.analysis-transaction-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.analysis-transaction-table th { padding: 6px 10px; border-bottom: 1px solid var(--tds-grey-200); color: var(--tds-grey-500); font-weight: 700; text-align: left; white-space: nowrap; }
+.analysis-transaction-table td { padding: 8px 10px; border-bottom: 1px solid var(--tds-grey-100); color: var(--tds-grey-700); white-space: nowrap; }
+.analysis-transaction-table tbody tr:last-child td { border-bottom: 0; }
+.analysis-transaction-table td.is-desc { min-width: 0; max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+.analysis-transaction-table th.is-amount, .analysis-transaction-table td.is-amount { text-align: right; }
 @media (max-width: 640px) {
   .analysis-drilldown-row { grid-template-columns: minmax(0, 1fr) minmax(96px, auto); font-size: 12px; }
-  .analysis-transaction-list { padding-left: 16px; }
+  .analysis-transaction-table-wrap { padding-left: 16px; }
+  .analysis-transaction-table { font-size: 11px; }
+  .analysis-transaction-table th, .analysis-transaction-table td { padding: 6px 6px; }
+  .analysis-transaction-table td.is-desc { max-width: 120px; }
 }
 
 /* §3 대시보드 8단계 순서의 마지막 항목(분석 이동 CTA)과 핵심 인사이트 행. */
