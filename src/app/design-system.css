@@ -1338,6 +1338,31 @@ input.quick-add-amount {
     min-width: 0;
   }
 
+  /* [data-table-align='right'] (design-system.css:212, unscoped — right-
+   * aligns numeric columns for the desktop table) was still winning on the
+   * mobile card, right-justifying the amount cell's content inside its
+   * 100px-wide, overflow:hidden box. A right-anchored value that's WIDER
+   * than its box overflows to the LEFT, so a long amount lost its leading
+   * digits with no ellipsis ("1,000,000원" rendered as "000,000원") —
+   * confirmed live against the user's own screenshot and reproduced by
+   * measuring the text node's actual x-position vs the cell's. The mobile
+   * card has no aligned-column grid to preserve; every field here reads
+   * left-to-right like the rest of the card. */
+  .tds-ledger-table [data-table-align='right'],
+  .tds-ledger-table [data-table-align='center'] {
+    justify-content: flex-start;
+    text-align: left;
+  }
+
+  /* [data-table-align='center'] (design-system.css:211, unscoped) center-
+   * aligned 날짜/상태/유형/성격 within their grid track. Those tracks are
+   * sized to whichever row's content is longest, so a shorter value in a
+   * shorter-content row centers into visibly different slack than a longer
+   * one — the label+value pair's left edge shifts row to row instead of
+   * lining up, reported as "날짜 컬럼 정렬이 안 맞다". Left-aligning (like
+   * every other mobile card field) keeps every row's label flush at the
+   * same starting edge regardless of its value's length. */
+
   /* The desktop <thead> column-header row has no mobile-card equivalent —
    * the card system labels each field individually via ::before instead.
    * Confirmed live (real login session, real /monthly data): removing the
