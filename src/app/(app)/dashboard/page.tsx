@@ -21,7 +21,7 @@ import type { HomeRecent } from '@/lib/dashboard-home';
 import { listInsurances } from '@/lib/insurances';
 import { listAssets } from '@/lib/assets';
 import { listLoans } from '@/lib/loans';
-import { listTransactions } from '@/lib/transactions';
+import { listTransactions, getTransactionYearRange, type Transaction } from '@/lib/transactions';
 import { listCategoriesWithSubcategories } from '@/lib/categories';
 import { buildAmortizationSchedule, paymentMonthsInclusive } from '@/lib/loan-calculations';
 
@@ -31,9 +31,51 @@ const money = (value: number | null | undefined) => value == null ? '-' : `${won
 const monthLabel = (month: string) => `${Number(month.slice(0, 4))}년 ${Number(month.slice(5, 7))}월`;
 const monthBounds = (month: string) => { const range = monthRangeFromSeoulDateString(`${month}-01`); return { from: range.fromDate, to: range.toDate }; };
 const shiftMonth = (month: string, offset: number) => { const d = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)) - 1 + offset, 1)); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`; };
+const reportMonth = (transaction: { sourceMonth?: string | null; transactionDate: string }) => transaction.sourceMonth ?? transaction.transactionDate.slice(0, 7);
 
-export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ month?: string; preset?: string; customFrom?: string; customTo?: string }> }) {
+// §"월별 상세" 연도 선택기(2026-09) — 기존에는 이 세 함수의 로직이 DashboardPage 본문에 "최근 12개월"
+// 창(month 기준 상대값) 하나에만 인라인으로 박혀 있었다. 연도 선택을 지원하려면 임의의 캘린더 연도
+// 12개월에 대해서도 똑같은 계산이 필요해서, 로직은 그대로 두고 인자만 받도록 추출했다 — 기존 트렌드
+// 차트용 호출과 새 "선택 연도" 호출이 정확히 같은 규칙을 쓰게 하기 위함(중복 구현으로 인한 값 불일치 방지).
+function buildTransactionDetails(transactions: Transaction[]) {
+  const details = transactions.filter((t) => t.status === 'posted' && t.transactionType !== 'income' && (t.flowClass === 'consumption' || t.transactionType === 'refund')).map((t) => ({ month: reportMonth(t), id: t.categoryId ?? 'unassigned', label: '', value: t.amount, subcategories: [{ id: t.id, label: `${t.transactionDate} · ${t.description}`, value: t.transactionType === 'refund' ? -t.amount : t.amount }] }));
+  details.push(...transactions.filter((t) => t.status === 'posted' && t.transactionType === 'income').map((t) => ({ month: reportMonth(t), id: t.subcategoryId ?? 'income:other', label: '', value: t.amount, subcategories: [{ id: t.id, label: `${t.transactionDate} · ${t.description}`, value: t.amount }] })));
+  return details;
+}
+function buildExpenseMonthlyDetail(transactions: Transaction[], months: string[], expenseCategoryNames: Map<string, string>) {
+  return months.map((target) => {
+    const rows = new Map<string, { id: string; label: string; value: number; subcategories: { id: string; label: string; value: number }[] }>();
+    transactions.filter((t) => t.status === 'posted' && t.transactionType !== 'income' && (t.flowClass === 'consumption' || t.transactionType === 'refund') && reportMonth(t) === target).forEach((t) => {
+      const id = t.categoryId ?? 'unassigned';
+      const row = rows.get(id) ?? { id, label: expenseCategoryNames.get(id) ?? '미분류', value: 0, subcategories: [] };
+      const value = t.transactionType === 'refund' ? -t.amount : t.amount;
+      row.value += value; row.subcategories.push({ id: t.id, label: `${t.transactionDate} · ${t.description}`, value });
+      rows.set(id, row);
+    });
+    return { month: target, total: [...rows.values()].reduce((sum, row) => sum + row.value, 0), categories: [...rows.values()].sort((a, b) => b.value - a.value) };
+  });
+}
+function buildIncomeMonthlyDetail(transactions: Transaction[], months: string[], incomeSubcategoryNames: Map<string, string>) {
+  return months.map((target) => {
+    const rows = new Map<string, { id: string; label: string; value: number; subcategories: { id: string; label: string; value: number }[] }>();
+    transactions.filter((t) => t.status === 'posted' && t.transactionType === 'income' && reportMonth(t) === target).forEach((t) => {
+      const id = t.subcategoryId ?? 'income:other';
+      const row = rows.get(id) ?? { id, label: incomeSubcategoryNames.get(id) ?? '기타 수입', value: 0, subcategories: [] };
+      row.value += t.amount; row.subcategories.push({ id: t.id, label: `${t.transactionDate} · ${t.description}`, value: t.amount });
+      rows.set(id, row);
+    });
+    return { month: target, total: [...rows.values()].reduce((sum, row) => sum + row.value, 0), categories: [...rows.values()].sort((a, b) => b.value - a.value) };
+  });
+}
+
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ month?: string; preset?: string; customFrom?: string; customTo?: string; detailYear?: string }> }) {
   const query = await searchParams; const today = todayInSeoul(); const currentMonth = today.slice(0, 7); const month = query.month && monthPattern.test(query.month) ? query.month : currentMonth; const trendStart = shiftMonth(month, -23); const bounds = monthBounds(month); const preset: DashboardPreset = 'month'; const dashboardRange = resolveDashboardRange(bounds.to, preset); const household = await ensureHouseholdForCurrentUser();
+  // "월별 상세" 위젯의 연도 선택기(2026-09). 위의 24개월 트렌드 창(month 기준 상대값)과는 별개로,
+  // 사용자가 임의의 캘린더 연도를 고를 수 있어야 한다 — 마이그레이션으로 2023년 말~2026년 데이터가
+  // 들어와 있는데, 기존 창은 항상 "오늘 기준 최근 24개월"이라 그보다 오래된 연도는 볼 방법이 없었다.
+  const detailYear = query.detailYear && /^\d{4}$/.test(query.detailYear) ? query.detailYear : month.slice(0, 4);
+  const detailFrom = `${detailYear}-01-01`; const detailTo = `${detailYear}-12-31`;
+  const detailMonths = Array.from({ length: 12 }, (_, index) => `${detailYear}-${String(index + 1).padStart(2, '0')}`);
   const referenceDataPromise = Promise.all([
     computeCurrentNetWorth(household.id, today),
     listAssetValueHistory(household.id, 36),
@@ -41,23 +83,34 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     listAssets(household.id),
     listLoans(household.id),
     listCategoriesWithSubcategories(household.id),
+    getTransactionYearRange(household.id),
   ]);
   // The dashboard only needs planned rows for the selected month. Materializing the
   // entire 24-month chart range made every visit perform avoidable database writes.
   await materializeRecurringRulesForRange(household.id, bounds.from, bounds.to);
-  const [summary, transactions, referenceData] = await Promise.all([
+  const [summary, transactions, detailSummary, detailTransactions, referenceData] = await Promise.all([
     getDashboardHomeSummary({ householdId: household.id, from: dashboardRange.from < `${trendStart}-01` ? dashboardRange.from : `${trendStart}-01`, to: bounds.to, monthStart: dashboardRange.from, monthEnd: dashboardRange.to }),
     listTransactions({ householdId: household.id, fromDate: `${trendStart}-01`, toDate: bounds.to, reportMonthFrom: trendStart, reportMonthTo: month }),
+    getDashboardHomeSummary({ householdId: household.id, from: detailFrom, to: detailTo, monthStart: detailFrom, monthEnd: detailTo }),
+    listTransactions({ householdId: household.id, fromDate: detailFrom, toDate: detailTo, reportMonthFrom: `${detailYear}-01`, reportMonthTo: `${detailYear}-12` }),
     referenceDataPromise,
   ]);
-  const [netWorth, assetHistory, insurances, realAssets, loans, categories] = referenceData;
+  const [netWorth, assetHistory, insurances, realAssets, loans, categories, transactionYearRange] = referenceData;
   const incomeSubcategoryNames = new Map(categories.find((category) => category.transactionType === 'income')?.subcategories.map((subcategory) => [subcategory.id, subcategory.name]) ?? []);
-  const reportMonth = (transaction: { sourceMonth?: string | null; transactionDate: string }) => transaction.sourceMonth ?? transaction.transactionDate.slice(0, 7);
-  const transactionDetails = transactions.filter((transaction) => transaction.status === 'posted' && transaction.transactionType !== 'income' && (transaction.flowClass === 'consumption' || transaction.transactionType === 'refund')).map((transaction) => ({ month: reportMonth(transaction), id: transaction.categoryId ?? 'unassigned', label: '', value: transaction.amount, subcategories: [{ id: transaction.id, label: `${transaction.transactionDate} · ${transaction.description}`, value: transaction.transactionType === 'refund' ? -transaction.amount : transaction.amount }] }));
-  transactionDetails.push(...transactions.filter((transaction) => transaction.status === 'posted' && transaction.transactionType === 'income').map((transaction) => ({ month: reportMonth(transaction), id: transaction.subcategoryId ?? 'income:other', label: '', value: transaction.amount, subcategories: [{ id: transaction.id, label: `${transaction.transactionDate} · ${transaction.description}`, value: transaction.amount }] })));
   const expenseCategoryNames = new Map(categories.filter((category) => category.transactionType === 'expense').map((category) => [category.id, category.name]));
-  const expenseMonthlyDetail = (months: string[]) => months.map((target) => { const rows = new Map<string, { id: string; label: string; value: number; subcategories: { id: string; label: string; value: number }[] }>(); transactions.filter((transaction) => transaction.status === 'posted' && transaction.transactionType !== 'income' && (transaction.flowClass === 'consumption' || transaction.transactionType === 'refund') && reportMonth(transaction) === target).forEach((transaction) => { const id = transaction.categoryId ?? 'unassigned'; const row = rows.get(id) ?? { id, label: expenseCategoryNames.get(id) ?? '미분류', value: 0, subcategories: [] }; const value = transaction.transactionType === 'refund' ? -transaction.amount : transaction.amount; row.value += value; row.subcategories.push({ id: transaction.id, label: `${transaction.transactionDate} · ${transaction.description}`, value }); rows.set(id, row); }); return { month: target, total: [...rows.values()].reduce((sum, row) => sum + row.value, 0), categories: [...rows.values()].sort((a, b) => b.value - a.value) }; });
-  const monthlyByMonth = new Map(summary.monthly.map((item) => [item.month, item])); const months = Array.from({ length: 12 }, (_, index) => shiftMonth(month, index - 11)); const incomeMonthlyDetail = months.map((target) => { const rows = new Map<string, { id: string; label: string; value: number; subcategories: { id: string; label: string; value: number }[] }>(); transactions.filter((transaction) => transaction.status === 'posted' && transaction.transactionType === 'income' && reportMonth(transaction) === target).forEach((transaction) => { const id = transaction.subcategoryId ?? 'income:other'; const row = rows.get(id) ?? { id, label: incomeSubcategoryNames.get(id) ?? '기타 수입', value: 0, subcategories: [] }; row.value += transaction.amount; row.subcategories.push({ id: transaction.id, label: `${transaction.transactionDate} · ${transaction.description}`, value: transaction.amount }); rows.set(id, row); }); return { month: target, total: [...rows.values()].reduce((sum, row) => sum + row.value, 0), categories: [...rows.values()].sort((a, b) => b.value - a.value) }; }); const incomeCurrentDetail = incomeMonthlyDetail.find((item) => item.month === month)?.categories ?? []; const monthlyExpenseDetail = expenseMonthlyDetail(months); const monthlyTrend = months.map((target) => deriveMonth(monthlyByMonth.get(target) ?? emptyMonth(target))); const monthCurrent = deriveMonth(monthlyByMonth.get(month) ?? emptyMonth(month)); const current = monthCurrent; const categoryRows = summary.categories; const paymentRows = summary.payments;
+  // transactionDetails/monthlyExpenseDetail are no longer computed for this trailing-24mo window —
+  // DashboardMonthlyDetail now gets its category/subcategory drill-down from the detailYear-scoped
+  // versions below. incomeMonthlyDetail stays: it's the source of incomeCurrentDetail, the RPC-backed
+  // fallback for the true pinned current month (independent of whichever year detailYear browses to).
+  const monthlyByMonth = new Map(summary.monthly.map((item) => [item.month, item])); const months = Array.from({ length: 12 }, (_, index) => shiftMonth(month, index - 11)); const incomeMonthlyDetail = buildIncomeMonthlyDetail(transactions, months, incomeSubcategoryNames); const incomeCurrentDetail = incomeMonthlyDetail.find((item) => item.month === month)?.categories ?? []; const monthlyTrend = months.map((target) => deriveMonth(monthlyByMonth.get(target) ?? emptyMonth(target))); const monthCurrent = deriveMonth(monthlyByMonth.get(month) ?? emptyMonth(month)); const current = monthCurrent; const categoryRows = summary.categories; const paymentRows = summary.payments;
+  // "월별 상세" 위젯 전용 — 위 monthlyTrend/incomeMonthlyDetail 등(트렌드 차트·현재 달 요약용, 오늘
+  // 기준 상대 24개월 창)과는 다른, 선택된 캘린더 연도(detailYear) 12개월 기준 데이터.
+  const detailMonthlyByMonth = new Map(detailSummary.monthly.map((item) => [item.month, item]));
+  const detailMonthlyTrend = detailMonths.map((target) => deriveMonth(detailMonthlyByMonth.get(target) ?? emptyMonth(target)));
+  const detailIncomeMonthlyDetail = buildIncomeMonthlyDetail(detailTransactions, detailMonths, incomeSubcategoryNames);
+  const detailExpenseMonthlyDetail = buildExpenseMonthlyDetail(detailTransactions, detailMonths, expenseCategoryNames);
+  const detailTransactionDetails = buildTransactionDetails(detailTransactions);
+  const availableYears = transactionYearRange ? Array.from({ length: transactionYearRange.maxYear - transactionYearRange.minYear + 1 }, (_, i) => transactionYearRange.minYear + i) : [Number(detailYear)];
   const history = [...assetHistory.filter((item) => item.snapshotMonth.slice(0, 7) !== currentMonth), { id: 'current', snapshotMonth: `${currentMonth}-01`, totalAssets: netWorth.totalAssets, source: 'live' }].sort((a, b) => a.snapshotMonth.localeCompare(b.snapshotMonth)).slice(-12); const debtRatio = netWorth.totalAssets > 0 ? netWorth.totalDebt / netWorth.totalAssets : 0;
   const assetRows = [{ label: '현금·입출금', value: netWorth.cashAssets, color: 'var(--tds-blue-500)' }, { label: '예금', value: netWorth.depositAssets, color: '#6b8afd' }, { label: '적금', value: netWorth.savingsAssets, color: 'var(--tds-green-500)' }, { label: '투자', value: netWorth.investmentAssets, color: '#8b5cf6' }, { label: '부동산·자동차', value: netWorth.nonFinancialAssets, color: '#f59e0b' }].filter((item) => item.value > 0);
   const annualDebt = new Map<number, { balance: number; principal: number; interest: number }>(); loans.filter((loan) => loan.status === 'active').forEach((loan) => { const schedule = buildAmortizationSchedule({ principal: loan.originalAmount, annualRate: loan.annualRate, termMonths: paymentMonthsInclusive(loan.firstPaymentDate, loan.maturityDate), graceMonths: loan.graceMonths, method: loan.repaymentMethod, firstPaymentDate: loan.firstPaymentDate }); schedule.forEach((row) => { const year = Number(row.paymentDate.slice(0, 4)); const existing = annualDebt.get(year) ?? { balance: row.remainingBalance, principal: 0, interest: 0 }; annualDebt.set(year, { balance: existing.balance + row.remainingBalance, principal: existing.principal + row.principalPayment, interest: existing.interest + row.interestPayment }); }); }); const annualDebtRows = [...annualDebt.entries()].map(([year, row]) => ({ year, ...row })).sort((a, b) => a.year - b.year);
@@ -89,7 +142,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           </div>
         </div>
         {/* 드릴다운은 이미 내부에 여러 섹션을 가진 넓은 컴포넌트라 컬럼에 넣지 않고 전체 폭 유지. */}
-        <DashboardMonthlyDetail selectedMonth={month} monthly={monthlyTrend} incomeMonthly={incomeMonthlyDetail} incomeCurrent={incomeCurrentDetail} expenseMonthly={monthlyExpenseDetail} expenseCurrent={categoryRows} expensePayments={paymentRows} transactionDetails={transactionDetails} />
+        <DashboardMonthlyDetail selectedMonth={month} detailYear={detailYear} availableYears={availableYears} monthly={detailMonthlyTrend} incomeMonthly={detailIncomeMonthlyDetail} incomeCurrent={incomeCurrentDetail} expenseMonthly={detailExpenseMonthlyDetail} expenseCurrent={categoryRows} expensePayments={paymentRows} transactionDetails={detailTransactionDetails} />
       </>}
       debt={<DashboardDebtOverview totalDebt={netWorth.totalDebt} debtRatio={debtRatio} principal={current.debtPrincipal} financeCost={current.financeCost} annual={annualDebtRows} />}
       risk={<DashboardRiskOverview insurances={insurances} />}

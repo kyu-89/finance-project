@@ -299,6 +299,25 @@ export async function confirmTransactionReview(id: string): Promise<void> {
   if (data.length !== 1) throw new Error('검토 완료 처리할 거래를 찾지 못했어요.');
 }
 
+// 대시보드 "월별 상세" 연도 선택기(2026-09)를 위한 실제 데이터 연도 범위. min/max 각각 인덱스
+// (household_id, transaction_date) 스캔 1행으로 끝나 저렴하다 — 전체 조회 후 연도만 뽑는 방식보다
+// 훨씬 가볍다. 2000년 이전 값은 걸러낸다(엑셀 마이그레이션의 날짜 파싱 오류로 생긴 1900-01-06
+// 이상치 1건이 실제 연도 범위를 왜곡하지 않도록 — FINAL-REPORT.md §6.4 참고, 아직 수기 수정 전).
+export async function getTransactionYearRange(householdId: string): Promise<{ minYear: number; maxYear: number } | null> {
+  const supabase = await createClient();
+  const base = () => supabase.from('transactions').select('transaction_date')
+    .eq('household_id', householdId).eq('status', 'posted').is('deleted_at', null)
+    .gte('transaction_date', '2000-01-01').limit(1);
+  const [{ data: minRow, error: minError }, { data: maxRow, error: maxError }] = await Promise.all([
+    base().order('transaction_date', { ascending: true }),
+    base().order('transaction_date', { ascending: false }),
+  ]);
+  if (minError) throw new Error(`거래 최소 연도 조회 실패: ${minError.message}`);
+  if (maxError) throw new Error(`거래 최대 연도 조회 실패: ${maxError.message}`);
+  if (!minRow?.length || !maxRow?.length) return null;
+  return { minYear: Number(minRow[0].transaction_date.slice(0, 4)), maxYear: Number(maxRow[0].transaction_date.slice(0, 4)) };
+}
+
 export async function promotePastPlannedTransactions(householdId: string, currentMonthStart: string): Promise<void> {
   const supabase = await createClient();
   const { error } = await supabase

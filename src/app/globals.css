@@ -507,8 +507,12 @@ textarea {
 .home-monthly-detail-controls .home-explorer-tabs { flex: 0 0 auto; }
 .home-month-selector { display: flex; min-width: 0; max-width: 100%; gap: 6px; overflow-x: auto; scrollbar-width: none; }
 .home-month-selector::-webkit-scrollbar { display: none; }
-.home-month-selector button { flex: 0 0 auto; min-width: 40px; min-height: 36px; padding-inline: 9px; border: 1px solid var(--tds-grey-200); border-radius: 9px; background: var(--tds-white); color: var(--tds-grey-700); font-size: 12px; font-weight: 700; }
-.home-month-selector button.is-selected { border-color: var(--state-selected-border); background: var(--state-selected-bg); color: var(--state-selected-fg); }
+.home-month-selector button, .home-month-selector a { flex: 0 0 auto; min-width: 40px; min-height: 36px; padding-inline: 9px; border: 1px solid var(--tds-grey-200); border-radius: 9px; background: var(--tds-white); color: var(--tds-grey-700); font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+.home-month-selector button.is-selected, .home-month-selector a.is-selected { border-color: var(--state-selected-border); background: var(--state-selected-bg); color: var(--state-selected-fg); }
+/* 2026-09 대시보드 연도 선택기 — 월별 상세의 "월 선택" 줄은 더 이상 연도 선택기와 나란히 있지 않고
+ * (연도가 늘 보이고, 월은 [월별] 탭에서만 그 아래 별도 줄로) .home-monthly-detail-controls 바깥의
+ * 형제 요소가 됐다 — 원래 컨트롤 묶음이 갖던 여백을 그대로 유지한다. */
+.home-monthly-detail > .home-month-selector { margin-top: 10px; }
 .home-html-kpi strong.is-accent, .home-html-equation .is-accent { color: var(--tds-blue-600); }
 .home-html-card { min-width: 0; padding: 22px; }
 .home-line-chart-svg { display: block; width: 100%; height: auto; min-height: 190px; overflow: visible; }
