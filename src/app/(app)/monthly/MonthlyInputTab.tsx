@@ -57,8 +57,8 @@ function makeColumns() {
     columnHelper.accessor('amount', { header: '금액', cell: (info) => `${info.getValue().toLocaleString('ko-KR')}원` }),
     columnHelper.accessor('paymentMethodId', { header: '결제수단', cell: () => null }),
     columnHelper.accessor('memo', { header: '비고', cell: (info) => info.getValue() ?? '' }),
-    columnHelper.accessor('costBehavior', { header: '성격', cell: (info) => <CostBehaviorEditor transaction={info.row.original} /> }),
-    columnHelper.accessor('status', { header: '상태', cell: (info) => <TransactionStatusEditor transaction={info.row.original} /> }),
+    columnHelper.accessor('costBehavior', { header: '성격', cell: (info) => <CostBehaviorEditor key={info.row.original.id} transaction={info.row.original} /> }),
+    columnHelper.accessor('status', { header: '상태', cell: (info) => <TransactionStatusEditor key={info.row.original.id} transaction={info.row.original} /> }),
   ]);
 }
 
