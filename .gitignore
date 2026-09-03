@@ -58,3 +58,8 @@ supabase/.temp
 /output/
 /.artifacts/
 /.playwright-cli/
+
+# Agent scratch workspace — includes real personal-data backups/reports from one-off analysis
+# (e.g. the 2026-09 Excel migration's pre-migration DB backup and per-transaction reports).
+# Never commit this: it can contain real transaction descriptions, names, and amounts.
+/.superpowers/
