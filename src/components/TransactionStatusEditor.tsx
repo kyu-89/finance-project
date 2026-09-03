@@ -5,6 +5,7 @@ import { updateTransactionStatusAction } from '@/actions/transaction-actions';
 import { addRecurringPausePeriodAction } from '@/actions/recurring-rule-actions';
 import { Button } from '@/components/Button';
 import { InlineActionSelect } from '@/components/InlineActionSelect';
+import { InlineSaveFeedback } from '@/components/InlineSaveFeedback';
 import { INITIAL_ACTION_STATE } from '@/lib/action-result';
 import { monthRangeFromSeoulDateString } from '@/lib/date';
 import type { Transaction } from '@/lib/transactions';
@@ -57,9 +58,7 @@ function PlannedRowActions({ transaction }: { transaction: Transaction & { recur
         >
           확정
         </Button>
-        {confirmPending && <span className="transaction-status-feedback" role="status">저장 중</span>}
-        {confirmState.ok === false && <span role="alert" className="transaction-status-feedback is-error">{confirmState.message}</span>}
-        {confirmState.ok === true && <span role="status" className="transaction-status-feedback">저장됨</span>}
+        <InlineSaveFeedback pending={confirmPending} ok={confirmState.ok} message={confirmState.ok === false ? confirmState.message : undefined} />
       </form>
       <form action={skipAction} className="transaction-inline-editor">
         <input type="hidden" name="id" value={transaction.recurringRuleId} />
@@ -74,9 +73,7 @@ function PlannedRowActions({ transaction }: { transaction: Transaction & { recur
         >
           이번달 제외
         </Button>
-        {skipPending && <span className="transaction-status-feedback" role="status">저장 중</span>}
-        {skipState.ok === false && <span role="alert" className="transaction-status-feedback is-error">{skipState.message}</span>}
-        {skipState.ok === true && <span role="status" className="transaction-status-feedback">저장됨</span>}
+        <InlineSaveFeedback pending={skipPending} ok={skipState.ok} message={skipState.ok === false ? skipState.message : undefined} />
       </form>
     </div>
   );

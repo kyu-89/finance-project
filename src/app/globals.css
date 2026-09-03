@@ -215,7 +215,10 @@ textarea {
 .transaction-inline-editor { position: relative; display: grid; width: 100%; min-width: 0; }
 .transaction-inline-select { box-sizing: border-box; display: block; width: 100%; height: 40px; min-height: 40px; padding: 0 8px; font-size: 13px; line-height: 1.2; }
 .transaction-status-editor select { min-height: 40px; }
-.transaction-status-feedback { flex: 0 0 auto; color: var(--tds-green-600); font-size: 11px; white-space: nowrap; }
+/* 2026-09(사용자 지시): "저장됨"이 조건부로 나타났다 사라지며 표의 행 높이를 밀던 문제 —
+ * InlineSaveFeedback이 이제 항상 이 span을 렌더링(내용만 비움)하므로, 고정 min-height로
+ * 그 자리를 늘 예약해 둔다(색 있는 텍스트든 빈 자리든 높이가 절대 바뀌지 않는다). */
+.transaction-status-feedback { display: block; flex: 0 0 auto; min-height: 14px; color: var(--tds-green-600); font-size: 11px; line-height: 14px; white-space: nowrap; }
 .transaction-status-feedback.is-error { color: var(--tds-red-500); }
 .monthly-report-lead { display: grid; gap: 6px; padding: 20px; border: 1px solid var(--tds-grey-200); border-radius: 18px; background: var(--tds-blue-50); }
 .monthly-report-lead h2 { max-width: 760px; font-size: var(--text-title-2); line-height: 1.45; letter-spacing: -.03em; }
