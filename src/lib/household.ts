@@ -61,6 +61,16 @@ export const ensureHouseholdForCurrentUser = cache(async (): Promise<Household> 
       }
     } else {
       household = { id: inserted.id, ownerUserId: inserted.owner_user_id, name: inserted.name, initializedAt: inserted.initialized_at };
+      // Every table's RLS (including households' own SELECT) now goes through
+      // household_users, not owner_user_id directly — without this row the owner who just
+      // created this household would immediately fail is_household_user() and be locked out
+      // of the very household they own.
+      const { error: membershipError } = await supabase
+        .from('household_users')
+        .insert({ household_id: household.id, user_id: user.id });
+      if (membershipError && membershipError.code !== UNIQUE_VIOLATION) {
+        throw new Error(`가구 멤버십 등록 실패: ${membershipError.message}`);
+      }
     }
   }
 
@@ -105,19 +115,32 @@ export const getCurrentHouseholdId = cache(async (): Promise<string> => {
   return (await ensureHouseholdForCurrentUser()).id;
 });
 
+// Looks up via household_users (membership) rather than households.owner_user_id (ownership) —
+// a shared household's non-owner members must resolve to it too. household_users.household_id
+// has no uniqueness constraint against user_id beyond the composite PK, but a user is expected to
+// belong to exactly one *active* household in this app's current UI (no household switcher yet);
+// `.limit(1)` picks a deterministic one if that ever isn't true, rather than erroring. It does not
+// prefer an owned household over a joined one — that ordering isn't needed by anything today, but
+// would be the first thing to add alongside a household switcher.
 async function selectHousehold(
   supabase: SupabaseServerClient,
   userId: string,
 ): Promise<Household | null> {
   const { data, error } = await supabase
-    .from('households')
-    .select('id, owner_user_id, name, initialized_at')
-    .eq('owner_user_id', userId)
+    .from('household_users')
+    .select('households(id, owner_user_id, name, initialized_at)')
+    .eq('user_id', userId)
+    .limit(1)
     .maybeSingle();
 
   if (error) {
     throw new Error(`가구 조회 실패: ${error.message}`);
   }
 
-  return data ? { id: data.id, ownerUserId: data.owner_user_id, name: data.name, initializedAt: data.initialized_at } : null;
+  // households(...) is a to-one embed (household_users.household_id -> households.id is
+  // many-to-one), so PostgREST returns one object at runtime — but without generated DB types,
+  // the client can't express that and infers an array. Read defensively either way.
+  const embedded = data?.households as { id: string; owner_user_id: string; name: string; initialized_at: string | null } | { id: string; owner_user_id: string; name: string; initialized_at: string | null }[] | null | undefined;
+  const household = Array.isArray(embedded) ? embedded[0] : embedded;
+  return household ? { id: household.id, ownerUserId: household.owner_user_id, name: household.name, initializedAt: household.initialized_at } : null;
 }
