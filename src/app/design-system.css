@@ -308,7 +308,9 @@
  * columns with nth-child selectors. */
 @media (min-width: 641px) {
   .tds-ledger-table {
-    --ui-ledger-columns: var(--ui-ledger-column-date) var(--ui-ledger-column-type) var(--ui-ledger-column-category) var(--ui-ledger-column-subcategory) minmax(var(--ui-ledger-column-description-min), 1fr) var(--ui-ledger-column-amount) var(--ui-ledger-column-payment) var(--ui-ledger-column-memo) var(--ui-ledger-column-behavior) var(--ui-ledger-column-state);
+    /* 내용/비고 둘 다 자유 텍스트라 남는 폭을 나눠 갖는다 — 비고에 글자가 더 많이 들어간다는
+     * 피드백에 따라 비고 쪽 비율(1.3fr)을 내용(0.8fr)보다 크게 준다. */
+    --ui-ledger-columns: var(--ui-ledger-column-date) var(--ui-ledger-column-type) var(--ui-ledger-column-category) var(--ui-ledger-column-subcategory) minmax(var(--ui-ledger-column-description-min), 0.8fr) var(--ui-ledger-column-amount) var(--ui-ledger-column-payment) minmax(var(--ui-ledger-column-memo), 1.3fr) var(--ui-ledger-column-behavior) var(--ui-ledger-column-state);
     display: block;
     width: 100%;
     min-width: 1204px;
@@ -337,6 +339,16 @@
 
   .tds-ledger-table th.tds-table-cell { min-height: var(--ui-table-header-height); }
   .tds-ledger-table td.tds-table-cell { min-height: var(--ui-table-row-min-height); font-size: var(--text-caption); }
+
+  /* 비고는 자유 텍스트라 컬럼 폭보다 긴 값이 흔하다 — 잘려서 안 보이는 대신(clip) 가로 스크롤로
+   * 확인 가능하게 한다(모바일 카드에서 이미 쓰던 패턴, 데스크톱 표에도 동일 적용). */
+  .tds-ledger-table td[data-table-field='memo'] {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tds-ledger-table td[data-table-field='memo']::-webkit-scrollbar { display: none; }
   .tds-ledger-table .tds-table-row { content-visibility: auto; contain-intrinsic-size: var(--ui-table-row-min-height); }
   .tds-ledger-table [data-table-field='status'],
   .tds-ledger-table [data-table-field='costBehavior'] { overflow: visible; }
