@@ -1,6 +1,17 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { Toast } from './Toast';
+
+// 2026-09(사용자 지시): "저장 버튼 누르고 저장 완료되면 토스트 띄우고 창 닫히게" — 안의 폼이
+// 저장 성공을 이 컨텍스트로 알리면(notifySuccess) 드로워가 즉시 닫히고, 토스트는 드로워 밖(항상
+// 살아있는 AddDrawer 자신)에서 띄운다. 폼이 드로워 안에서만 렌더되는 자식이라 드로워가 닫히면
+// 자식과 함께 사라지는 토스트를 여기서 방지한다.
+type DrawerControls = { close: () => void; notifySuccess: (message: string) => void };
+const DrawerContext = createContext<DrawerControls>({ close: () => {}, notifySuccess: () => {} });
+export function useDrawerControls(): DrawerControls {
+  return useContext(DrawerContext);
+}
 
 export function AddDrawer({
   title,
@@ -14,10 +25,20 @@ export function AddDrawer({
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const [toast, setToast] = useState<{ key: number; message: string } | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const wasOpenRef = useRef(false);
   const titleId = `drawer-title-${title.replace(/[^a-zA-Z0-9가-힣]/g, '-')}`;
+
+  const close = useCallback(() => setOpen(false), []);
+  // 매번 새 key를 줘서, 연달아 저장했을 때 메시지 문자열이 같아도(예: "지출 내역을 추가했어요.")
+  // Toast가 매번 새 인스턴스로 마운트되어 다시 보인다(문자열만 비교하면 두 번째 토스트가 "이미
+  // 닫은 메시지"로 취급돼 안 뜬다).
+  const notifySuccess = useCallback((message: string) => {
+    setToast({ key: Date.now(), message });
+    setOpen(false);
+  }, []);
 
   useEffect(() => {
     if (!open) {
@@ -63,9 +84,6 @@ export function AddDrawer({
 
   return (
     <>
-      {/* 2026-09(사용자 지시): "+"는 이제 모바일 하단의 플로팅 추가 버튼 하나만 쓴다 — 이 컴포넌트가
-          add와 edit 두 용도(예: 투자거래 "수정" 트리거)로 함께 쓰이는데, "+ 수정"처럼 편집 버튼
-          앞에 "+"가 붙는 게 의미상 맞지 않았다. CTA 전역에서 "+"를 제거하고 라벨 텍스트만 남긴다. */}
       <button ref={triggerRef} type="button" className="tds-primary-button drawer-trigger" onClick={() => setOpen(true)}>
         {triggerLabel}
       </button>
@@ -85,10 +103,13 @@ export function AddDrawer({
                 닫기
               </button>
             </div>
-            <div className="app-drawer-body">{children}</div>
+            <div className="app-drawer-body">
+              <DrawerContext.Provider value={{ close, notifySuccess }}>{children}</DrawerContext.Provider>
+            </div>
           </aside>
         </div>
       )}
+      {toast && <Toast key={toast.key} message={toast.message} />}
     </>
   );
 }

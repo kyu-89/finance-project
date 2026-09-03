@@ -929,6 +929,12 @@ button:disabled { cursor: wait; transform: none !important; }
 .analysis-drilldown-label em { display: block; height: 100%; border-radius: inherit; background: var(--tds-blue-400); }
 .analysis-drilldown-row b { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .analysis-drilldown-sub { margin-left: 4px; border-left: 2px solid var(--tds-grey-200); padding-left: 12px; }
+/* 2026-09(사용자 지시): 지출 탭만 3단계(대분류→소분류→개별거래)라 개별거래 표가
+ * .analysis-drilldown-sub의 들여쓰기(margin+border+padding 18px) 위에 표 자체의 32px
+ * padding까지 더해져 수입/참고거래/카드사용 탭(2단계, 들여쓰기 32px 하나뿐)보다 표가 더
+ * 오른쪽으로 밀려 좁아 보였다. 중첩된 만큼만 표의 자체 여백을 줄여 4개 탭의 표 왼쪽 끝이
+ * 맞도록(총 들여쓰기 32px로) 통일한다. */
+.analysis-drilldown-sub .analysis-transaction-table-wrap { padding-left: 14px; }
 .analysis-transaction-note { padding: 4px 0 4px 32px; color: var(--tds-grey-500); font-size: 11px; }
 /* 2026-09(사용자 지시): 개별 거래는 엑셀 같은 표로, 항상 각 드릴다운 그룹의 가장 아래에 위치.
  * 수입/지출/참고거래/카드 사용 4개 탭이 전부 이 표 하나만 쓴다(디자인 시스템 통일). */
@@ -942,6 +948,7 @@ button:disabled { cursor: wait; transform: none !important; }
 @media (max-width: 640px) {
   .analysis-drilldown-row { grid-template-columns: minmax(0, 1fr) minmax(96px, auto); font-size: 12px; }
   .analysis-transaction-table-wrap { padding-left: 16px; }
+  .analysis-drilldown-sub .analysis-transaction-table-wrap { padding-left: 0; }
   .analysis-transaction-table { font-size: 11px; }
   .analysis-transaction-table th, .analysis-transaction-table td { padding: 6px 6px; }
   .analysis-transaction-table td.is-desc { max-width: 120px; }

@@ -1,9 +1,10 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { createMonthlyRowAction } from '@/actions/transaction-actions';
 import { AmountInput } from '@/components/AmountInput';
 import { CategoryPicker } from '@/components/CategoryPicker';
+import { useDrawerControls } from '@/components/Drawer';
 import { FormField } from '@/components/FormField';
 import { FormMessage } from '@/components/FormMessage';
 import { PaymentMethodPicker } from '@/components/PaymentMethodPicker';
@@ -20,6 +21,12 @@ export function MonthlyDrawerForm({ categories, paymentMethods, initialTransacti
   const [paymentMethodId, setPaymentMethodId] = useState('');
   const [transactionType, setTransactionType] = useState<TransactionType>(initialTransactionType);
   const [state, formAction, pending] = useActionState(createMonthlyRowAction, INITIAL_ACTION_STATE);
+  const { notifySuccess } = useDrawerControls();
+  // 2026-09(사용자 지시): 저장 성공하면 토스트를 띄우고 드로워를 닫는다 — 토스트는 드로워
+  // 밖(AddDrawer 자신)에서 뜨므로 드로워가 닫혀도 사라지지 않는다.
+  useEffect(() => {
+    if (state.ok === true) notifySuccess(state.message ?? '저장했어요.');
+  }, [state, notifySuccess]);
   const selectedCategory = categories.find((category) => category.id === categoryId);
   // 2026-09: 참고 거래는 수입·지출과 달리 대분류/소분류가 필수가 아니다(사용자 지시: "단순히
   // 대분류에 '미분류'를 넣는 방식으로 구현하지 않는다" — 진짜로 null 저장을 허용한다). 결제수단은

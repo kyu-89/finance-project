@@ -44,9 +44,14 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
     ]);
   }
 
+  // 2026-09(사용자 지시: "날짜 기준으로 월별로 데이터 분리 바람") — reportMonthFrom/To(source_month
+  // 기준)를 쓰면 실제 transaction_date가 다른 달인데도 원본 엑셀 시트의 소속 월(source_month)
+  // 기준으로 이 달에 끼어 보이는 거래가 생겼다("9월인데 8월 거래가 보임"). 월간관리는 화면에
+  // 보이는 연월 선택기와 실제 날짜가 항상 일치해야 하므로, source_month는 무시하고 순수
+  // transaction_date 범위로만 필터링한다.
   const [[categories, paymentMethods], transactions] = await Promise.all([
     metadataPromise,
-    listTransactions({ householdId: household.id, fromDate, toDate, reportMonthFrom: selectedMonth, reportMonthTo: selectedMonth, categoryId: selectedCategory, subcategoryId: selectedSubcategory, recurringRuleId: selectedRecurringRule }),
+    listTransactions({ householdId: household.id, fromDate, toDate, categoryId: selectedCategory, subcategoryId: selectedSubcategory, recurringRuleId: selectedRecurringRule }),
   ]);
 
   const categoryFilterName = selectedCategory ? categories.find((category) => category.id === selectedCategory)?.name : null;
