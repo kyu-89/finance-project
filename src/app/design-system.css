@@ -217,9 +217,15 @@
  * (income = blue, everything else = red, matching --chart-income/-expense
  * used everywhere else a transaction's sign is shown) and treats the
  * description as a tap target, not a link — same color as the row's other
- * text, at every width. */
-.tds-ledger-table [data-table-field='transactionType'] { color: var(--chart-expense); }
-.tds-ledger-table [data-table-field='transactionType'][data-flow='income'] { color: var(--chart-income); }
+ * text, at every width.
+ *
+ * Scoped to tbody: the <th> column header shares the same data-table-field
+ * attribute as its column's <td> cells (both come from the same TanStack
+ * column id), so an unscoped rule colored the "유형" header text red too —
+ * the header should read like every other column name, only the values
+ * carry the income/expense color. */
+.tds-ledger-table tbody [data-table-field='transactionType'] { color: var(--chart-expense); }
+.tds-ledger-table tbody [data-table-field='transactionType'][data-flow='income'] { color: var(--chart-income); }
 .tds-ledger-table [data-table-field='description'] .monthly-description-button { color: inherit; }
 
 /* Legacy table wrappers are mapped to the same surface anatomy while their
@@ -1442,15 +1448,27 @@ input.quick-add-amount {
    * min-height to its row makes all three sit flush at the same top. */
   .tds-ledger-table [data-table-field='transactionType'] { grid-row: 1; grid-column: 1; min-height: var(--ui-mobile-inline-control-height); font-weight: 700; }
   .tds-ledger-table [data-table-field='transactionType']::before { content: none; }
+  /* A 7+ digit amount can still be wider than column 1's 100px floor.
+   * text-overflow:ellipsis never actually took effect here (it doesn't
+   * apply to a flex container's anonymous text item), so a too-narrow box
+   * just hard-clipped the value with no indication more was cut off. Rather
+   * than clip, let this one field scroll horizontally — the scrollbar
+   * itself is hidden (still touch/trackpad-scrollable) so it doesn't look
+   * like a UI element bolted onto a single card. */
   .tds-ledger-table [data-table-field='amount'] {
     grid-row: 2;
     grid-column: 1;
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
     font-weight: 700;
     font-size: var(--text-title-2);
-    text-overflow: ellipsis;
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
+  }
+  .tds-ledger-table [data-table-field='amount']::-webkit-scrollbar {
+    display: none;
   }
   .tds-ledger-table [data-table-field='amount']::before { content: none; }
   .tds-ledger-table [data-table-field='description'] {
