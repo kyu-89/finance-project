@@ -30,6 +30,25 @@ describe('product-backed recurring rules', () => {
     householdId = household.id;
     const { error: signInError } = await user.auth.signInWithPassword({ email, password });
     if (signInError) throw signInError;
+    // 2026-09: create_savings_recurring_rule()/create_loan_recurring_rules() 트리거가 이름으로
+    // 저축성지출>예/적금, 주거비>주담대 원금/이자를 찾는다(20260909110000부터는 못 찾으면 아예
+    // 예외를 던진다) — 실제 앱에서는 ensureDefaultCategoriesSeeded()가 매 요청마다 이 카테고리를
+    // 보장하지만, 이 테스트는 서비스롤로 household를 직접 만들어 그 경로를 거치지 않는다. 두
+    // 카테고리를 이 household에도 똑같이 만들어 둔다(사용자 지시: 테스트 셋업 결함을 고쳐라).
+    const { data: savingsCategory, error: savingsCategoryError } = await admin.from('categories')
+      .insert({ household_id: householdId, transaction_type: 'expense', name: '저축성지출', default_cost_behavior: null })
+      .select('id').single();
+    if (savingsCategoryError || !savingsCategory) throw savingsCategoryError ?? new Error('failed to seed 저축성지출 category');
+    const { error: savingsSubcategoryError } = await admin.from('subcategories')
+      .insert({ category_id: savingsCategory.id, name: '예/적금' });
+    if (savingsSubcategoryError) throw savingsSubcategoryError;
+    const { data: housingCategory, error: housingCategoryError } = await admin.from('categories')
+      .insert({ household_id: householdId, transaction_type: 'expense', name: '주거비', default_cost_behavior: 'fixed' })
+      .select('id').single();
+    if (housingCategoryError || !housingCategory) throw housingCategoryError ?? new Error('failed to seed 주거비 category');
+    const { error: housingSubcategoryError } = await admin.from('subcategories')
+      .insert([{ category_id: housingCategory.id, name: '주담대 원금' }, { category_id: housingCategory.id, name: '주담대 이자' }]);
+    if (housingSubcategoryError) throw housingSubcategoryError;
   });
 
   afterAll(async () => {

@@ -196,6 +196,9 @@ textarea {
 .monthly-summary-card.is-income strong { color: var(--tds-blue-600); }
 .monthly-summary-card.is-expense strong { color: var(--tds-red-500); }
 .monthly-summary-card.is-wealth strong { color: var(--tds-green-500); }
+.monthly-summary-card.is-planned strong { color: var(--tds-grey-700); }
+.monthly-analysis-cta { display: inline-flex; align-self: flex-start; align-items: center; gap: 4px; padding: 10px 16px; border-radius: 12px; background: var(--tds-grey-900); color: var(--tds-white); font-size: 13px; font-weight: 700; text-decoration: none; }
+.monthly-analysis-cta:hover { background: var(--tds-grey-800); }
 .monthly-quick-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .monthly-quick-actions > * { flex: 1 1 150px; }
 .monthly-planned-queue { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 16px; border: 1px solid var(--tds-grey-200); border-radius: 16px; background: var(--tds-white); }
@@ -916,3 +919,37 @@ button:disabled { cursor: wait; transform: none !important; }
 /* 참고 거래 요약(§8)은 "확인할 일이 있어요"(파란색, 행동 필요)와 달리 정보성 안내라 중립 톤을 쓴다. */
 .dashboard-alert-strip.is-neutral { border-color: var(--tds-grey-200); background: var(--tds-grey-50); }
 .dashboard-alert-strip.is-neutral > span { color: var(--tds-grey-500); }
+
+/* 분석 메뉴(2026-09 신설). 기간 컨트롤/유형 탭은 .home-explorer-tabs/.home-month-selector를
+ * 그대로 재사용하고(대시보드의 연도·월 선택기와 같은 컴포넌트), 여기서는 유형 탭 줄바꿈과
+ * 드릴다운 목록·개별 거래 행만 새로 정의한다. */
+.analysis-controls { display: flex; flex-direction: column; gap: 10px; }
+.analysis-type-tabs { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 12px; background: var(--tds-grey-100); width: fit-content; max-width: 100%; }
+.analysis-type-tabs button { min-height: 36px; padding: 0 14px; border-radius: 9px; color: var(--tds-grey-700); font-size: 13px; font-weight: 700; white-space: nowrap; }
+.analysis-type-tabs button.is-selected { background: var(--state-selected-bg); color: var(--state-selected-fg); box-shadow: inset 0 0 0 1px var(--state-selected-border); }
+.analysis-view { min-width: 0; }
+.analysis-drilldown { display: flex; min-width: 0; flex-direction: column; }
+.analysis-drilldown-group { min-width: 0; border-bottom: 1px solid var(--tds-grey-100); }
+.analysis-drilldown-group:last-child { border-bottom: 0; }
+.analysis-drilldown-row { display: grid; width: 100%; grid-template-columns: minmax(0, 1fr) minmax(130px, auto); align-items: center; gap: 12px; padding: 12px 0; background: transparent; text-align: left; font-size: 13px; }
+.analysis-drilldown-row:hover { background: var(--tds-grey-50); }
+.analysis-drilldown-row.is-sub { padding-left: 16px; color: var(--tds-grey-700); font-size: 12px; }
+.analysis-drilldown-label { min-width: 0; }
+.analysis-drilldown-label i { display: block; height: 5px; margin-top: 6px; overflow: hidden; border-radius: 99px; background: var(--tds-grey-100); }
+.analysis-drilldown-label em { display: block; height: 100%; border-radius: inherit; background: var(--tds-blue-400); }
+.analysis-drilldown-row b { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.analysis-drilldown-sub { margin-left: 4px; border-left: 2px solid var(--tds-grey-200); padding-left: 12px; }
+.analysis-transaction-list { display: flex; min-width: 0; flex-direction: column; gap: 2px; padding: 4px 0 12px 32px; }
+.analysis-transaction-row { display: flex; align-items: center; gap: 12px; padding: 6px 0; color: var(--tds-grey-700); font-size: 12px; }
+.analysis-transaction-desc { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.analysis-transaction-note { padding: 4px 0; color: var(--tds-grey-500); font-size: 11px; }
+@media (max-width: 640px) {
+  .analysis-drilldown-row { grid-template-columns: minmax(0, 1fr) minmax(96px, auto); font-size: 12px; }
+  .analysis-transaction-list { padding-left: 16px; }
+}
+
+/* §3 대시보드 8단계 순서의 마지막 항목(분석 이동 CTA)과 핵심 인사이트 행. */
+.dashboard-analysis-cta { display: flex; min-height: 56px; align-items: center; justify-content: center; border-radius: 16px; background: var(--tds-grey-900); color: var(--tds-white); font-size: 15px; font-weight: 750; text-decoration: none; }
+.dashboard-analysis-cta:hover { background: var(--tds-grey-800); }
+.dashboard-insight-row { position: relative; padding: 10px 0 10px 18px; color: var(--tds-grey-800); font-size: 13px; line-height: 1.5; }
+.dashboard-insight-row::before { position: absolute; left: 0; top: 13px; width: 6px; height: 6px; border-radius: 99px; background: var(--tds-blue-400); content: ''; }

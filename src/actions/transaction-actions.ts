@@ -157,6 +157,7 @@ export async function createMonthlyRowAction(
 
     revalidatePath('/monthly');
     revalidatePath('/dashboard');
+    revalidatePath('/analysis');
   return ok(transactionType === 'income' ? '수입 내역을 추가했어요.' : transactionType === 'reference' ? '참고 거래를 추가했어요.' : '지출 내역을 추가했어요.');
 }
 
@@ -184,7 +185,7 @@ export async function deleteTransactionAction(_prevState: ActionResult, formData
   if (!id) return fail('삭제할 거래 id가 없습니다.');
   try { await getCurrentHouseholdId(); await softDeleteTransaction(id); }
   catch (error) { return fail(error instanceof Error ? error.message : '거래 삭제에 실패했어요.'); }
-  revalidatePath('/monthly'); revalidatePath('/dashboard'); revalidatePath('/settings/data'); revalidatePath('/review'); revalidatePath('/settings');
+  revalidatePath('/monthly'); revalidatePath('/dashboard'); revalidatePath('/analysis'); revalidatePath('/settings/data'); revalidatePath('/review'); revalidatePath('/settings');
   return ok('거래를 삭제했어요.');
 }
 
@@ -193,7 +194,7 @@ export async function restoreTransactionAction(_prevState: ActionResult, formDat
   if (!id) return fail('복구할 거래 id가 없습니다.');
   try { await getCurrentHouseholdId(); await restoreTransaction(id); }
   catch (error) { return fail(error instanceof Error ? error.message : '거래 복구에 실패했어요.'); }
-  revalidatePath('/monthly'); revalidatePath('/dashboard'); revalidatePath('/settings/data');
+  revalidatePath('/monthly'); revalidatePath('/dashboard'); revalidatePath('/analysis'); revalidatePath('/settings/data');
   return ok('거래를 복구했어요.');
 }
 
@@ -218,6 +219,7 @@ export async function updateCostBehaviorAction(
 
     revalidatePath('/monthly');
     revalidatePath('/dashboard');
+    revalidatePath('/analysis');
   return ok();
 }
 
@@ -248,6 +250,7 @@ export async function updateTransactionStatusAction(
 
   revalidatePath('/monthly');
   revalidatePath('/dashboard');
+  revalidatePath('/analysis');
   return ok('거래 상태를 변경했어요.');
 }
 
@@ -270,6 +273,7 @@ export async function confirmPlannedTransactionAction(
   }
   revalidatePath('/monthly');
   revalidatePath('/dashboard');
+  revalidatePath('/analysis');
   return ok();
 }
 
@@ -286,6 +290,8 @@ export async function skipPlannedTransactionAction(
     return fail(error instanceof Error ? error.message : '예정 거래 건너뛰기에 실패했어요.');
   }
   revalidatePath('/monthly');
+  revalidatePath('/dashboard');
+  revalidatePath('/analysis');
   return ok();
 }
 
@@ -305,6 +311,8 @@ export async function linkRecurringOccurrenceAction(
     return fail(error instanceof Error ? error.message : '기존 거래 연결에 실패했어요.');
   }
   revalidatePath('/monthly');
+  revalidatePath('/dashboard');
+  revalidatePath('/analysis');
   return ok();
 }
 
@@ -313,7 +321,7 @@ export async function confirmReviewedTransactionAction(_prevState: ActionResult,
   if (!id) return fail('검토 완료할 거래 id가 없습니다.');
   try { await getCurrentHouseholdId(); await confirmTransactionReview(id); }
   catch (error) { return fail(error instanceof Error ? error.message : '검토 완료 처리에 실패했어요.'); }
-  revalidatePath('/review'); revalidatePath('/monthly'); revalidatePath('/dashboard'); revalidatePath('/settings');
+  revalidatePath('/review'); revalidatePath('/monthly'); revalidatePath('/dashboard'); revalidatePath('/analysis'); revalidatePath('/settings');
   return ok('검토 완료로 표시했어요.');
 }
 
@@ -343,5 +351,6 @@ export async function reviewDuplicateTransactionAction(
   revalidatePath('/settings/data');
   revalidatePath('/monthly');
   revalidatePath('/dashboard');
+  revalidatePath('/analysis');
   return ok('중복 거래를 삭제 처리했습니다.');
 }

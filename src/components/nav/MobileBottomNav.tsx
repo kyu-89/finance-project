@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { CalendarDays, Home, Plus, Settings, WalletCards, type LucideIcon } from 'lucide-react';
+import { BarChart3, CalendarDays, Home, Plus, Settings, WalletCards, type LucideIcon } from 'lucide-react';
 
 const MOBILE_ITEMS = [
   { href: '/dashboard', label: '홈', icon: Home },
   { href: '/monthly', label: '거래', icon: CalendarDays },
   { href: '/quick-add', label: '추가', icon: Plus },
+  { href: '/analysis', label: '분석', icon: BarChart3 },
   { href: '/finance', label: '자산', icon: WalletCards },
   { href: '/settings', label: '설정', icon: Settings },
 ] as const;

@@ -36,10 +36,15 @@ export function WorkbookMonthlyImport({ categories, paymentMethods }: { categori
         needsReview: Boolean(row.categoryName && !category) || Boolean(row.subcategoryName && !subcategory) || Boolean(row.cardLabel && !paymentMethod),
       };
     }), [rows, categoryByName, paymentMethodId, paymentMethods, fileName]);
+  // 2026-09: 중복 판단 키를 lib/duplicate-transactions.ts의 duplicateTransactionKey / lib/
+  // transactions.ts의 importDuplicateKey와 동일하게 통일했다(사용자 지시) — 이전에는 이 클라
+  // 사전필터만 source_month를 키에 추가로 넣어서, 날짜·유형·금액·내용·결제수단이 같아도
+  // source_month가 다르면 "다른 거래"로 취급해 버렸다. 세 곳 모두 같은 기준이어야 임포트
+  // 단계에서 걸러진 것과 나중에 중복검토 화면이 찾아내는 것이 일치한다.
   const validRows = useMemo(() => {
     const seen = new Set<string>();
     return parsedValidRows.filter((row) => {
-      const key = `${row.sourceMonth ?? ''}|${row.transactionDate}|${row.transactionType}|${row.amount}|${row.description.trim().toLocaleLowerCase()}|${row.paymentMethodId ?? ''}`;
+      const key = `${row.transactionDate}|${row.transactionType}|${row.amount}|${row.description.trim().toLocaleLowerCase()}|${row.paymentMethodId ?? ''}`;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;

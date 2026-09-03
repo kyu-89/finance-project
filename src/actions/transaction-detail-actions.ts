@@ -9,7 +9,7 @@ const text = (f: FormData, key: string) => String(f.get(key) ?? '').trim() || nu
 const integer = (f: FormData, key: string) => { const value = Number(f.get(key)); return Number.isSafeInteger(value) && value >= 0 ? value : null; };
 const payoutCycles = ['monthly', 'quarterly', 'yearly', 'one_time', 'custom'];
 const supportStatuses = ['planned', 'eligible', 'applied', 'approved', 'receiving', 'completed', 'rejected', 'expired'];
-const refresh = () => { revalidatePath('/monthly'); revalidatePath('/dashboard'); revalidatePath('/review'); revalidatePath('/settings'); };
+const refresh = () => { revalidatePath('/monthly'); revalidatePath('/dashboard'); revalidatePath('/analysis'); revalidatePath('/review'); revalidatePath('/settings'); };
 // 2026-09: 등록 드로워(createMonthlyRowAction)와 같은 검증·필드 세트로 통일했다 — 예전에는
 // updateTransactionBasicsAction/updateTransactionClassificationAction 두 액션으로 나뉘어 있었다.
 export async function updateTransactionAction(_p: ActionResult, f: FormData): Promise<ActionResult> {

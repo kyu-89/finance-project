@@ -2,6 +2,13 @@ import 'server-only';
 import { createClient } from '@/lib/supabase/server';
 import { resolveCostBehavior, type TransactionType } from '@/lib/cost-behavior';
 
+// 2026-09: 예산 집계는 참고 거래를 항상 제외한다(사용자 지시) — 생성·수정·임포트 세 경로가
+// 각자 다른 식을 인라인으로 쓰다가 임포트 경로만 'expense'인지만 확인해 수입 임포트 행의
+// include_in_budget이 잘못 저장되는 결함이 있었다. 하나의 함수로 통일해 다시 갈라지지 않게 한다.
+export function includeInBudget(transactionType: TransactionType): boolean {
+  return transactionType !== 'reference';
+}
+
 export type Transaction = {
   id: string;
   householdId: string;
@@ -128,7 +135,7 @@ export async function createTransaction(input: {
       tags: input.tags ?? [],
       // 참고 거래는 예산 집계 대상이 아니다(사용자 지시) — flow_class가 이미 'excluded'라
       // include_in_budget 필터를 쓰는 집계 어디서도 안 걸리지만, 명시적으로도 false로 남긴다.
-      include_in_budget: input.transactionType !== 'reference',
+      include_in_budget: includeInBudget(input.transactionType),
       needs_review: input.needsReview ?? false,
       status: 'posted',
     })
@@ -212,7 +219,11 @@ export async function importTransactions(input: { householdId: string; rows: Imp
       amount: row.amount,
       description: row.description.trim(),
       memo: row.memo ?? null,
-      include_in_budget: row.transactionType === 'expense',
+      // createTransaction()/updateTransaction()과 동일한 규칙으로 통일했다(사용자 지시) — 예전엔
+      // 'expense'인지만 봤는데, 그러면 임포트된 income 행은 항상 include_in_budget=false로
+      // 저장됐다(하위 집계가 전부 flow_class='consumption'을 먼저 걸러서 지금은 무해하지만,
+      // 값 자체가 저장 규칙과 어긋나는 잠재 결함이었다).
+      include_in_budget: includeInBudget(row.transactionType),
       needs_review: row.needsReview ?? row.status === 'refunded',
       status: row.status ?? 'posted',
     });
@@ -476,7 +487,7 @@ export async function updateTransaction(input: {
     subcategory_id: input.subcategoryId,
     payment_method_id: input.paymentMethodId,
     // 참고 거래로 전환하면 예산 집계 대상에서 빠지고, 수입/지출로 되돌리면 다시 포함된다.
-    include_in_budget: input.transactionType !== 'reference',
+    include_in_budget: includeInBudget(input.transactionType),
   }).eq('id', input.id).is('deleted_at', null).select('id');
   if (error) throw new Error(`거래 수정 실패: ${error.message}`);
   if (data.length !== 1) throw new Error('수정할 거래를 찾지 못했어요.');

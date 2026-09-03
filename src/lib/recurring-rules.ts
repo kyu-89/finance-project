@@ -318,6 +318,13 @@ export async function materializeRecurringRulesForRange(
     if (rule.source_type !== 'loan' || !rule.source_id) return rule.default_amount;
     const amounts = loanAmounts.get(rule.source_id)?.get(occurrenceDate);
     if (!amounts) return 0;
+    // "주담대 원금"/"주담대 이자" 소분류를 못 찾으면 principalSubcategoryId/interestSubcategoryId가
+    // 둘 다 null로 남는데, rule.subcategory_id도 마침 null이면 `null === null`이 우연히 true가 되어
+    // 원금·이자가 뒤섞일 수 있었다(사용자 지시로 조사·수정). 두 id를 못 찾은 경우는 애초에 금액을
+    // 판단할 수 없는 상태이므로 0을 반환한다 — 이제 create_loan_recurring_rules() DB 트리거가
+    // 카테고리를 못 찾으면 규칙 생성 자체를 막으므로(20260909110000), 정상 가계에서는 이 분기를
+    // 타지 않는다.
+    if (principalSubcategoryId === null || interestSubcategoryId === null) return 0;
     return rule.subcategory_id === principalSubcategoryId ? amounts.debtPrincipal
       : rule.subcategory_id === interestSubcategoryId ? amounts.financeCost : 0;
   };

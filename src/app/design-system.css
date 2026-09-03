@@ -991,6 +991,7 @@ a.tds-chip {
 .tds-chart-series-asset .recharts-active-dot .recharts-dot { fill: var(--color-asset); }
 
 .tds-chart-series-expense-bar .recharts-rectangle { fill: var(--color-negative); }
+.tds-chart-series-income-bar .recharts-rectangle { fill: var(--color-positive); }
 
 .tds-chart-target .recharts-reference-line-line {
   stroke: var(--chart-target);

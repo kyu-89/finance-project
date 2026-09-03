@@ -41,7 +41,7 @@ export function AccountManager({ accounts }: { accounts: Account[] }) {
         </Section>
         {sectionAccounts.length === 0
           ? <p className="rounded-xl border border-dashed border-[var(--tds-grey-300)] p-5 text-sm text-[var(--tds-grey-600)]">등록된 {label} 계좌가 없어요. 위의 계좌 추가로 등록해 보세요.</p>
-          : <div className="grid gap-3">{sectionAccounts.map((account) => <AccountRow key={account.id} account={account} onEdit={() => setEditing(account)} />)}</div>}
+          : <div className="grid gap-3 md:grid-cols-2">{sectionAccounts.map((account) => <AccountRow key={account.id} account={account} onEdit={() => setEditing(account)} />)}</div>}
       </section>;
     })}
     {editing && <AccountEditDrawer key={editing.id} account={editing} onClose={() => setEditing(null)} />}

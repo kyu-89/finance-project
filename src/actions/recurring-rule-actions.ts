@@ -82,6 +82,9 @@ export async function createRecurringRuleAction(
   }
 
   revalidatePath('/settings/recurring');
+  revalidatePath('/monthly');
+  revalidatePath('/dashboard');
+  revalidatePath('/analysis');
   return ok();
 }
 
@@ -104,6 +107,8 @@ export async function updateRecurringRuleStatusAction(
 
   revalidatePath('/settings/recurring');
   revalidatePath('/monthly');
+  revalidatePath('/dashboard');
+  revalidatePath('/analysis');
   return ok();
 }
 
@@ -127,6 +132,8 @@ export async function updateRecurringRuleAmountAction(
   }
   revalidatePath('/settings/recurring');
   revalidatePath('/monthly');
+  revalidatePath('/dashboard');
+  revalidatePath('/analysis');
   return ok('이번 달 예정 거래만 변경했어요.');
 }
 
@@ -148,6 +155,8 @@ export async function addRecurringPausePeriodAction(
   }
   revalidatePath('/settings/recurring');
   revalidatePath('/monthly');
+  revalidatePath('/dashboard');
+  revalidatePath('/analysis');
   return ok();
 }
 
@@ -212,5 +221,7 @@ export async function updateRecurringRuleAction(
   }
   revalidatePath('/settings/recurring');
   revalidatePath('/monthly');
+  revalidatePath('/dashboard');
+  revalidatePath('/analysis');
   return ok('반복항목을 수정했어요.');
 }

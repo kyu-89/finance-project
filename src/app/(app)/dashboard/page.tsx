@@ -1,236 +1,120 @@
 import Link from 'next/link';
 import { ensureHouseholdForCurrentUser } from '@/lib/household';
-import { monthRangeFromSeoulDateString, todayInSeoul } from '@/lib/date';
-import { resolveDashboardRange, type DashboardPreset } from '@/lib/dashboard-calculations';
-import { getDashboardHomeSummary, type HomeMonth, type HomeRank } from '@/lib/dashboard-home';
-import { computeCurrentNetWorth, listAssetValueHistory } from '@/lib/snapshots';
+import { todayInSeoul } from '@/lib/date';
+import { getDashboardHomeSummary, type HomeRecent } from '@/lib/dashboard-home';
+import { computeCurrentNetWorth } from '@/lib/snapshots';
 import { materializeRecurringRulesForRange } from '@/lib/recurring-rules';
-import { DashboardPrimaryTabs } from './DashboardPrimaryTabs';
-import { DashboardAssetOverview } from './DashboardAssetOverview';
-import { DashboardCashflowOverview } from './DashboardCashflowOverview';
-import { DashboardCategoryBarChart } from './DashboardCategoryBarChart';
-import { DashboardDebtOverview } from './DashboardDebtOverview';
-import { DashboardRiskOverview } from './DashboardRiskOverview';
-import { DashboardMonthlyDetail } from './DashboardMonthlyDetail';
+import { listTransactions } from '@/lib/transactions';
+import { listCategoriesWithSubcategories } from '@/lib/categories';
+import { generateInsights, periodTotals, reportMonthOf } from '@/lib/analysis';
+import { AnalysisCashflowChart } from '../analysis/AnalysisCashflowChart';
 import { Amount } from '@/components/Amount';
 import { EmptyState } from '@/components/EmptyState';
 import { ListItem } from '@/components/ListItem';
 import { SectionHeader } from '@/components/SectionHeader';
 import { StatCard } from '@/components/StatCard';
-import type { HomeRecent } from '@/lib/dashboard-home';
-import { listInsurances } from '@/lib/insurances';
-import { listAssets } from '@/lib/assets';
-import { listLoans } from '@/lib/loans';
-import { listTransactions, getTransactionYearRange, type Transaction } from '@/lib/transactions';
-import { listCategoriesWithSubcategories } from '@/lib/categories';
-import { buildAmortizationSchedule, paymentMonthsInclusive } from '@/lib/loan-calculations';
 
 const won = new Intl.NumberFormat('ko-KR');
-const monthPattern = /^\d{4}-(0[1-9]|1[0-2])$/;
 const money = (value: number | null | undefined) => value == null ? '-' : `${won.format(Math.round(value))}원`;
 const monthLabel = (month: string) => `${Number(month.slice(0, 4))}년 ${Number(month.slice(5, 7))}월`;
-const monthBounds = (month: string) => { const range = monthRangeFromSeoulDateString(`${month}-01`); return { from: range.fromDate, to: range.toDate }; };
 const shiftMonth = (month: string, offset: number) => { const d = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)) - 1 + offset, 1)); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`; };
-const reportMonth = (transaction: { sourceMonth?: string | null; transactionDate: string }) => transaction.sourceMonth ?? transaction.transactionDate.slice(0, 7);
 
-// §"월별 상세" 연도 선택기(2026-09) — 기존에는 이 세 함수의 로직이 DashboardPage 본문에 "최근 12개월"
-// 창(month 기준 상대값) 하나에만 인라인으로 박혀 있었다. 연도 선택을 지원하려면 임의의 캘린더 연도
-// 12개월에 대해서도 똑같은 계산이 필요해서, 로직은 그대로 두고 인자만 받도록 추출했다 — 기존 트렌드
-// 차트용 호출과 새 "선택 연도" 호출이 정확히 같은 규칙을 쓰게 하기 위함(중복 구현으로 인한 값 불일치 방지).
-// 2026-09: 환불/취소는 더 이상 transaction_type='refund'가 아니라 status='cancelled'/'refunded'로
-// 표현된다 — 아래 t.status === 'posted' 필터가 그 두 상태를 이미 걸러내므로, 이전에 있던
-// "환불이면 금액을 음수로 뒤집는다" 로직은 이제 도달 불가능해 제거했다.
-function buildTransactionDetails(transactions: Transaction[]) {
-  const details = transactions.filter((t) => t.status === 'posted' && t.transactionType !== 'income' && t.flowClass === 'consumption').map((t) => ({ month: reportMonth(t), id: t.categoryId ?? 'unassigned', label: '', value: t.amount, subcategories: [{ id: t.id, label: `${t.transactionDate} · ${t.description}`, value: t.amount }] }));
-  details.push(...transactions.filter((t) => t.status === 'posted' && t.transactionType === 'income').map((t) => ({ month: reportMonth(t), id: t.subcategoryId ?? 'income:other', label: '', value: t.amount, subcategories: [{ id: t.id, label: `${t.transactionDate} · ${t.description}`, value: t.amount }] })));
-  return details;
-}
-function buildExpenseMonthlyDetail(transactions: Transaction[], months: string[], expenseCategoryNames: Map<string, string>) {
-  return months.map((target) => {
-    const rows = new Map<string, { id: string; label: string; value: number; subcategories: { id: string; label: string; value: number }[] }>();
-    transactions.filter((t) => t.status === 'posted' && t.transactionType !== 'income' && t.flowClass === 'consumption' && reportMonth(t) === target).forEach((t) => {
-      const id = t.categoryId ?? 'unassigned';
-      const row = rows.get(id) ?? { id, label: expenseCategoryNames.get(id) ?? '미분류', value: 0, subcategories: [] };
-      const value = t.amount;
-      row.value += value; row.subcategories.push({ id: t.id, label: `${t.transactionDate} · ${t.description}`, value });
-      rows.set(id, row);
-    });
-    return { month: target, total: [...rows.values()].reduce((sum, row) => sum + row.value, 0), categories: [...rows.values()].sort((a, b) => b.value - a.value) };
-  });
-}
-function buildIncomeMonthlyDetail(transactions: Transaction[], months: string[], incomeSubcategoryNames: Map<string, string>) {
-  return months.map((target) => {
-    const rows = new Map<string, { id: string; label: string; value: number; subcategories: { id: string; label: string; value: number }[] }>();
-    transactions.filter((t) => t.status === 'posted' && t.transactionType === 'income' && reportMonth(t) === target).forEach((t) => {
-      const id = t.subcategoryId ?? 'income:other';
-      const row = rows.get(id) ?? { id, label: incomeSubcategoryNames.get(id) ?? '기타 수입', value: 0, subcategories: [] };
-      row.value += t.amount; row.subcategories.push({ id: t.id, label: `${t.transactionDate} · ${t.description}`, value: t.amount });
-      rows.set(id, row);
-    });
-    return { month: target, total: [...rows.values()].reduce((sum, row) => sum + row.value, 0), categories: [...rows.values()].sort((a, b) => b.value - a.value) };
-  });
-}
-
-export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ month?: string; preset?: string; customFrom?: string; customTo?: string; detailYear?: string }> }) {
-  const query = await searchParams; const today = todayInSeoul(); const currentMonth = today.slice(0, 7); const month = query.month && monthPattern.test(query.month) ? query.month : currentMonth; const trendStart = shiftMonth(month, -23); const bounds = monthBounds(month); const preset: DashboardPreset = 'month'; const dashboardRange = resolveDashboardRange(bounds.to, preset); const household = await ensureHouseholdForCurrentUser();
-  // "월별 상세" 위젯의 연도 선택기(2026-09). 위의 24개월 트렌드 창(month 기준 상대값)과는 별개로,
-  // 사용자가 임의의 캘린더 연도를 고를 수 있어야 한다 — 마이그레이션으로 2023년 말~2026년 데이터가
-  // 들어와 있는데, 기존 창은 항상 "오늘 기준 최근 24개월"이라 그보다 오래된 연도는 볼 방법이 없었다.
-  // 기본값은 "이번 달"이 아니라 "전월"이다(이번 달은 대개 아직 안 끝나서 데이터가 비어 보임) — 그래서
-  // ?detailYear=가 없으면 전월이 속한 연도를 기본 연도로 쓴다(1월엔 전월이 작년 12월이라 연도가
-  // 자연스럽게 넘어간다).
+// 2026-09: 대시보드/분석/월간관리 정보구조 재정리(사용자 지시) — 대시보드는 더 이상 상세 분석
+// 화면이 아니라 "지금 우리 집 재무 상태를 판단하고 행동하는" 화면이다. 연간 전체 목록·카테고리
+// 드릴다운·카드별 상세처럼 긴 분석은 전부 /analysis로 옮기고, 여기는 §3이 정한 8단계 순서
+// (알림 → 총자산/총부채/순자산 → 이번 달 수입/총지출/저축성지출/순현금흐름 → 예정 거래 →
+// 핵심 인사이트 → 최근 추이 미리보기 → 최근 거래 → 분석 이동 CTA)만 보여준다.
+export default async function DashboardPage() {
+  const household = await ensureHouseholdForCurrentUser();
+  const today = todayInSeoul();
+  const currentMonth = today.slice(0, 7);
+  // 이번 달은 대개 아직 안 끝나서 데이터가 비어 보이므로, 요약은 전월을 기본으로 보여준다
+  // (기존 dashboard/DashboardMonthlyDetail이 쓰던 것과 같은 원칙).
+  const month = shiftMonth(currentMonth, -1);
   const previousMonth = shiftMonth(month, -1);
-  const detailYear = query.detailYear && /^\d{4}$/.test(query.detailYear) ? query.detailYear : previousMonth.slice(0, 4);
-  const detailFrom = `${detailYear}-01-01`; const detailTo = `${detailYear}-12-31`;
-  const detailMonths = Array.from({ length: 12 }, (_, index) => `${detailYear}-${String(index + 1).padStart(2, '0')}`);
-  // 사용자가 명시적으로 다른 연도를 고른 경우: 그 연도가 "오늘이 속한 연도"면 오늘 달을, 아니면 그
-  // 연도의 12월을(가장 최근에 끝난 달) 기본으로 보여준다. 아무것도 안 고른 최초 진입이면 위에서 구한
-  // 전월 그대로.
-  const initialDetailMonth = query.detailYear ? (detailYear === month.slice(0, 4) ? month : `${detailYear}-12`) : previousMonth;
-  const referenceDataPromise = Promise.all([
-    computeCurrentNetWorth(household.id, today),
-    listAssetValueHistory(household.id, 36),
-    listInsurances(household.id),
-    listAssets(household.id),
-    listLoans(household.id),
+  const trailingStart = shiftMonth(month, -5); // 최근 6개월 미리보기 + 인사이트용 3개월 평균 계산 범위
+  const monthStart = `${month}-01`;
+  const monthEndDate = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0)).toISOString().slice(0, 10);
+
+  await materializeRecurringRulesForRange(household.id, monthStart, monthEndDate);
+
+  const [summary, categories, netWorth, transactions] = await Promise.all([
+    getDashboardHomeSummary({ householdId: household.id, from: monthStart, to: monthEndDate, monthStart, monthEnd: monthEndDate }),
     listCategoriesWithSubcategories(household.id),
-    getTransactionYearRange(household.id),
+    computeCurrentNetWorth(household.id, today),
+    listTransactions({ householdId: household.id, fromDate: `${trailingStart}-01`, toDate: monthEndDate, reportMonthFrom: trailingStart, reportMonthTo: month }),
   ]);
-  // The dashboard only needs planned rows for the selected month. Materializing the
-  // entire 24-month chart range made every visit perform avoidable database writes.
-  await materializeRecurringRulesForRange(household.id, bounds.from, bounds.to);
-  const [summary, transactions, detailSummary, detailTransactions, referenceData] = await Promise.all([
-    getDashboardHomeSummary({ householdId: household.id, from: dashboardRange.from < `${trendStart}-01` ? dashboardRange.from : `${trendStart}-01`, to: bounds.to, monthStart: dashboardRange.from, monthEnd: dashboardRange.to }),
-    listTransactions({ householdId: household.id, fromDate: `${trendStart}-01`, toDate: bounds.to, reportMonthFrom: trendStart, reportMonthTo: month }),
-    getDashboardHomeSummary({ householdId: household.id, from: detailFrom, to: detailTo, monthStart: detailFrom, monthEnd: detailTo }),
-    listTransactions({ householdId: household.id, fromDate: detailFrom, toDate: detailTo, reportMonthFrom: `${detailYear}-01`, reportMonthTo: `${detailYear}-12` }),
-    referenceDataPromise,
-  ]);
-  const [netWorth, assetHistory, insurances, realAssets, loans, categories, transactionYearRange] = referenceData;
-  const incomeSubcategoryNames = new Map(categories.find((category) => category.transactionType === 'income')?.subcategories.map((subcategory) => [subcategory.id, subcategory.name]) ?? []);
-  const expenseCategoryNames = new Map(categories.filter((category) => category.transactionType === 'expense').map((category) => [category.id, category.name]));
-  // transactionDetails/monthlyExpenseDetail are no longer computed for this trailing-24mo window —
-  // DashboardMonthlyDetail now gets its category/subcategory drill-down from the detailYear-scoped
-  // versions below. incomeMonthlyDetail stays: it's the source of incomeCurrentDetail, the RPC-backed
-  // fallback for the true pinned current month (independent of whichever year detailYear browses to).
-  const monthlyByMonth = new Map(summary.monthly.map((item) => [item.month, item])); const months = Array.from({ length: 12 }, (_, index) => shiftMonth(month, index - 11)); const incomeMonthlyDetail = buildIncomeMonthlyDetail(transactions, months, incomeSubcategoryNames); const incomeCurrentDetail = incomeMonthlyDetail.find((item) => item.month === month)?.categories ?? []; const monthlyTrend = months.map((target) => deriveMonth(monthlyByMonth.get(target) ?? emptyMonth(target))); const monthCurrent = deriveMonth(monthlyByMonth.get(month) ?? emptyMonth(month)); const current = monthCurrent; const categoryRows = summary.categories; const paymentRows = summary.payments;
-  // "월별 상세" 위젯 전용 — 위 monthlyTrend/incomeMonthlyDetail 등(트렌드 차트·현재 달 요약용, 오늘
-  // 기준 상대 24개월 창)과는 다른, 선택된 캘린더 연도(detailYear) 12개월 기준 데이터.
-  const detailMonthlyByMonth = new Map(detailSummary.monthly.map((item) => [item.month, item]));
-  const detailMonthlyTrend = detailMonths.map((target) => deriveMonth(detailMonthlyByMonth.get(target) ?? emptyMonth(target)));
-  const detailIncomeMonthlyDetail = buildIncomeMonthlyDetail(detailTransactions, detailMonths, incomeSubcategoryNames);
-  const detailExpenseMonthlyDetail = buildExpenseMonthlyDetail(detailTransactions, detailMonths, expenseCategoryNames);
-  // 2026-09: 대출 원금/이자는 이제 별도 flow_class가 아니라 지출 > 주거비 > 주담대 원금/이자
-  // 카테고리다 — "이번 달 원금/이자" 카드는 그 소분류로 이번 달 거래를 직접 걸러 합산한다.
-  const housingCategory = categories.find((category) => category.name === '주거비');
-  const loanPrincipalSubcategoryId = housingCategory?.subcategories.find((sub) => sub.name === '주담대 원금')?.id;
-  const loanInterestSubcategoryId = housingCategory?.subcategories.find((sub) => sub.name === '주담대 이자')?.id;
-  const sumBySubcategoryThisMonth = (subcategoryId: string | undefined) => !subcategoryId ? 0 : transactions.filter((t) => t.status === 'posted' && t.subcategoryId === subcategoryId && reportMonth(t) === month).reduce((sum, t) => sum + t.amount, 0);
-  const currentMonthLoanPrincipal = sumBySubcategoryThisMonth(loanPrincipalSubcategoryId);
-  const currentMonthLoanInterest = sumBySubcategoryThisMonth(loanInterestSubcategoryId);
-  const detailTransactionDetails = buildTransactionDetails(detailTransactions);
-  const availableYears = transactionYearRange ? Array.from({ length: transactionYearRange.maxYear - transactionYearRange.minYear + 1 }, (_, i) => transactionYearRange.minYear + i) : [Number(detailYear)];
-  const history = [...assetHistory.filter((item) => item.snapshotMonth.slice(0, 7) !== currentMonth), { id: 'current', snapshotMonth: `${currentMonth}-01`, totalAssets: netWorth.totalAssets, source: 'live' }].sort((a, b) => a.snapshotMonth.localeCompare(b.snapshotMonth)).slice(-12); const debtRatio = netWorth.totalAssets > 0 ? netWorth.totalDebt / netWorth.totalAssets : 0;
-  const assetRows = [{ label: '현금·입출금', value: netWorth.cashAssets, color: 'var(--tds-blue-500)' }, { label: '예금', value: netWorth.depositAssets, color: '#6b8afd' }, { label: '적금', value: netWorth.savingsAssets, color: 'var(--tds-green-500)' }, { label: '투자', value: netWorth.investmentAssets, color: '#8b5cf6' }, { label: '부동산·자동차', value: netWorth.nonFinancialAssets, color: '#f59e0b' }].filter((item) => item.value > 0);
-  const annualDebt = new Map<number, { balance: number; principal: number; interest: number }>(); loans.filter((loan) => loan.status === 'active').forEach((loan) => { const schedule = buildAmortizationSchedule({ principal: loan.originalAmount, annualRate: loan.annualRate, termMonths: paymentMonthsInclusive(loan.firstPaymentDate, loan.maturityDate), graceMonths: loan.graceMonths, method: loan.repaymentMethod, firstPaymentDate: loan.firstPaymentDate }); schedule.forEach((row) => { const year = Number(row.paymentDate.slice(0, 4)); const existing = annualDebt.get(year) ?? { balance: row.remainingBalance, principal: 0, interest: 0 }; annualDebt.set(year, { balance: existing.balance + row.remainingBalance, principal: existing.principal + row.principalPayment, interest: existing.interest + row.interestPayment }); }); }); const annualDebtRows = [...annualDebt.entries()].map(([year, row]) => ({ year, ...row })).sort((a, b) => a.year - b.year);
+
+  const categoryNames = new Map(categories.filter((c) => c.transactionType === 'expense').map((c) => [c.id, c.name]));
+  const incomeSubcategoryNames = new Map(categories.find((c) => c.transactionType === 'income')?.subcategories.map((s) => [s.id, s.name]) ?? []);
+  const savingsCategoryId = categories.find((c) => c.name === '저축성지출')?.id ?? null;
+
+  const currentMonthTransactions = transactions.filter((t) => reportMonthOf(t) === month);
+  const previousMonthTransactions = transactions.filter((t) => reportMonthOf(t) === previousMonth);
+  const trailing3MonthsTransactions = transactions.filter((t) => { const m = reportMonthOf(t); return m >= shiftMonth(month, -3) && m < month; });
+  const totals = periodTotals(currentMonthTransactions, savingsCategoryId);
+  const plannedRows = transactions.filter((t) => t.status === 'planned' && reportMonthOf(t) === month);
+  const plannedAmount = plannedRows.reduce((sum, t) => sum + t.amount, 0);
+
+  const insights = generateInsights({ currentMonth: currentMonthTransactions, previousMonth: previousMonthTransactions, trailing3Months: trailing3MonthsTransactions, categoryNames, incomeSubcategoryNames });
+
+  const sixMonths = Array.from({ length: 6 }, (_, i) => shiftMonth(month, i - 5));
+  const trendMonthly = sixMonths.map((m) => { const t = periodTotals(transactions.filter((row) => reportMonthOf(row) === m), savingsCategoryId); return { month: m, income: t.income, expense: t.expense, savings: t.savings, net: t.net }; });
+
+  const recent: HomeRecent[] = [...currentMonthTransactions].filter((t) => t.status === 'posted').sort((a, b) => b.transactionDate.localeCompare(a.transactionDate)).slice(0, 5).map((t) => ({ id: t.id, transactionDate: t.transactionDate, transactionType: t.transactionType, flowClass: t.flowClass, amount: t.amount, description: t.description }));
 
   return <div data-page="home" className="tds-page home-page">
     <header className="tds-page-header"><div><p className="tds-eyebrow">우리집 재무</p><h1 className="tds-title">가계 재무 대시보드</h1><p className="tds-page-subtitle">기준 월: {monthLabel(month)} · 실제로 확정된 데이터를 기준으로 보여줍니다.</p></div></header>
-    {(summary.reviewCount > 0 || summary.plannedCount > 0) && <aside className="dashboard-alert-strip" aria-label="확인할 알림"><span aria-hidden="true">●</span><div><strong>확인할 일이 있어요</strong><p>{summary.reviewCount > 0 ? `검토가 필요한 거래 ${summary.reviewCount}건` : ''}{summary.reviewCount > 0 && summary.plannedCount > 0 ? ' · ' : ''}{summary.plannedCount > 0 ? `예정 거래 ${summary.plannedCount}건` : ''}</p></div><Link href="/monthly" prefetch className="tds-text-link">월간관리에서 확인</Link></aside>}
-    {/* §8: 참고 거래는 수입·지출·순현금흐름에 포함되지 않는다는 점을 문구로 명확히 한다. */}
-    {summary.referenceCount > 0 && <aside className="dashboard-alert-strip is-neutral" aria-label="참고 거래 요약"><span aria-hidden="true">●</span><div><strong>참고 거래 {summary.referenceCount}건 · 카드 사용액 {money(summary.referenceCardAmount)}</strong><p>수입·지출·순현금흐름에는 포함되지 않은 금액이에요.</p></div><Link href="/monthly" prefetch className="tds-text-link">월간관리에서 확인</Link></aside>}
 
-    {/* §7 item 1 — 이번 달 요약은 탭 안이 아니라 페이지 최상단에 고정한다. */}
-    <MonthSummary current={current} />
+    {/* 1. 확인이 필요한 알림 */}
+    {(summary.reviewCount > 0 || plannedRows.length > 0) && <aside className="dashboard-alert-strip" aria-label="확인할 알림"><span aria-hidden="true">●</span><div><strong>확인할 일이 있어요</strong><p>{summary.reviewCount > 0 ? `검토가 필요한 거래 ${summary.reviewCount}건` : ''}{summary.reviewCount > 0 && plannedRows.length > 0 ? ' · ' : ''}{plannedRows.length > 0 ? `예정 거래 ${plannedRows.length}건 · ${money(plannedAmount)}` : ''}</p></div><Link href="/monthly" prefetch className="tds-text-link">월간관리에서 확인</Link></aside>}
+    {summary.referenceCount > 0 && <aside className="dashboard-alert-strip is-neutral" aria-label="참고 거래 요약"><span aria-hidden="true">●</span><div><strong>참고 거래 {summary.referenceCount}건 · 카드 사용액 {money(summary.referenceCardAmount)}</strong><p>수입·지출·순현금흐름에는 포함되지 않은 금액이에요.</p></div><Link href="/analysis?type=reference" prefetch className="tds-text-link">분석에서 확인</Link></aside>}
 
-    <DashboardPrimaryTabs
-      asset={<>
-        <DashboardAssetOverview totalAssets={netWorth.totalAssets} totalDebt={netWorth.totalDebt} netWorth={netWorth.netWorth} debtRatio={debtRatio} assetRows={assetRows} history={history.map((item) => ({ month: item.snapshotMonth, value: item.totalAssets }))} liquidCash={netWorth.cashAssets} monthlyConsumption={current.consumption} realAssets={realAssets.filter((item) => item.status === 'active').map((item) => ({ id: item.id, assetName: item.assetName, currentValue: item.currentValue }))} />
-      </>}
-      monthly={<>
-        {/* §7 items 2 → 6, §16 웹 레퍼런스: 데스크톱 폭에서는 요약/리스트류(좌)와
-         * 차트류(우)를 2컬럼으로 나란히 배치해 넓은 화면을 활용한다. 모바일/태블릿
-         * (< 1024px)에서는 .dashboard-monthly-columns가 1열로 접혀 순서가 지금과 동일하다. */}
-        <div className="dashboard-monthly-columns">
-          <div className="dashboard-monthly-column">
-            <BudgetMeter total={summary.budgetTotal} actual={summary.budgetActual} />
-            <PlannedTransactions plannedCount={summary.plannedCount} />
-            <RecentTransactions rows={summary.recent} />
-          </div>
-          <div className="dashboard-monthly-column">
-            <DashboardCashflowOverview monthly={monthlyTrend} />
-            <DashboardCategoryBarChart rows={categoryRows} />
-          </div>
-        </div>
-        {/* 드릴다운은 이미 내부에 여러 섹션을 가진 넓은 컴포넌트라 컬럼에 넣지 않고 전체 폭 유지. */}
-        <DashboardMonthlyDetail selectedMonth={month} detailYear={detailYear} initialMonth={initialDetailMonth} availableYears={availableYears} monthly={detailMonthlyTrend} incomeMonthly={detailIncomeMonthlyDetail} incomeCurrent={incomeCurrentDetail} expenseMonthly={detailExpenseMonthlyDetail} expenseCurrent={categoryRows} expensePayments={paymentRows} transactionDetails={detailTransactionDetails} />
-      </>}
-      debt={<DashboardDebtOverview totalDebt={netWorth.totalDebt} debtRatio={debtRatio} principal={currentMonthLoanPrincipal} financeCost={currentMonthLoanInterest} annual={annualDebtRows} />}
-      risk={<DashboardRiskOverview insurances={insurances} />}
-    />
+    {/* 2. 총자산·총부채·순자산 */}
+    <section className="tds-summary-grid" aria-label="자산 현황">
+      <StatCard label="총자산" value={<Amount value={netWorth.totalAssets} size="large" />} meta={<Link href="/finance" prefetch className="tds-text-link">자산·금융에서 보기</Link>} />
+      <StatCard label="총부채" value={<Amount value={netWorth.totalDebt} size="large" />} meta={netWorth.totalAssets > 0 ? `총자산 대비 ${(netWorth.totalDebt / netWorth.totalAssets * 100).toFixed(1)}%` : '-'} />
+      <StatCard label="순자산" value={<Amount value={netWorth.netWorth} size="large" />} meta="총자산 − 총부채" />
+    </section>
+
+    {/* 3. 이번 달 수입·총지출·저축성지출·순현금흐름 */}
+    <section className="tds-summary-grid" aria-label="이번 달 요약">
+      <StatCard label={`${monthLabel(month)} 수입`} value={<Amount value={totals.income} type="income" size="large" />} meta="확정 수입 합계" />
+      <StatCard label="총지출" value={<Amount value={totals.expense} type="expense" size="large" />} meta="저축성지출 포함" />
+      <StatCard label="저축성 지출" value={<Amount value={totals.savings} type="expense" size="large" />} meta="총지출에 포함된 금액" />
+      <StatCard label="순현금흐름" value={<Amount value={Math.abs(totals.net)} type={totals.net >= 0 ? 'income' : 'expense'} size="large" showSign />} meta={totals.income > 0 ? `수입의 ${(totals.net / totals.income * 100).toFixed(1)}%` : '수입 − 지출'} />
+    </section>
+
+    {/* 4. 처리할 예정 거래 */}
+    <section className="tds-card tds-section-card" aria-label="예정 거래">
+      <SectionHeader title="예정 거래" description="정기거래에서 만들어졌지만 아직 확정하지 않은 거래입니다." />
+      <div className="tds-section-card-list">
+        {plannedRows.length > 0
+          ? <ListItem title={`확정을 기다리는 거래 ${plannedRows.length}건 · ${money(plannedAmount)}`} description="월간관리에서 확정하거나 이번 달 제외로 처리할 수 있어요." trailing={<Link href="/monthly" prefetch className="tds-button-secondary">월간관리로 이동</Link>} />
+          : <EmptyState title="예정 거래가 없어요" description="이번 달 정기거래가 모두 처리되었습니다." />}
+      </div>
+    </section>
+
+    {/* 5. 핵심 인사이트 — 근거 있는 문장만 표시(§3) */}
+    {insights.length > 0 && <section className="tds-card tds-section-card" aria-label="핵심 인사이트">
+      <SectionHeader title="핵심 인사이트" description="확정된 거래를 기준으로 계산했어요." />
+      <ul className="tds-section-card-list">{insights.map((text) => <li key={text} className="dashboard-insight-row">{text}</li>)}</ul>
+    </section>}
+
+    {/* 6. 최근 6개월 추이 미리보기 */}
+    <AnalysisCashflowChart scope="year" monthly={trendMonthly} daily={[]} title="최근 6개월 추이" description="확정 거래 기준 · 자세히 보려면 분석 메뉴로 이동하세요" />
+
+    {/* 7. 최근 거래 */}
+    <section className="tds-card tds-section-card" aria-label="최근 거래">
+      <SectionHeader title="최근 거래" description="가장 최근에 기록된 거래입니다." action={<Link href="/monthly" prefetch className="tds-text-link">전체 보기</Link>} />
+      <div className="tds-section-card-list">
+        {recent.length
+          ? recent.map((row) => <ListItem key={row.id} title={row.description || '내용 없음'} metadata={row.transactionDate} trailing={<Amount value={row.amount} type={row.transactionType === 'income' ? 'income' : row.transactionType === 'reference' ? 'neutral' : 'expense'} size="small" showSign />} />)
+          : <EmptyState title="최근 거래가 없어요" description="거래를 기록하면 이곳에 최근 순으로 보여드립니다." />}
+      </div>
+    </section>
+
+    {/* 8. 분석 화면 이동 CTA */}
+    <Link href="/analysis" prefetch className="dashboard-analysis-cta">수입·지출 자세히 분석하기 →</Link>
   </div>;
 }
-
-export function RankedRows({ rows, total, empty, href }: { rows: HomeRank[]; total: number; empty: string; href?: (id: string) => string }) { const max = rows[0]?.value ?? 1; return <div className="home-ranked-list">{rows.slice(0, 6).map((row, index) => { const content = <><span className="home-rank">{index + 1}</span><div><p><span>{row.label}</span><strong>{money(row.value)}</strong></p><div><span style={{ width: `${row.value / max * 100}%` }} /></div><small>{total > 0 ? `${(row.value / total * 100).toFixed(1)}%` : '0%'}</small>{row.subcategories?.length ? <div className="mt-2 border-l-2 border-[var(--tds-grey-200)] pl-3">{row.subcategories.slice(0, 5).map((sub) => <Link key={sub.id} href={href ? `${href(row.id)}&subcategory=${sub.id}` : '#'} className="flex items-center justify-between py-1 text-xs text-[var(--tds-grey-700)] hover:text-[var(--tds-blue-600)]"><span>{sub.label}</span><b>{money(sub.value)}</b></Link>)}</div> : null}</div></>; return row.subcategories?.length ? <div key={row.id} className="home-ranked-row">{content}</div> : href ? <Link key={row.id} href={href(row.id)} className="home-ranked-row" prefetch>{content}</Link> : <div key={row.id} className="home-ranked-row">{content}</div>; })}{!rows.length && <Empty text={empty} />}</div>; }
-function Empty({ text }: { text: string }) { return <p className="home-empty">{text}</p>; }
-
-/* §7 item 1 — 수입 / 지출 / 잔액. 2026-09: 거래 유형이 수입/지출뿐이라 "지출"은 그냥 consumption이고
- * 잔액은 deriveMonth가 계산한 cashRemaining(수입 − 지출) 그대로다. 지출 하단 보조 지표는 저축·투자·
- * 상환 비율 대신(그 구분이 없어졌으므로) 고정비/변동비 비율로 대체한다 — cost_behavior는 여전히
- * 남아있는 축이다. */
-function MonthSummary({ current }: { current: ReturnType<typeof deriveMonth> }) {
-  const spent = current.consumption;
-  const share = (value: number, base: number) => base > 0 ? `${(value / base * 100).toFixed(0)}%` : '-';
-  return <section className="tds-summary-grid" aria-label="이번 달 요약">
-    <StatCard label="이번 달 수입" value={<Amount value={current.income} type="income" size="large" />} meta="확정된 수입 합계" />
-    <StatCard label="이번 달 지출" value={<Amount value={spent} type="expense" size="large" />} meta={`고정비 ${share(current.fixedConsumption, spent)} · 변동비 ${share(current.variableConsumption, spent)}`} />
-    <StatCard label="이번 달 잔액" value={<Amount value={Math.abs(current.cashRemaining)} type={current.cashRemaining >= 0 ? 'income' : 'expense'} size="large" showSign />} meta={current.income > 0 ? `수입의 ${share(current.cashRemaining, current.income)}` : '수입 − 지출'} />
-  </section>;
-}
-
-/* §7 item 2 — budgetTotal/budgetActual은 RPC가 이미 반환하는데 화면 어디에도
- * 노출되지 않았다.  예산 초과 여부는 색 하나로 읽히는 게 핵심이라 진행률 바로 둔다. */
-function BudgetMeter({ total, actual }: { total: number; actual: number }) {
-  const ratio = total > 0 ? actual / total : 0;
-  const state = ratio > 1 ? 'over' : ratio >= 0.9 ? 'near' : 'within';
-  const remaining = total - actual;
-  return <section className="tds-card tds-section-card" aria-label="예산 대비 지출">
-    <SectionHeader title="예산 대비 지출" description={total > 0 ? '이번 달 예산과 확정 지출을 비교합니다.' : '이번 달 예산이 설정되지 않았습니다.'} action={<Link href="/settings/budgets" prefetch className="tds-text-link">예산 설정</Link>} />
-    {total > 0 ? <div className="tds-budget-meter">
-      <div className="tds-budget-meter-head"><Amount value={actual} type="expense" size="medium" /><span className="tds-budget-meter-ratio">{(ratio * 100).toFixed(0)}%</span></div>
-      <div className="tds-progress" role="img" aria-label={`예산 ${money(total)} 중 ${money(actual)} 사용 · ${(ratio * 100).toFixed(0)}%`}><span className={`tds-progress-fill tds-progress-fill-${state}`} style={{ width: `${Math.min(100, Math.max(0, ratio * 100))}%` }} /></div>
-      <div className="tds-budget-meter-foot"><span>예산 <Amount value={total} size="small" /></span><span>{remaining >= 0 ? <>남은 예산 <Amount value={remaining} size="small" /></> : <>초과 <Amount value={Math.abs(remaining)} type="expense" size="small" /></>}</span></div>
-    </div> : <EmptyState title="예산이 없어요" description="연간 예산을 설정하면 이번 달 지출과 비교해 보여드립니다." />}
-  </section>;
-}
-
-/* §7 item 5 — dashboard_home_summary는 예정 거래의 "건수"만 반환하고 행 목록은
- * 반환하지 않는다(HomeRecent에 status 필드가 없다).  새 RPC를 만들지 않는다는
- * §7 원칙에 따라 요약 한 줄 + 월간관리 이동으로 처리한다. */
-function PlannedTransactions({ plannedCount }: { plannedCount: number }) {
-  return <section className="tds-card tds-section-card" aria-label="예정 거래">
-    <SectionHeader title="예정 거래" description="정기거래에서 만들어졌지만 아직 확정하지 않은 거래입니다." />
-    <div className="tds-section-card-list">
-      {plannedCount > 0
-        ? <ListItem title={`확정을 기다리는 거래 ${plannedCount}건`} description="월간관리에서 확정하거나 이번 달 제외로 처리할 수 있어요." trailing={<Link href="/monthly" prefetch className="tds-button-secondary">월간관리로 이동</Link>} />
-        : <EmptyState title="예정 거래가 없어요" description="이번 달 정기거래가 모두 처리되었습니다." />}
-    </div>
-  </section>;
-}
-
-/* §7 item 6 — 최근 거래.  §14 정보 위계(금액 > 거래내용 > 보조정보)대로
- * 금액은 우측 Amount, 수입/지출은 아이콘이 아니라 색과 부호로만 구분한다. */
-function RecentTransactions({ rows }: { rows: HomeRecent[] }) {
-  return <section className="tds-card tds-section-card" aria-label="최근 거래">
-    <SectionHeader title="최근 거래" description="가장 최근에 기록된 거래입니다." action={<Link href="/monthly" prefetch className="tds-text-link">전체 보기</Link>} />
-    <div className="tds-section-card-list">
-      {rows.length
-        ? rows.map((row) => <ListItem key={row.id} title={row.description || '내용 없음'} metadata={row.transactionDate} trailing={<Amount value={row.amount} type={row.transactionType === 'income' ? 'income' : 'expense'} size="small" showSign />} />)
-        : <EmptyState title="최근 거래가 없어요" description="거래를 기록하면 이곳에 최근 순으로 보여드립니다." />}
-    </div>
-  </section>;
-}
-function emptyMonth(month: string): HomeMonth { return { month, income: 0, consumption: 0, fixedConsumption: 0, variableConsumption: 0 }; }
-// 2026-09: 저축/투자/대출원금/금융비용이 flow_class로 따로 안 잡히므로(전부 consumption) 순현금흐름은
-// 그냥 수입 − 지출이다. 대출 원금·이자는 이제 "지출"이므로 이미 value.consumption에 포함돼 있다.
-function deriveMonth(value: HomeMonth) { return { ...value, cashRemaining: value.income - value.consumption }; }

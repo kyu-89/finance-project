@@ -5,7 +5,6 @@ import { listCategoriesWithSubcategories } from '@/lib/categories';
 import { listPaymentMethods } from '@/lib/payment-methods';
 import { monthRangeFromSeoulDateString, todayInSeoul } from '@/lib/date';
 import { materializeRecurringRulesForRange } from '@/lib/recurring-rules';
-import { listBudgets } from '@/lib/budgets';
 import { MonthlyPageTabs } from './MonthlyPageTabs';
 
 const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
@@ -28,12 +27,9 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
   const selectedSubcategory = params.subcategory && /^[0-9a-f-]{36}$/i.test(params.subcategory) ? params.subcategory : undefined;
   const selectedRecurringRule = params.recurringRule && /^[0-9a-f-]{36}$/i.test(params.recurringRule) ? params.recurringRule : undefined;
   const { fromDate, toDate } = monthRangeFromSeoulDateString(`${selectedMonth}-01`);
-  const year = Number(fromDate.slice(0, 4));
-  const monthNumber = Number(fromDate.slice(5, 7));
   const metadataPromise = Promise.all([
     listCategoriesWithSubcategories(household.id),
     listPaymentMethods(household.id),
-    listBudgets(household.id, year),
   ]);
 
   if (selectedMonth < currentMonth) {
@@ -48,16 +44,14 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
     ]);
   }
 
-  const [[categories, paymentMethods, annualBudgets], transactions] = await Promise.all([
+  const [[categories, paymentMethods], transactions] = await Promise.all([
     metadataPromise,
     listTransactions({ householdId: household.id, fromDate, toDate, reportMonthFrom: selectedMonth, reportMonthTo: selectedMonth, categoryId: selectedCategory, subcategoryId: selectedSubcategory, recurringRuleId: selectedRecurringRule }),
   ]);
 
-  const budgetCategories = categories.filter((c) => c.transactionType === 'expense');
   const categoryFilterName = selectedCategory ? categories.find((category) => category.id === selectedCategory)?.name : null;
   const subcategoryFilterName = selectedSubcategory ? categories.flatMap((category) => category.subcategories).find((subcategory) => subcategory.id === selectedSubcategory)?.name : null;
   const activePaymentMethods = paymentMethods.filter((m) => m.isActive);
-  const budgets = annualBudgets.filter((budget) => budget.month === monthNumber);
 
   return (
     <div className="tds-page">
@@ -77,8 +71,6 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
         selectedMonth={selectedMonth}
         categories={categories}
         paymentMethods={activePaymentMethods}
-        budgets={budgets}
-        budgetCategories={budgetCategories}
       />
     </div>
   );

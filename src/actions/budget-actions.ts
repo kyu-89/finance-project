@@ -37,5 +37,7 @@ export async function budgetEditorAction(_previous: ActionResult, formData: Form
 
   revalidatePath('/settings/budgets');
   revalidatePath('/monthly');
+  revalidatePath('/dashboard');
+  revalidatePath('/analysis');
   return ok();
 }

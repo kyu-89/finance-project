@@ -32,6 +32,17 @@ describe('Sprint 4 finance table RLS', () => {
     ]);
     expect(signInA).toBeNull(); expect(signInB).toBeNull();
 
+    // create_loan_recurring_rules() 트리거가 이름으로 주거비>주담대 원금/이자를 찾는다
+    // (20260909110000부터는 못 찾으면 예외를 던진다) — 실제 앱은 ensureDefaultCategoriesSeeded()가
+    // 매번 이를 보장하지만, 이 테스트는 서비스롤로 household를 직접 만들어 그 경로를 안 거친다.
+    const { data: housingCategory, error: housingCategoryError } = await admin.from('categories')
+      .insert({ household_id: householdA, transaction_type: 'expense', name: '주거비', default_cost_behavior: 'fixed' })
+      .select('id').single();
+    if (housingCategoryError || !housingCategory) throw housingCategoryError ?? new Error('failed to seed 주거비 category');
+    const { error: housingSubcategoryError } = await admin.from('subcategories')
+      .insert([{ category_id: housingCategory.id, name: '주담대 원금' }, { category_id: housingCategory.id, name: '주담대 이자' }]);
+    if (housingSubcategoryError) throw housingSubcategoryError;
+
     const account = await insert('accounts', { household_id: householdA, bank_name: '은행', account_name: '계좌', account_type: 'checking', current_balance: 1_000_000 });
     cases.push({ table: 'accounts', id: account.id, spoof: { household_id: householdA, bank_name: 'B', account_name: 'B', account_type: 'checking' }, update: { memo: 'B update' } });
     const deposit = await insert('deposits', { household_id: householdA, bank_name: '은행', product_name: '예금', joined_at: '2026-01-01', maturity_date: '2026-12-31', principal: 1_000_000, annual_rate: 0.03 });
