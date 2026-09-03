@@ -1404,18 +1404,24 @@ input.quick-add-amount {
    * visual grouping differs from the desktop column sequence. */
   .tds-ledger-table tbody > .tds-table-row {
     display: grid;
-    /* Column 1 carries 유형/금액/내용 — the row's primary content — but a bare
-     * minmax(0, …) floor loses that fight every time against two max-content
-     * tracks that always claim their full content width first (confirmed
-     * live: column 1 measured ~31px wide once a legacy conflicting rule that
-     * had been silently zeroing this grid was removed, truncating the amount
-     * to "1,2…"). A fixed minimum floor guarantees the money and description
-     * stay legible even if that leaves less room for column 2/3, which can
-     * wrap or compress without losing meaning. */
+    /* Column 1 carries 날짜/유형/금액/내용 — the row's primary content — but a
+     * bare minmax(0, …) floor loses that fight every time against two
+     * max-content tracks that always claim their full content width first
+     * (confirmed live: column 1 measured ~31px wide once a legacy
+     * conflicting rule that had been silently zeroing this grid was
+     * removed, truncating the amount to "1,2…"). A fixed minimum floor
+     * guarantees the money and description stay legible even if that
+     * leaves less room for column 2/3, which can wrap or compress without
+     * losing meaning. */
     grid-template-columns: minmax(100px, 1.1fr) minmax(0, max-content) minmax(0, max-content);
     align-items: center;
     column-gap: var(--ui-space-3);
-    row-gap: var(--ui-space-3);
+    /* 4 rows in column 1 now (날짜 added on top), same card height budget as
+     * the previous 3-row layout — row-gap trades 12px for 8px to absorb the
+     * extra gap the new row introduces (see field rules below for the rest
+     * of the compensation: 유형/내용 step down one font size, 유형 no longer
+     * force-matches the row-1 selects' height). */
+    row-gap: var(--ui-space-2);
     padding: var(--ui-mobile-transaction-card-padding);
     border: 1px solid var(--tds-grey-200);
     border-radius: 16px;
@@ -1439,14 +1445,15 @@ input.quick-add-amount {
     font-weight: 700;
   }
 
-  /* Left region — primary content, no field labels */
-  /* Row 1's other two cells (성격/상태) hold selects at
-   * --ui-mobile-inline-control-height (40px), taller than the 32px base
-   * .tds-table-cell min-height. Grid centers each cell within the row's
-   * auto-sized height (= the tallest sibling), so 유형's shorter box was
-   * floating 4px lower than the selects beside it — matching this field's
-   * min-height to its row makes all three sit flush at the same top. */
-  .tds-ledger-table [data-table-field='transactionType'] { grid-row: 1; grid-column: 1; min-height: var(--ui-mobile-inline-control-height); font-weight: 700; }
+  /* Left region — primary content, no field labels. 4 rows now: 날짜(요청에
+   * 따라 최상단으로 이동) · 유형 · 금액 · 내용. 날짜는 폰트 그대로(요청), 유형/
+   * 내용은 한 단계 축소해 4번째 행이 늘어난 만큼을 상쇄한다(row-gap 축소와
+   * 함께 — 위 .tds-table-row 주석 참고). */
+  .tds-ledger-table [data-table-field='transactionDate'] {
+    grid-row: 1;
+    grid-column: 1;
+  }
+  .tds-ledger-table [data-table-field='transactionType'] { grid-row: 2; grid-column: 1; font-size: var(--text-micro); font-weight: 700; }
   .tds-ledger-table [data-table-field='transactionType']::before { content: none; }
   /* A 7+ digit amount can still be wider than column 1's 100px floor.
    * text-overflow:ellipsis never actually took effect here (it doesn't
@@ -1456,7 +1463,7 @@ input.quick-add-amount {
    * itself is hidden (still touch/trackpad-scrollable) so it doesn't look
    * like a UI element bolted onto a single card. */
   .tds-ledger-table [data-table-field='amount'] {
-    grid-row: 2;
+    grid-row: 3;
     grid-column: 1;
     overflow-x: auto;
     overflow-y: hidden;
@@ -1472,26 +1479,42 @@ input.quick-add-amount {
   }
   .tds-ledger-table [data-table-field='amount']::before { content: none; }
   .tds-ledger-table [data-table-field='description'] {
-    grid-row: 3;
+    grid-row: 4;
     grid-column: 1;
-    overflow: hidden;
-    font-size: var(--text-body-2);
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    font-size: var(--text-caption);
   }
   .tds-ledger-table [data-table-field='description']::before { content: none; }
+  /* The actual overflow constraint lives on .monthly-description-button
+   * itself (globals.css), not this <td> — it's `display:block; max-width:
+   * 100%; overflow:hidden` there, so it clips internally before content
+   * ever reaches the cell's edge; overflow rules on the <td> have no effect
+   * on it. Same fix and reasoning as amount above (its text-overflow never
+   * actually rendered ellipsis dots, just hard-clipped) — scoped to mobile
+   * only, the desktop table keeps its ellipsis since it rarely runs out of
+   * room there. */
+  .tds-ledger-table [data-table-field='description'] .monthly-description-button {
+    overflow-x: auto;
+    overflow-y: hidden;
+    text-overflow: clip;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tds-ledger-table [data-table-field='description'] .monthly-description-button::-webkit-scrollbar {
+    display: none;
+  }
 
-  /* Right region — labeled, 2 columns (col 2 carries the left/right divider) */
+  /* Right region — no field labels either (see below), 2 columns (col 2
+   * carries the left/right divider). 날짜가 좌측으로 옮겨가면서 비운 자리에
+   * 대분류·소분류를 나열하고, 결제는 그 아래 행 전체를 쓴다. */
   .tds-ledger-table [data-table-field='costBehavior'],
-  .tds-ledger-table [data-table-field='transactionDate'],
-  .tds-ledger-table [data-table-field='subcategoryId'] {
+  .tds-ledger-table [data-table-field='categoryId'],
+  .tds-ledger-table [data-table-field='paymentMethodId'] {
     grid-column: 2;
     border-left: 1px solid var(--tds-grey-100);
     padding-left: var(--ui-space-3);
   }
   .tds-ledger-table [data-table-field='status'],
-  .tds-ledger-table [data-table-field='categoryId'],
-  .tds-ledger-table [data-table-field='paymentMethodId'] {
+  .tds-ledger-table [data-table-field='subcategoryId'] {
     grid-column: 3;
   }
 
@@ -1511,9 +1534,10 @@ input.quick-add-amount {
    * amount and cutting select text entirely. "이번달 제외" is fixed-length
    * button copy, not user data, so this isn't a rare-long-value edge case;
    * it happens on every planned+recurring row. Give the pair its own
-   * full-width row instead of fighting column 3 for space. */
+   * full-width row instead of fighting column 3 for space. Row 5, not 4 —
+   * column 1's 내용 now occupies row 4. */
   .tds-ledger-table [data-table-field='status']:has(.transaction-status-actions) {
-    grid-row: 4;
+    grid-row: 5;
     grid-column: 1 / -1;
     min-height: 0;
   }
@@ -1521,15 +1545,42 @@ input.quick-add-amount {
     content: none;
   }
 
-  .tds-ledger-table [data-table-field='transactionDate'] { grid-row: 2; }
-  .tds-ledger-table [data-table-field='transactionDate']::before { content: '날짜'; }
+  /* 날짜/대분류/소분류/결제 라벨 제거(성격/상태와 같은 이유, iPhone 13 mini
+   * 실기기에서 "날짜"의 일(day)자리가 잘린다는 리포트로 확인됨): 라벨 하나당
+   * 2~3자 + gap이 이미 빡빡한 2/3열 폭을 계속 갉아먹는 게 근본 문제라, 값 하나만
+   * 옮겨서는 다른 필드가 똑같이 압박받는다. 레퍼런스 목업도 이 필드들에 라벨을
+   * 쓰지 않는다 — 값의 서식(날짜 형식, 결제수단명 등) 자체로 의미가 통한다. */
+  .tds-ledger-table [data-table-field='transactionDate']::before { content: none; }
   .tds-ledger-table [data-table-field='categoryId'] { grid-row: 2; }
-  .tds-ledger-table [data-table-field='categoryId']::before { content: '대분류'; }
+  .tds-ledger-table [data-table-field='categoryId']::before { content: none; }
 
-  .tds-ledger-table [data-table-field='subcategoryId'] { grid-row: 3; }
-  .tds-ledger-table [data-table-field='subcategoryId']::before { content: '소분류'; }
-  .tds-ledger-table [data-table-field='paymentMethodId'] { grid-row: 3; }
-  .tds-ledger-table [data-table-field='paymentMethodId']::before { content: '결제'; }
+  .tds-ledger-table [data-table-field='subcategoryId'] { grid-row: 2; }
+  .tds-ledger-table [data-table-field='subcategoryId']::before { content: none; }
+  /* 결제: 대분류/소분류 행 바로 아래, 우측 영역 전체 폭 — 파트너 없이 혼자
+   * 남았으니 col 2/3을 합쳐 하나의 값으로 넓게 보여준다. */
+  .tds-ledger-table [data-table-field='paymentMethodId'] {
+    grid-row: 3;
+    grid-column: 2 / -1;
+  }
+  .tds-ledger-table [data-table-field='paymentMethodId']::before { content: none; }
+
+  /* 대분류/소분류/결제는 플레인 텍스트 노드라 원래 overflow 지정이 전혀 없었다
+   * (넘치면 clip 없이 그냥 옆 영역을 침범). amount/내용과 같은 이유로 clip 대신
+   * 스크롤 — 이 셋은 감싸는 요소가 없어 셀 자신에 바로 적용한다. */
+  .tds-ledger-table [data-table-field='categoryId'],
+  .tds-ledger-table [data-table-field='subcategoryId'],
+  .tds-ledger-table [data-table-field='paymentMethodId'] {
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tds-ledger-table [data-table-field='categoryId']::-webkit-scrollbar,
+  .tds-ledger-table [data-table-field='subcategoryId']::-webkit-scrollbar,
+  .tds-ledger-table [data-table-field='paymentMethodId']::-webkit-scrollbar {
+    display: none;
+  }
 
   .tds-ledger-table [data-table-field='status'] form,
   .tds-ledger-table [data-table-field='costBehavior'] form { min-width: 0; flex: 0 1 auto; }
