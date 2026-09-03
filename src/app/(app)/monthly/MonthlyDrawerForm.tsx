@@ -55,7 +55,6 @@ export function MonthlyDrawerForm({ categories, paymentMethods, initialTransacti
               // 버려야 한다 — resetClassification()이 비우는 폼 상태와 짝을 맞춘다.
               key={transactionType}
               categories={availableCategories}
-              allowClearCategory={!isCategoryRequired}
               allowClearSubcategory
               onSelect={(category, pickedSubcategoryId) => {
                 setCategoryId(category?.id ?? '');

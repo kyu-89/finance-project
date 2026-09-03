@@ -628,13 +628,6 @@ textarea {
 .confirm-dialog-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 20px; }
 .confirm-dialog-actions button { min-height: 48px; }
 .drawer-trigger { min-height: 44px; padding: 10px 16px; font-size: 14px; }
-/* 월간관리의 수입/지출/참고 거래 추가 버튼 — 크기·스타일은 동일하게 두고 왼쪽 강조선 색으로만
- * 거래 유형을 구분한다(사용자 지시: "동일한 크기·높이·스타일 체계를 사용하되 시각적 구분은
- * 명확히"). 색은 다른 화면의 수입/지출 색상(--chart-income/--chart-expense)과 맞췄다. */
-.drawer-trigger.is-income, .drawer-trigger.is-expense, .drawer-trigger.is-reference { box-shadow: inset 3px 0 0 0 var(--cta-accent); }
-.drawer-trigger.is-income { --cta-accent: var(--chart-income); }
-.drawer-trigger.is-expense { --cta-accent: var(--chart-expense); }
-.drawer-trigger.is-reference { --cta-accent: var(--tds-grey-500); }
 .drawer-backdrop { position: fixed; z-index: 70; inset: 0; display: flex; justify-content: flex-end; background: rgb(13 25 43 / .32); }
 .app-drawer { width: min(640px, 100vw); height: 100%; overflow-y: auto; background: var(--tds-white); box-shadow: -12px 0 40px rgb(0 0 0 / .16); animation: drawer-in 180ms ease-out; }
 .app-drawer-header { position: sticky; z-index: 1; top: 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 22px 24px 18px; border-bottom: 1px solid var(--tds-grey-200); background: rgb(255 255 255 / .94); backdrop-filter: blur(12px); }
@@ -654,9 +647,27 @@ aside[role="dialog"][aria-modal="true"]:not(.app-drawer) { width: min(640px, 100
 .form-field { display: flex; min-width: 0; flex-direction: column; gap: 6px; color: var(--tds-grey-700); font-size: 13px; font-weight: 650; }
 /* 반복 항목 추가/수정 드로워는 이제 RecurringRuleForm이 MonthlyDrawerForm과 같은
  * .monthly-drawer-form/-section/-grid 클래스를 쓴다(사용자 지시: 워딩·레이아웃 통일) — 예전의
- * .recurring-form/.recurring-rule-edit-body 전용 스타일은 더 이상 어디서도 쓰이지 않아 제거했다.
- * 남은 RecurringRuleAmountForm/RecurringPauseForm은 .recurring-rule-card의 input/select
- * min-height(위 645번째 줄)와 form(644번째 줄) 규칙을 그대로 물려받는다. */
+ * .recurring-form/.recurring-rule-edit-body 전용 스타일은 더 이상 어디서도 쓰이지 않아 제거했다. */
+.recurring-rule-card-body { display: flex; min-width: 0; flex-direction: column; gap: 8px; }
+.recurring-rule-card-heading { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.recurring-rule-card-heading strong { font-size: 15px; font-weight: 750; color: var(--tds-grey-900); }
+.recurring-rule-card-meta { color: var(--tds-grey-700); font-size: 13px; }
+.recurring-rule-card-note { color: var(--tds-grey-500); font-size: 12px; }
+/* 자주 안 쓰는 보조 기능(이번 달만 금액 변경, 일시중지)은 카드 기본 화면을 어지럽히지 않도록
+ * <details>로 접어둔다 — 필요할 때만 펼쳐서 쓴다. */
+.recurring-rule-card-quick-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; border-top: 1px solid var(--tds-grey-100); padding-top: 12px; }
+.recurring-rule-quick-action summary { cursor: pointer; list-style: none; color: var(--tds-blue-600); font-size: 13px; font-weight: 700; }
+.recurring-rule-quick-action summary::-webkit-details-marker { display: none; }
+.recurring-rule-quick-action summary::before { content: '+ '; }
+.recurring-rule-quick-action[open] summary::before { content: '− '; }
+.recurring-rule-quick-action-body { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.recurring-rule-card form.recurring-rule-quick-action-body { align-items: stretch; }
+.recurring-rule-quick-action-row { display: flex; align-items: center; gap: 8px; }
+.recurring-rule-quick-action-row button { flex: 0 0 auto; }
+.recurring-rule-quick-action-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.recurring-rule-pause-reason { grid-column: 1 / -1; }
+.recurring-rule-pauses { display: flex; flex-direction: column; gap: 8px; }
+.recurring-rule-pause-list { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0; list-style: none; color: var(--tds-grey-600); font-size: 12px; }
 input[type='date'], input[type='month'] { color-scheme: light; padding-right: 40px; }
 input[type='date']::-webkit-calendar-picker-indicator, input[type='month']::-webkit-calendar-picker-indicator { cursor: pointer; opacity: .62; }
 input[type='date']:user-invalid, input[type='month']:user-invalid { border-color: var(--tds-red-500); background: oklch(0.98 0.01 22); }

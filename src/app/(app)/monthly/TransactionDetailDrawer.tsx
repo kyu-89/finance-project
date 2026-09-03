@@ -69,7 +69,6 @@ export function TransactionDetailDrawer({ transaction, support, event, categorie
               categories={availableCategories}
               initialCategoryId={categoryId || null}
               initialSubcategoryId={subcategoryId || null}
-              allowClearCategory={!isCategoryRequired}
               allowClearSubcategory
               onSelect={(category, pickedSubcategoryId) => {
                 setCategoryId(category?.id ?? '');
