@@ -17,10 +17,7 @@ import type { TransactionType } from '@/lib/cost-behavior';
 import type { RecurrenceFrequency } from '@/lib/recurrence';
 import { todayInSeoul } from '@/lib/date';
 
-const TRANSACTION_TYPES = new Set<TransactionType>([
-  'income', 'expense', 'saving', 'investment', 'debt_principal',
-  'finance_cost', 'transfer', 'asset_adjustment', 'refund',
-]);
+const TRANSACTION_TYPES = new Set<TransactionType>(['income', 'expense']);
 const FREQUENCIES = new Set<RecurrenceFrequency>(['monthly', 'weekly', 'yearly', 'custom']);
 const SOURCE_TYPES = new Set<RecurringSourceType>([
   'insurance', 'saving', 'loan', 'subscription', 'salary', 'support', 'manual',

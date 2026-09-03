@@ -4,8 +4,7 @@ import { resolveCostBehavior } from '@/lib/cost-behavior';
 describe('resolveCostBehavior', () => {
   it('returns null for non-expense transaction types regardless of inputs', () => {
     expect(resolveCostBehavior('income', 'fixed', 'variable')).toBeNull();
-    expect(resolveCostBehavior('saving', 'fixed', null)).toBeNull();
-    expect(resolveCostBehavior('transfer', null, 'fixed')).toBeNull();
+    expect(resolveCostBehavior('income', null, 'fixed')).toBeNull();
   });
 
   it('uses the explicit override when provided for an expense', () => {

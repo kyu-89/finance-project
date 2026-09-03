@@ -5,8 +5,7 @@ describe('calculateTransactionTotals', () => {
   it('includes only posted consumption rows in the confirmed consumption total', () => {
     const totals = calculateTransactionTotals([
       { amount: 10_000, flowClass: 'consumption', status: 'posted' },
-      { amount: 20_000, flowClass: 'saving', status: 'posted' },
-      { amount: 30_000, flowClass: 'transfer', status: 'posted' },
+      { amount: 20_000, flowClass: 'cash_in', status: 'posted' },
       { amount: 40_000, flowClass: 'consumption', status: 'cancelled' },
       { amount: 50_000, flowClass: 'consumption', status: 'skipped' },
     ]);
@@ -17,22 +16,25 @@ describe('calculateTransactionTotals', () => {
   it('reports planned consumption separately without adding it to confirmed consumption', () => {
     const totals = calculateTransactionTotals([
       { amount: 10_000, flowClass: 'consumption', status: 'planned' },
-      { amount: 20_000, flowClass: 'saving', status: 'planned' },
+      { amount: 20_000, flowClass: 'cash_in', status: 'planned' },
       { amount: 30_000, flowClass: 'consumption', status: 'posted' },
     ]);
 
-    // This previously expected plannedTotal: 30_000 — it summed the planned 저축 into a figure
-    // rendered beside 소비 합계, and so locked in the very bug it looked like it was guarding.
-    // 저축 is not 소비 (PRD §23.6); only planned consumption belongs in this total.
+    // 계획된 수입(cash_in)이 소비 합계에 섞이면 안 된다(PRD §23.6) — 급여와 월세가 더해지는 식의
+    // 버그를 막는 회귀 가드.
     expect(totals).toEqual({ consumptionTotal: 30_000, plannedTotal: 10_000 });
   });
 
-  it('subtracts posted refunds from confirmed consumption', () => {
+  // 2026-09: 환불/취소는 이제 별도 transaction_type이 아니라 그 거래 자체의 status
+  // ('refunded'/'cancelled')이다 — status==='posted' 조건에서 이미 완전히 빠지므로
+  // "포함 후 빼기"가 아니라 애초에 합산되지 않는다.
+  it('excludes a refunded/cancelled row from the confirmed consumption total entirely', () => {
     const totals = calculateTransactionTotals([
       { amount: 50_000, flowClass: 'consumption', status: 'posted' },
-      { amount: 20_000, transactionType: 'refund', flowClass: 'cash_in', status: 'posted' },
+      { amount: 20_000, flowClass: 'consumption', status: 'refunded' },
+      { amount: 15_000, flowClass: 'consumption', status: 'cancelled' },
     ]);
-    expect(totals.consumptionTotal).toBe(30_000);
+    expect(totals.consumptionTotal).toBe(50_000);
   });
 });
 
@@ -41,9 +43,8 @@ describe('calculateTransactionTotals — planned rows must not mix inflow and ou
     const totals = calculateTransactionTotals([
       { amount: 4_000_000, flowClass: 'cash_in', status: 'planned' },
       { amount: 1_000_000, flowClass: 'consumption', status: 'planned' },
-      { amount: 500_000, flowClass: 'saving', status: 'planned' },
     ]);
-    // Previously 5,500,000 — a salary and a rent added together.
+    // Previously 5,000,000 — a salary and a rent added together.
     expect(totals.plannedTotal).toBe(1_000_000);
   });
 });

@@ -25,7 +25,8 @@ export function WorkbookMonthlyImport({ categories, paymentMethods }: { categori
       return {
         transactionDate: row.transactionDate as string,
         sourceMonth: row.sourceMonth ?? null,
-        transactionType: row.transactionType,
+        transactionType: (row.transactionType === 'refund' ? 'expense' : row.transactionType) as 'income' | 'expense',
+        status: (row.transactionType === 'refund' ? 'refunded' : 'posted') as 'posted' | 'refunded',
         amount: row.amount as number,
         description: row.description,
         categoryId: category?.id ?? null,

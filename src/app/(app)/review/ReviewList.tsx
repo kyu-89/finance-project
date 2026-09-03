@@ -16,13 +16,6 @@ const PAGE_SIZE = 20;
 const TYPE_LABEL: Record<Transaction['transactionType'], string> = {
   income: '수입',
   expense: '지출',
-  refund: '환불',
-  saving: '저축',
-  investment: '투자',
-  debt_principal: '대출원금',
-  finance_cost: '이자/비용',
-  transfer: '이체',
-  asset_adjustment: '자산조정',
 };
 
 export function ReviewList({ transactions, categories, paymentMethods }: { transactions: Transaction[]; categories: CategoryWithSubcategories[]; paymentMethods: PaymentMethod[] }) {

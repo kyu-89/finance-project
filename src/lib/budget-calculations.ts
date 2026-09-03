@@ -9,44 +9,28 @@ export function budgetStatus(spent: number, budget: number): BudgetStatus {
   return 'safe';
 }
 
+// 2026-09: 거래 유형이 수입/지출 두 가지로 축소되면서 flow_class도 cash_in/consumption 두 값만
+// 남았다(저축/투자/대출원금상환/금융비용은 이제 별도 flow_class가 아니라 지출의 하위 카테고리다).
+// 그래서 이 집계도 총수입/소비성지출/현금잔여액 세 값만 계산한다 — 예전의 생활수지·자산형성액·
+// 저축률 등은 저축과 소비가 분리된 flow_class일 때만 의미가 있던 파생값이라 함께 걷어냈다.
 export type ClosingTransaction = {
   amount: number;
-  transactionType: string;
   flowClass: string;
-  status: 'planned' | 'posted' | 'skipped' | 'cancelled';
+  status: 'planned' | 'posted' | 'skipped' | 'cancelled' | 'refunded';
   includeInBudget: boolean;
   categoryId: string | null;
-  parentCategoryId?: string | null;
 };
 
 export type MonthlyBudget = { transactionType: 'income' | 'expense' | 'saving'; categoryId: string | null; amount: number };
 
 export function calculateMonthlyClosing(transactions: ClosingTransaction[], budgets: MonthlyBudget[]) {
   let income = 0;
-  let saving = 0;
   let consumption = 0;
-  let investment = 0;
-  let debtPrincipal = 0;
-  let financeCost = 0;
   const spentByCategory: Record<string, number> = {};
 
   for (const transaction of transactions) {
     if (transaction.status !== 'posted') continue;
-    if (transaction.transactionType === 'income') income += transaction.amount;
-    if (transaction.transactionType === 'saving') saving += transaction.amount;
-    // PRD §1.4: 저축·투자·대출원금상환·금융비용 are each their own flow class. Keying these on
-    // flow_class (not transaction_type) keeps them aligned with the one FLOW_CLASS_BY_TRANSACTION_TYPE
-    // map, so a future transaction_type that maps to an existing class is counted automatically.
-    if (transaction.flowClass === 'investment') investment += transaction.amount;
-    if (transaction.flowClass === 'debt_principal') debtPrincipal += transaction.amount;
-    if (transaction.flowClass === 'finance_cost') financeCost += transaction.amount;
-    if (transaction.transactionType === 'refund') {
-      consumption -= transaction.amount;
-      const categoryId = transaction.categoryId ?? transaction.parentCategoryId;
-      if (transaction.includeInBudget && categoryId) {
-        spentByCategory[categoryId] = (spentByCategory[categoryId] ?? 0) - transaction.amount;
-      }
-    }
+    if (transaction.flowClass === 'cash_in') income += transaction.amount;
     if (transaction.flowClass === 'consumption') {
       consumption += transaction.amount;
       if (transaction.includeInBudget && transaction.categoryId) {
@@ -57,53 +41,22 @@ export function calculateMonthlyClosing(transactions: ClosingTransaction[], budg
 
   const budgetTotal = budgets.filter((budget) => budget.transactionType === 'expense').reduce((sum, budget) => sum + budget.amount, 0);
   const plannedIncome = budgets.filter((budget) => budget.transactionType === 'income').reduce((sum, budget) => sum + budget.amount, 0);
-  const savingBudget = budgets.filter((budget) => budget.transactionType === 'saving').reduce((sum, budget) => sum + budget.amount, 0);
   const budgetedConsumption = Object.values(spentByCategory).reduce((sum, amount) => sum + amount, 0);
+  const cashRemaining = income - consumption;
 
-  // PRD §1.4 / §36 — these are four DIFFERENT numbers and must not be collapsed into one
-  // "월 차액". The previous single `balance = income - saving - consumption` silently dropped
-  // 투자·대출원금·금융비용, so a household with a mortgage was shown far more spare cash than
-  // it had, in the direction that encourages overspending.
-  //
-  //   생활수지   = 총수입 − 소비성지출 − 금융비용        (what living costs leave behind)
-  //   자산형성액 = 저축 + 투자 + 대출원금상환             (cash that became net worth)
-  //   현금잔여액 = 총현금유입 − 총현금유출                (what is actually left)
-  //
-  // 이체(transfer) is deliberately excluded from every one of these: it moves cash between the
-  // household's own accounts and is neither income, cost, nor wealth creation (§23.5).
-  const livingBalance = income - consumption - financeCost;
-  const wealthBuilt = saving + investment + debtPrincipal;
-  const cashOutflow = consumption + financeCost + saving + investment + debtPrincipal;
-  const cashRemaining = income - cashOutflow;
-
-  const savingsRate = income > 0 ? saving / income : null;
-  const targetSavingsRate = plannedIncome > 0 ? savingBudget / plannedIncome : null;
   return {
     income,
-    saving,
     consumption,
-    investment,
-    debtPrincipal,
-    financeCost,
     budgetedConsumption,
-    totalExpense: saving + consumption,
+    totalExpense: consumption,
     // 현금 기준 잔여액. Kept under the existing `balance` key so no call site silently reads a
-    // stale meaning; it now accounts for every outflow rather than three of them.
+    // stale meaning.
     balance: cashRemaining,
     cashRemaining,
-    livingBalance,
-    wealthBuilt,
-    cashOutflow,
-    wealthBuildingRate: income > 0 ? wealthBuilt / income : null,
-    savingsRate,
-    targetSavingsRate,
-    savingsRateVariance: savingsRate !== null && targetSavingsRate !== null ? savingsRate - targetSavingsRate : null,
     consumptionRate: income > 0 ? consumption / income : null,
     budgetTotal,
     plannedIncome,
-    savingBudget,
     incomeVariance: income - plannedIncome,
-    savingVariance: saving - savingBudget,
     budgetRemaining: budgetTotal - budgetedConsumption,
     budgetUsageRate: budgetTotal > 0 ? budgetedConsumption / budgetTotal : null,
     spentByCategory,

@@ -18,23 +18,18 @@ const percent = (value: number | null) => value === null ? '-' : `${(value * 100
 export function BudgetClosingTab({ transactions, categories, budgets }: { transactions: Transaction[]; categories: CategoryWithSubcategories[]; budgets: Budget[] }) {
   const closing = calculateMonthlyClosing(transactions, budgets.map((budget) => ({ transactionType: budget.transactionType, categoryId: budget.categoryId, amount: budget.amount })));
   const budgetByCategory = new Map(budgets.filter((budget) => budget.transactionType === 'expense' && budget.categoryId).map((budget) => [budget.categoryId!, budget.amount]));
-  // PRD §36: 생활수지, 현금잔여액, 자산형성액, 순자산은 각각 별도의 KPI다. A single "월 차액"
-  // used to stand in for all of them while silently ignoring 대출원금·금융비용·투자, which
-  // overstated spare cash for any household with a loan.
+  // 2026-09: 저축/투자/대출원금상환/금융비용은 이제 별도 flow_class가 아니라 지출의 하위 카테고리라
+  // 소비성지출에 이미 포함돼 있다. 그래서 생활수지·자산형성액·저축률처럼 저축과 소비가 분리돼
+  // 있어야만 의미 있던 지표는 걷어내고, 총수입/소비성지출/현금잔여액 중심으로 단순화했다.
   const metrics = [
-    ['총수입', won(closing.income)], ['소비성지출', won(closing.consumption)], ['금융비용', won(closing.financeCost)],
-    ['생활수지', won(closing.livingBalance)],
-    ['저축', won(closing.saving)], ['투자', won(closing.investment)], ['대출원금상환', won(closing.debtPrincipal)],
-    ['자산형성액', won(closing.wealthBuilt)], ['자산형성률', percent(closing.wealthBuildingRate)],
+    ['총수입', won(closing.income)], ['소비성지출', won(closing.consumption)],
     ['현금잔여액', won(closing.cashRemaining)],
-    ['수입 예산차', won(closing.incomeVariance)], ['저축 예산차', won(closing.savingVariance)],
-    ['저축률', percent(closing.savingsRate)], ['목표 저축률', percent(closing.targetSavingsRate)],
-    ['목표 대비 저축률', closing.savingsRateVariance === null ? '-' : `${closing.savingsRateVariance >= 0 ? '+' : ''}${(closing.savingsRateVariance * 100).toFixed(1)}%p`],
+    ['수입 예산차', won(closing.incomeVariance)],
     ['소비율', percent(closing.consumptionRate)],
   ];
-  const primaryMetrics = metrics.filter(([label]) => ['총수입', '소비성지출', '생활수지', '저축률', '자산형성액', '현금잔여액'].includes(label));
-  const detailMetrics = metrics.filter(([label]) => !['총수입', '소비성지출', '생활수지', '저축률', '자산형성액', '현금잔여액'].includes(label));
-  const insight = closing.income === 0 && closing.consumption === 0 ? '아직 확정된 거래가 없어요. 이번 달 수입과 지출을 입력하면 분석이 시작됩니다.' : closing.livingBalance >= 0 ? `이번 달 생활수지 ${won(closing.livingBalance)}로 흑자예요. 저축·투자로 ${won(closing.wealthBuilt)}을 자산으로 옮겼어요.` : `이번 달 지출이 수입보다 ${won(Math.abs(closing.livingBalance))} 많아요. 고정비와 예정 거래를 먼저 점검해 보세요.`;
+  const primaryMetrics = metrics.filter(([label]) => ['총수입', '소비성지출', '현금잔여액'].includes(label));
+  const detailMetrics = metrics.filter(([label]) => !['총수입', '소비성지출', '현금잔여액'].includes(label));
+  const insight = closing.income === 0 && closing.consumption === 0 ? '아직 확정된 거래가 없어요. 이번 달 수입과 지출을 입력하면 분석이 시작됩니다.' : closing.cashRemaining >= 0 ? `이번 달 현금잔여액 ${won(closing.cashRemaining)}로 흑자예요.` : `이번 달 지출이 수입보다 ${won(Math.abs(closing.cashRemaining))} 많아요. 고정비와 예정 거래를 먼저 점검해 보세요.`;
   return <div className="flex flex-col gap-5">
     <section className="monthly-report-lead"><p className="monthly-kicker">이번 달 분석 리포트</p><h2>{insight}</h2><p>확정된 거래를 기준으로 계산했어요. 예정 거래는 확정·제외 처리한 뒤 다시 확인할 수 있습니다.</p></section>
     <section className="grid grid-cols-2 gap-3 md:grid-cols-3">{primaryMetrics.map(([label, value]) => <div key={label} className="tds-card p-4">

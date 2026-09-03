@@ -35,7 +35,7 @@ export function QuickAddForm({
 }) {
   const [amountDisplay, setAmountDisplay] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<CategoryWithSubcategories | null>(null);
-  const [transactionType, setTransactionType] = useState<'income' | 'expense' | 'saving' | 'investment' | 'debt_principal' | 'finance_cost' | 'transfer'>('expense');
+  const [transactionType, setTransactionType] = useState<'income' | 'expense'>('expense');
   const [incomeGroup, setIncomeGroup] = useState<'fixed' | 'additional'>('fixed');
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string | null>(null);
   const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string | null>(null);
@@ -148,7 +148,7 @@ export function QuickAddForm({
 
       <FormField label="거래 유형">
         <select value={transactionType} onChange={(e) => { const next = e.target.value as typeof transactionType; setTransactionType(next); setSelectedCategory(null); setSelectedSubcategoryId(null); setSelectedPaymentMethodId(null); }} className="px-4">
-          <option value="expense">지출</option><option value="income">수입</option><option value="saving">저축</option><option value="investment">투자</option><option value="debt_principal">대출 원금상환</option><option value="finance_cost">금융비용</option><option value="transfer">이체</option>
+          <option value="expense">지출</option><option value="income">수입</option>
         </select>
       </FormField>
 

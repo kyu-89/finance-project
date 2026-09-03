@@ -1,11 +1,11 @@
 export type DuplicateCandidateTransaction = {
   id: string;
   transactionDate: string;
-  transactionType: 'income' | 'expense' | 'refund' | 'saving' | 'investment' | 'debt_principal' | 'finance_cost' | 'transfer' | 'asset_adjustment';
+  transactionType: 'income' | 'expense';
   flowClass?: string;
   amount: number;
   description: string;
-  status: 'planned' | 'posted' | 'skipped' | 'cancelled';
+  status: 'planned' | 'posted' | 'skipped' | 'cancelled' | 'refunded';
   categoryId: string | null;
   subcategoryId: string | null;
   paymentMethodId: string | null;

@@ -10,8 +10,6 @@ import { ChartCard, ChartTooltip, compactAxisValue } from '@/components/ChartCar
 
 type Row = { month: string; label: string; income: number; consumption: number; net: number };
 
-const outflow = (item: HomeMonth) => item.consumption + item.financeCost + item.saving + item.investment + item.debtPrincipal;
-
 function CashflowTooltip({ active, payload }: { active?: boolean; payload?: Array<{ payload?: Row }> }) {
   const row = payload?.[0]?.payload;
   if (!active || !row) return null;
@@ -33,7 +31,7 @@ export function DashboardCashflowOverview({ monthly }: { monthly: HomeMonth[] })
     label: `${Number(item.month.slice(5, 7))}월`,
     income: item.income,
     consumption: item.consumption,
-    net: item.income - outflow(item),
+    net: item.income - item.consumption,
   }));
 
   return (

@@ -119,7 +119,6 @@ export async function createMonthlyRowAction(
   const subcategoryId = String(formData.get('subcategoryId') ?? '') || null;
   const paymentMethodId = String(formData.get('paymentMethodId') ?? '') || null;
   const transactionType = (formData.get('transactionType') as TransactionType) ?? 'expense';
-  const parentTransactionId = String(formData.get('parentTransactionId') ?? '') || null;
   const rawCostBehavior = formData.get('costBehaviorOverride');
   const costBehaviorOverride =
     rawCostBehavior === 'fixed' || rawCostBehavior === 'variable' ? rawCostBehavior : null;
@@ -136,43 +135,21 @@ export async function createMonthlyRowAction(
 
   try {
     const householdId = await getCurrentHouseholdId();
-    if (transactionType === 'refund') {
-      if (!parentTransactionId) return fail('환불할 원거래를 선택해 주세요.');
-      const supabase = await createClient();
-      const { data: parent, error: parentError } = await supabase.from('transactions').select('id, amount, transaction_type, flow_class, category_id, subcategory_id, payment_method_id, cost_behavior').eq('id', parentTransactionId).eq('household_id', householdId).is('deleted_at', null).single();
-      if (parentError || !parent || parent.transaction_type !== 'expense' || parent.flow_class !== 'consumption') return fail('환불 원거래를 찾을 수 없어요.');
-      const { data: refunds, error: refundsError } = await supabase.from('transactions').select('amount').eq('parent_transaction_id', parentTransactionId).eq('transaction_type', 'refund').eq('status', 'posted').is('deleted_at', null);
-      if (refundsError) return fail('기존 환불 내역을 확인하지 못했어요.');
-      const refunded = (refunds ?? []).reduce((sum, refund) => sum + Number(refund.amount), 0);
-      if (refunded + amount > Number(parent.amount)) return fail(`환불 가능 금액은 ${(Number(parent.amount) - refunded).toLocaleString('ko-KR')}원이에요.`);
-    }
-    let inheritedCategoryId = categoryId;
-    let inheritedSubcategoryId = subcategoryId;
-    let inheritedPaymentMethodId = paymentMethodId;
-    let inheritedCostBehavior = categoryDefaultCostBehavior;
-    if (transactionType === 'refund' && parentTransactionId) {
-      const supabase = await createClient();
-      const { data: parentFields } = await supabase.from('transactions').select('category_id, subcategory_id, payment_method_id, cost_behavior').eq('id', parentTransactionId).eq('household_id', householdId).is('deleted_at', null).single();
-      if (parentFields) {
-        inheritedCategoryId = parentFields.category_id;
-        inheritedSubcategoryId = parentFields.subcategory_id;
-        inheritedPaymentMethodId = parentFields.payment_method_id;
-        inheritedCostBehavior = parentFields.cost_behavior;
-      }
-    }
+    // 2026-09: 환불/취소는 더 이상 별도 거래를 새로 만들지 않는다 — 기존 지출 거래 자체를
+    // TransactionStatusEditor에서 status='cancelled'/'refunded'로 바꾸는 방식으로 대체됐다
+    // (거래를 새로 등록하는 이 액션에는 "환불할 원거래" 개념 자체가 없다).
     await createTransaction({
       householdId,
       transactionDate,
       transactionType,
-      categoryId: inheritedCategoryId,
-      categoryDefaultCostBehavior: inheritedCostBehavior,
+      categoryId,
+      categoryDefaultCostBehavior,
       costBehaviorOverride,
-      subcategoryId: inheritedSubcategoryId,
-      paymentMethodId: inheritedPaymentMethodId,
+      subcategoryId,
+      paymentMethodId,
       amount,
       description,
       memo,
-      parentTransactionId,
     });
   } catch (error) {
     return fail(error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.');
@@ -251,19 +228,18 @@ export async function updateTransactionStatusAction(
   const id = String(formData.get('id') ?? '');
   const status = formData.get('status');
   if (!id) return fail('거래 id가 없습니다.');
-  if (status !== 'planned' && status !== 'posted' && status !== 'skipped' && status !== 'cancelled') {
+  if (status !== 'planned' && status !== 'posted' && status !== 'skipped' && status !== 'cancelled' && status !== 'refunded') {
     return fail('올바른 거래 상태를 선택해주세요.');
   }
 
   try {
     await getCurrentHouseholdId();
     const supabase = await createClient();
-    const { data, error } = await supabase
-      .from('transactions')
-      .update({ status })
-      .eq('id', id)
-      .is('deleted_at', null)
-      .select('id');
+    // 취소/환불은 지출 거래에만 허용된다(사용자 지시: "취소와 환불 컬럼은 유형이 지출인 경우만에만
+    // 노출되도록") — UI에서 이미 숨기지만, transaction_type 조건을 함께 걸어 서버에서도 강제한다.
+    let query = supabase.from('transactions').update({ status }).eq('id', id).is('deleted_at', null);
+    if (status === 'cancelled' || status === 'refunded') query = query.eq('transaction_type', 'expense');
+    const { data, error } = await query.select('id');
     if (error) throw new Error(error.message);
     if (data.length !== 1) throw new Error('상태를 변경할 거래를 찾지 못했어요.');
   } catch (error) {

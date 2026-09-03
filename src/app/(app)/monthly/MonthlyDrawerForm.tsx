@@ -11,16 +11,19 @@ import { INITIAL_ACTION_STATE } from '@/lib/action-result';
 import type { CategoryWithSubcategories } from '@/lib/categories';
 import type { PaymentMethod } from '@/lib/payment-methods';
 
-type TransactionType = 'income' | 'expense' | 'refund' | 'saving' | 'investment' | 'debt_principal' | 'finance_cost' | 'transfer';
+type TransactionType = 'income' | 'expense';
 
-export function MonthlyDrawerForm({ categories, paymentMethods, transactions, initialTransactionType = 'expense' }: { categories: CategoryWithSubcategories[]; paymentMethods: PaymentMethod[]; transactions: { id: string; transactionDate: string; description: string; amount: number; transactionType: string; flowClass: string; status: string }[]; initialTransactionType?: TransactionType }) {
+export function MonthlyDrawerForm({ categories, paymentMethods, initialTransactionType = 'expense' }: { categories: CategoryWithSubcategories[]; paymentMethods: PaymentMethod[]; initialTransactionType?: TransactionType }) {
   const [categoryId, setCategoryId] = useState('');
   const [subcategoryId, setSubcategoryId] = useState('');
   const [paymentMethodId, setPaymentMethodId] = useState('');
   const [transactionType, setTransactionType] = useState<TransactionType>(initialTransactionType);
   const [state, formAction, pending] = useActionState(createMonthlyRowAction, INITIAL_ACTION_STATE);
   const selectedCategory = categories.find((category) => category.id === categoryId);
-  const isCategorized = transactionType === 'income' || transactionType === 'expense';
+  // 2026-09: 거래 유형이 수입/지출 두 가지뿐이라 항상 분류 대상이다(과거 환불/저축/투자/대출원금
+  // 상환/금융비용/이체 유형은 없어졌고, 환불·취소는 이제 기존 지출 거래의 status 값으로만 표현된다
+  // — TransactionStatusEditor 참고).
+  const isCategorized = true;
   // 예전에는 대분류/결제수단이 네이티브 `<select required>`라 브라우저가 제출을 막아줬지만,
   // 칩 피커는 hidden input으로 제출하고 hidden input에는 `required`가 적용되지 않는다.
   // 같은 보장을 유지하려면 여기서 직접 막아야 한다(날짜/내용/금액은 여전히 네이티브 required).
@@ -38,8 +41,7 @@ export function MonthlyDrawerForm({ categories, paymentMethods, transactions, in
       <div className="monthly-drawer-section">
         <h3>기본 정보</h3>
         <div className="monthly-drawer-grid">
-          <label className="form-field"><span>거래 유형</span><select value={transactionType} onChange={(event) => { setTransactionType(event.target.value as TransactionType); resetClassification(); }}><option value="expense">지출</option><option value="income">수입</option><option value="refund">환불</option><option value="saving">저축</option><option value="investment">투자</option><option value="debt_principal">대출 원금 상환</option><option value="finance_cost">금융 비용</option><option value="transfer">이체</option></select></label>
-          {transactionType === 'refund' && <label className="form-field"><span>원거래</span><select name="parentTransactionId" required><option value="">환불할 지출을 선택하세요</option>{transactions.filter((transaction) => transaction.transactionType === 'expense' && transaction.flowClass === 'consumption' && transaction.status === 'posted').map((transaction) => <option key={transaction.id} value={transaction.id}>{transaction.transactionDate} · {transaction.description} · {transaction.amount.toLocaleString('ko-KR')}원</option>)}</select></label>}
+          <label className="form-field"><span>거래 유형</span><select value={transactionType} onChange={(event) => { setTransactionType(event.target.value as TransactionType); resetClassification(); }}><option value="expense">지출</option><option value="income">수입</option></select></label>
           <label className="form-field"><span>거래일</span><input type="date" name="transactionDate" required /></label>
           {/* 칩은 줄바꿈되며 세로로 자라기 때문에, 2열 그리드에서 짧은 필드와 나란히 두면
               어색하다. 두 열을 다 쓰게 한다(`1 / -1`이라 모바일 1열에서도 안전하다). */}

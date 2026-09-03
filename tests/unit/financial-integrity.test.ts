@@ -2,31 +2,31 @@ import { describe, expect, it } from 'vitest';
 import { calculateMonthlyClosing } from '@/lib/budget-calculations';
 import { calculateNetWorth } from '@/lib/net-worth';
 
-const tx = (transactionType: string, flowClass: string, amount: number, status: 'posted' | 'planned' = 'posted') => ({ amount, transactionType, flowClass, status, includeInBudget: true, categoryId: 'category' });
+const tx = (flowClass: string, amount: number, status: 'posted' | 'planned' | 'cancelled' | 'refunded' = 'posted') => ({ amount, flowClass, status, includeInBudget: true, categoryId: 'category' });
 
+// 2026-09: 저축/투자/대출원금상환/금융비용/이체는 더 이상 별도 flow_class가 아니다 — 저축·
+// 대출원금·금융비용은 지출의 하위 카테고리(consumption)로, 이체는 애초에 거래로 기록되지
+// 않는다. 그래서 이 무결성 테스트는 총수입/소비성지출/현금잔여액만 검증한다.
 describe('PRD financial integrity rules', () => {
-  it('keeps consumption, saving, investment, principal, and finance cost independent', () => {
+  it('sums only posted cash_in/consumption rows into income and consumption', () => {
     const result = calculateMonthlyClosing([
-      tx('income', 'cash_in', 1_000_000), tx('expense', 'consumption', 300_000), tx('saving', 'saving', 100_000), tx('investment', 'investment', 200_000), tx('debt_principal', 'debt_principal', 250_000), tx('finance_cost', 'finance_cost', 50_000), tx('transfer', 'transfer', 900_000),
+      tx('cash_in', 1_000_000), tx('consumption', 300_000), tx('consumption', 100_000), tx('consumption', 250_000), tx('consumption', 50_000),
     ], []);
-    expect(result.consumption).toBe(300_000);
-    expect(result.wealthBuilt).toBe(550_000);
-    expect(result.cashOutflow).toBe(900_000);
-    expect(result.cashRemaining).toBe(100_000);
-    expect(result.livingBalance).toBe(650_000);
+    expect(result.income).toBe(1_000_000);
+    expect(result.consumption).toBe(700_000);
+    expect(result.cashRemaining).toBe(300_000);
   });
 
   it('excludes planned transactions from posted performance', () => {
-    const result = calculateMonthlyClosing([tx('income', 'cash_in', 1_000_000), tx('expense', 'consumption', 400_000), tx('expense', 'consumption', 200_000, 'planned')], []);
+    const result = calculateMonthlyClosing([tx('cash_in', 1_000_000), tx('consumption', 400_000), tx('consumption', 200_000, 'planned')], []);
     expect(result.income).toBe(1_000_000);
     expect(result.consumption).toBe(400_000);
     expect(result.cashRemaining).toBe(600_000);
   });
 
-  it('excludes transfers from every financial KPI', () => {
-    const result = calculateMonthlyClosing([tx('income', 'cash_in', 500_000), tx('transfer', 'transfer', 500_000)], []);
-    expect(result.cashOutflow).toBe(0);
-    expect(result.wealthBuilt).toBe(0);
+  it('excludes cancelled/refunded transactions from every financial KPI', () => {
+    const result = calculateMonthlyClosing([tx('cash_in', 500_000), tx('consumption', 200_000, 'cancelled'), tx('consumption', 150_000, 'refunded')], []);
+    expect(result.consumption).toBe(0);
     expect(result.cashRemaining).toBe(500_000);
   });
 

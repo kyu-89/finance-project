@@ -116,7 +116,7 @@ export async function createRecurringRule(input: {
     costBehavior = category.default_cost_behavior as CostBehavior;
   }
 
-  if (input.transactionType !== 'expense' && input.transactionType !== 'finance_cost') {
+  if (input.transactionType !== 'expense') {
     costBehavior = null;
   }
 
@@ -196,6 +196,12 @@ export async function materializeRecurringRulesForRange(
   const rules = (rawRules ?? []) as MaterializationRule[];
   const loanIds = [...new Set(rules.filter((rule) => rule.source_type === 'loan' && rule.source_id).map((rule) => rule.source_id as string))];
   const loanAmounts = new Map<string, Map<string, LoanOccurrenceAmounts>>();
+  // 2026-09: 대출원금/금융비용은 이제 별도 transaction_type이 아니라 둘 다 'expense'다(주거비 카테고리의
+  // 하위 카테고리로만 구분됨) — 그래서 원금 회차와 이자 회차를 가려낼 때 더 이상 transaction_type을 쓸 수
+  // 없고, create_loan_recurring_rules() 트리거가 두 규칙을 만들 때 심어둔 subcategory_id(주담대 원금 /
+  // 주담대 이자, 가구별로 다른 id)로 구분해야 한다.
+  let principalSubcategoryId: string | null = null;
+  let interestSubcategoryId: string | null = null;
   if (loanIds.length > 0) {
     const { data: loans, error: loanError } = await supabase.from('loans')
       .select('id, original_amount, annual_rate, repayment_method, first_payment_date, maturity_date, grace_months')
@@ -208,13 +214,23 @@ export async function materializeRecurringRulesForRange(
         maturityDate: loan.maturity_date, graceMonths: loan.grace_months,
       }));
     }
+    const { data: housingSubcategories, error: subcategoryError } = await supabase.from('subcategories')
+      .select('id, name, categories!inner(household_id, name)')
+      .eq('categories.household_id', householdId)
+      .eq('categories.name', '주거비')
+      .in('name', ['주담대 원금', '주담대 이자']);
+    if (subcategoryError) throw new Error(`대출 하위카테고리 조회 실패: ${subcategoryError.message}`);
+    for (const row of housingSubcategories ?? []) {
+      if (row.name === '주담대 원금') principalSubcategoryId = row.id;
+      if (row.name === '주담대 이자') interestSubcategoryId = row.id;
+    }
   }
   const amountFor = (rule: MaterializationRule, occurrenceDate: string): number => {
     if (rule.source_type !== 'loan' || !rule.source_id) return rule.default_amount;
     const amounts = loanAmounts.get(rule.source_id)?.get(occurrenceDate);
     if (!amounts) return 0;
-    return rule.transaction_type === 'debt_principal' ? amounts.debtPrincipal
-      : rule.transaction_type === 'finance_cost' ? amounts.financeCost : 0;
+    return rule.subcategory_id === principalSubcategoryId ? amounts.debtPrincipal
+      : rule.subcategory_id === interestSubcategoryId ? amounts.financeCost : 0;
   };
   const { data: rawPauses, error: pausesError } = rules.length === 0
     ? { data: [], error: null }

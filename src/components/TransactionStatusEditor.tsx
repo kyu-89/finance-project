@@ -14,10 +14,20 @@ export const TRANSACTION_STATUS_LABEL: Record<Transaction['status'], string> = {
   posted: '확정',
   skipped: '이번 달 제외',
   cancelled: '취소',
+  refunded: '환불',
 };
 
-const TRANSACTION_STATUS_OPTIONS = (Object.entries(TRANSACTION_STATUS_LABEL) as Array<[Transaction['status'], string]>)
+const ALL_STATUS_OPTIONS = (Object.entries(TRANSACTION_STATUS_LABEL) as Array<[Transaction['status'], string]>)
   .map(([value, label]) => ({ value, label }));
+
+// 취소/환불은 지출 거래에만 의미가 있다(사용자 지시: "취소와 환불 컬럼은 유형이 지출인 경우만에만
+// 노출되도록") — 수입 거래에서는 이 두 옵션을 아예 목록에서 뺀다.
+const EXPENSE_ONLY_STATUSES = new Set<Transaction['status']>(['cancelled', 'refunded']);
+function statusOptionsFor(transactionType: Transaction['transactionType']) {
+  return transactionType === 'expense'
+    ? ALL_STATUS_OPTIONS
+    : ALL_STATUS_OPTIONS.filter((option) => !EXPENSE_ONLY_STATUSES.has(option.value));
+}
 
 // planned 상태이면서 정기거래 규칙에서 생성된 행에 한해서만 [확정] [이번달 제외] 버튼 2개를
 // 보여준다(§9). 그 외(취소 등 드문 상태, 또는 규칙 없이 수동으로 planned가 된 행)는 기존
@@ -83,7 +93,7 @@ export function TransactionStatusEditor({ transaction }: { transaction: Transact
     label={`${transaction.description} 상태`}
     name="status"
     value={transaction.status}
-    options={TRANSACTION_STATUS_OPTIONS}
+    options={statusOptionsFor(transaction.transactionType)}
     hiddenFields={{ id: transaction.id }}
     className="transaction-status-editor transaction-inline-editor"
     selectClassName="tds-inline-select transaction-inline-select"

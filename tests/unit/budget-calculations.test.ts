@@ -14,109 +14,67 @@ describe('budgetStatus', () => {
   });
 });
 
+// 2026-09: 거래 유형이 수입/지출 두 가지로 축소되면서 flow_class도 cash_in/consumption
+// 두 값만 남았다 — 저축/투자/대출원금상환/금융비용은 이제 별도 축이 아니라 지출의 하위
+// 카테고리이므로 이미 consumption에 포함돼 있고, 환불/취소는 status로만 표현되므로
+// status==='posted' 필터가 자동으로 걸러낸다. 그래서 이 테스트는 총수입/소비성지출/
+// 현금잔여액 중심으로만 검증한다.
 describe('calculateMonthlyClosing', () => {
   it('uses posted rows only and excludes non-budget consumption from category spend', () => {
     const result = calculateMonthlyClosing([
-      { amount: 3000000, transactionType: 'income', flowClass: 'cash_in', status: 'posted', includeInBudget: true, categoryId: null },
-      { amount: 500000, transactionType: 'saving', flowClass: 'saving', status: 'posted', includeInBudget: true, categoryId: 'saving' },
-      { amount: 700000, transactionType: 'expense', flowClass: 'consumption', status: 'posted', includeInBudget: true, categoryId: 'food' },
-      { amount: 100000, transactionType: 'expense', flowClass: 'consumption', status: 'posted', includeInBudget: false, categoryId: 'food' },
-      { amount: 999999, transactionType: 'expense', flowClass: 'consumption', status: 'planned', includeInBudget: true, categoryId: 'food' },
+      { amount: 3000000, flowClass: 'cash_in', status: 'posted', includeInBudget: true, categoryId: null },
+      { amount: 700000, flowClass: 'consumption', status: 'posted', includeInBudget: true, categoryId: 'food' },
+      { amount: 100000, flowClass: 'consumption', status: 'posted', includeInBudget: false, categoryId: 'food' },
+      { amount: 999999, flowClass: 'consumption', status: 'planned', includeInBudget: true, categoryId: 'food' },
+      { amount: 250000, flowClass: 'consumption', status: 'posted', includeInBudget: true, categoryId: 'housing' },
     ], [
       { transactionType: 'expense', categoryId: 'food', amount: 1000000 },
       { transactionType: 'income', categoryId: 'income', amount: 2800000 },
-      { transactionType: 'saving', categoryId: 'saving', amount: 600000 },
     ]);
-    expect(result).toMatchObject({ income: 3000000, plannedIncome: 2800000, incomeVariance: 200000, saving: 500000, savingBudget: 600000, savingVariance: -100000, consumption: 800000, budgetedConsumption: 700000, balance: 1700000, budgetTotal: 1000000, budgetRemaining: 300000 });
+    expect(result).toMatchObject({
+      income: 3000000,
+      plannedIncome: 2800000,
+      incomeVariance: 200000,
+      consumption: 1050000,
+      budgetedConsumption: 950000,
+      cashRemaining: 1950000,
+      balance: 1950000,
+      budgetTotal: 1000000,
+      budgetRemaining: 50000,
+    });
     expect(result.spentByCategory.food).toBe(700000);
-    expect(result.savingsRate).toBeCloseTo(1 / 6);
-    expect(result.targetSavingsRate).toBeCloseTo(600000 / 2800000);
-    expect(result.savingsRateVariance).toBeCloseTo((1 / 6) - (600000 / 2800000));
+    expect(result.spentByCategory.housing).toBe(250000);
+    expect(result.consumptionRate).toBeCloseTo(1050000 / 3000000);
   });
+
   it('avoids division by zero when there is no income or budget', () => {
     const result = calculateMonthlyClosing([], []);
-    expect(result.savingsRate).toBeNull();
-    expect(result.targetSavingsRate).toBeNull();
-    expect(result.savingsRateVariance).toBeNull();
     expect(result.consumptionRate).toBeNull();
     expect(result.budgetUsageRate).toBeNull();
+    expect(result.income).toBe(0);
+    expect(result.consumption).toBe(0);
+    expect(result.cashRemaining).toBe(0);
   });
-  it('subtracts linked refunds from consumption and the original budget category', () => {
+
+  it('ignores planned rows in every total', () => {
     const result = calculateMonthlyClosing([
-      { amount: 500000, transactionType: 'expense', flowClass: 'consumption', status: 'posted', includeInBudget: true, categoryId: 'food' },
-      { amount: 120000, transactionType: 'refund', flowClass: 'cash_in', status: 'posted', includeInBudget: true, categoryId: null, parentCategoryId: 'food' },
+      { amount: 1_000_000, flowClass: 'cash_in', status: 'posted', includeInBudget: true, categoryId: null },
+      { amount: 400_000, flowClass: 'consumption', status: 'posted', includeInBudget: true, categoryId: 'food' },
+      { amount: 200_000, flowClass: 'consumption', status: 'planned', includeInBudget: true, categoryId: 'food' },
     ], []);
-    expect(result.consumption).toBe(380000);
-    expect(result.spentByCategory.food).toBe(380000);
-    expect(result.budgetedConsumption).toBe(380000);
-  });
-});
-
-describe('calculateMonthlyClosing — 대출·투자·금융비용 (PRD §1.4, §36)', () => {
-  // Regression guard for the review finding: the closing screen used to compute
-  // balance = income - saving - consumption, silently dropping 투자/대출원금/금융비용.
-  // A household with a mortgage was shown 2,500,000원 spare when it actually had 1,300,000원 —
-  // an error in the direction that encourages overspending.
-  const mortgageHousehold = [
-    { amount: 5_000_000, transactionType: 'income', flowClass: 'cash_in', status: 'posted' as const, includeInBudget: true, categoryId: null },
-    { amount: 2_000_000, transactionType: 'expense', flowClass: 'consumption', status: 'posted' as const, includeInBudget: true, categoryId: 'cat-food' },
-    { amount: 500_000, transactionType: 'saving', flowClass: 'saving', status: 'posted' as const, includeInBudget: false, categoryId: null },
-    { amount: 900_000, transactionType: 'debt_principal', flowClass: 'debt_principal', status: 'posted' as const, includeInBudget: false, categoryId: null },
-    { amount: 300_000, transactionType: 'finance_cost', flowClass: 'finance_cost', status: 'posted' as const, includeInBudget: false, categoryId: null },
-  ];
-
-  it('counts 대출원금상환 and 금융비용 as cash outflow', () => {
-    const result = calculateMonthlyClosing(mortgageHousehold, []);
-    expect(result.debtPrincipal).toBe(900_000);
-    expect(result.financeCost).toBe(300_000);
-    // 5,000,000 - (2,000,000 + 300,000 + 500,000 + 900,000)
-    expect(result.balance).toBe(1_300_000);
+    expect(result.consumption).toBe(400_000);
+    expect(result.cashRemaining).toBe(600_000);
   });
 
-  it('separates 생활수지 / 자산형성액 / 현금잔여액 as distinct KPIs (§36)', () => {
-    const result = calculateMonthlyClosing(mortgageHousehold, []);
-    expect(result.livingBalance).toBe(2_700_000); // 5,000,000 - 2,000,000 - 300,000
-    expect(result.wealthBuilt).toBe(1_400_000); //  500,000 + 900,000 (no investment here)
-    expect(result.cashRemaining).toBe(1_300_000);
-  });
-
-  it('counts 투자 as 자산형성, never as 소비 (§23.6, §35)', () => {
-    const result = calculateMonthlyClosing(
-      [
-        ...mortgageHousehold,
-        { amount: 300_000, transactionType: 'investment', flowClass: 'investment', status: 'posted' as const, includeInBudget: false, categoryId: null },
-      ],
-      [],
-    );
-    expect(result.investment).toBe(300_000);
-    expect(result.consumption).toBe(2_000_000); // unchanged — 투자 is not 소비
-    expect(result.wealthBuilt).toBe(1_700_000);
-    expect(result.balance).toBe(1_000_000);
-  });
-
-  it('excludes 계좌간 이체 from every total (§23.5)', () => {
-    const withTransfer = calculateMonthlyClosing(
-      [
-        ...mortgageHousehold,
-        { amount: 2_000_000, transactionType: 'transfer', flowClass: 'transfer', status: 'posted' as const, includeInBudget: false, categoryId: null },
-      ],
-      [],
-    );
-    const withoutTransfer = calculateMonthlyClosing(mortgageHousehold, []);
-    expect(withTransfer.balance).toBe(withoutTransfer.balance);
-    expect(withTransfer.consumption).toBe(withoutTransfer.consumption);
-    expect(withTransfer.wealthBuilt).toBe(withoutTransfer.wealthBuilt);
-  });
-
-  it('still ignores planned rows in every new total (§23.9)', () => {
-    const result = calculateMonthlyClosing(
-      [
-        ...mortgageHousehold,
-        { amount: 999_000, transactionType: 'debt_principal', flowClass: 'debt_principal', status: 'planned' as const, includeInBudget: false, categoryId: null },
-      ],
-      [],
-    );
-    expect(result.debtPrincipal).toBe(900_000);
-    expect(result.balance).toBe(1_300_000);
+  it('a refunded/cancelled row (status !== posted) is excluded automatically', () => {
+    // 2026-09: 환불/취소는 별도 거래가 아니라 기존 지출 거래의 status 값('refunded'/'cancelled')이다
+    // — status==='posted' 필터가 이미 그 거래를 빼주므로 별도의 refund 처리 로직이 필요 없다.
+    const result = calculateMonthlyClosing([
+      { amount: 500000, flowClass: 'consumption', status: 'posted', includeInBudget: true, categoryId: 'food' },
+      { amount: 120000, flowClass: 'consumption', status: 'refunded', includeInBudget: true, categoryId: 'food' },
+      { amount: 80000, flowClass: 'consumption', status: 'cancelled', includeInBudget: true, categoryId: 'food' },
+    ], []);
+    expect(result.consumption).toBe(500000);
+    expect(result.spentByCategory.food).toBe(500000);
   });
 });

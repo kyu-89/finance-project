@@ -5,6 +5,11 @@ const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
+// 2026-09: 거래 유형이 수입/지출 두 가지로 축소되면서 저축/대출원금상환/금융비용은 더 이상
+// transaction_type이 아니다 — create_savings_recurring_rule()/create_loan_recurring_rules()
+// 트리거가 이제 항상 transaction_type='expense', flow_class='consumption'을 넣고, 저축은
+// 지출>저축성지출>예/적금 서브카테고리로, 대출은 지출>주거비>주담대 원금/이자 서브카테고리로
+// 구분한다. 그래서 이 테스트도 transaction_type/flow_class 대신 subcategory_id로 검증한다.
 describe('product-backed recurring rules', () => {
   const admin: SupabaseClient = createClient(url, serviceRoleKey);
   const user = createClient(url, publishableKey);
@@ -28,10 +33,21 @@ describe('product-backed recurring rules', () => {
   });
 
   afterAll(async () => {
-    if (userId) await admin.auth.admin.deleteUser(userId);
+    // households.owner_user_id는 ON DELETE CASCADE라 유저를 지우면 household/거래도 함께
+    // 지워지지만, 프로세스가 중간에 죽거나 삭제가 실패하면 household가 그대로 남는다(실제로
+    // 이 테스트가 남긴 좀비 household 6개를 마이그레이션 중 발견해 정리한 적이 있다) — 그래서
+    // household도 명시적으로 지우고 두 삭제 결과를 모두 확인한다.
+    if (householdId) {
+      const { error } = await admin.from('households').delete().eq('id', householdId);
+      if (error) console.error('product-recurring cleanup: household delete failed', error.message);
+    }
+    if (userId) {
+      const { error } = await admin.auth.admin.deleteUser(userId);
+      if (error) console.error('product-recurring cleanup: user delete failed', error.message);
+    }
   });
 
-  it('creates a saving rule with saving flow and the product source id', async () => {
+  it('creates a saving rule as an expense against 저축성지출 > 예/적금', async () => {
     const { data: savings, error } = await user.from('savings_accounts').insert({
       household_id: householdId, bank_name: '테스트뱅크', product_name: '적금', joined_at: '2026-01-01',
       maturity_date: '2026-12-31', monthly_amount: 500_000, annual_rate: 0.03, tax_rate: 0.154,
@@ -39,14 +55,16 @@ describe('product-backed recurring rules', () => {
     }).select('id').single();
     expect(error).toBeNull(); savingsId = savings!.id;
     const { data: rule, error: ruleError } = await user.from('recurring_rules')
-      .select('id, source_type, source_id, transaction_type, flow_class, default_amount')
+      .select('id, source_type, source_id, transaction_type, flow_class, default_amount, category_id, subcategory_id')
       .eq('source_type', 'saving').eq('source_id', savingsId).single();
     expect(ruleError).toBeNull();
-    expect(rule).toMatchObject({ source_type: 'saving', source_id: savingsId, transaction_type: 'saving', flow_class: 'saving', default_amount: 500_000 });
+    expect(rule).toMatchObject({ source_type: 'saving', source_id: savingsId, transaction_type: 'expense', flow_class: 'consumption', default_amount: 500_000 });
+    expect(rule!.category_id).not.toBeNull();
+    expect(rule!.subcategory_id).not.toBeNull();
     savingsRuleId = rule!.id;
   });
 
-  it('creates distinct debt-principal and finance-cost rules for a loan', async () => {
+  it('creates distinct principal and interest rules for a loan, both as expense', async () => {
     const { data: loan, error } = await user.from('loans').insert({
       household_id: householdId, institution_name: '테스트은행', loan_name: '대출', original_amount: 10_800_000,
       annual_rate: 0.04, repayment_method: 'equal_principal', loan_date: '2025-12-31',
@@ -54,12 +72,16 @@ describe('product-backed recurring rules', () => {
     }).select('id').single();
     expect(error).toBeNull();
     const { data: rules, error: rulesError } = await user.from('recurring_rules')
-      .select('transaction_type, flow_class').eq('source_type', 'loan').eq('source_id', loan!.id).order('transaction_type');
+      .select('transaction_type, flow_class, subcategory_id').eq('source_type', 'loan').eq('source_id', loan!.id);
     expect(rulesError).toBeNull();
-    expect(rules).toEqual([
-      { transaction_type: 'debt_principal', flow_class: 'debt_principal' },
-      { transaction_type: 'finance_cost', flow_class: 'finance_cost' },
-    ]);
+    expect(rules).toHaveLength(2);
+    // 원금/이자 두 규칙 모두 지출·소비성이지만, 서로 다른 서브카테고리(주담대 원금 / 주담대 이자)로
+    // 구분된다 — recurring_rules_one_product_flow 유니크 인덱스가 이 subcategory_id로 원금/이자를
+    // 가려낸다(transaction_type만으로는 더 이상 구분할 수 없다).
+    for (const rule of rules ?? []) expect(rule).toMatchObject({ transaction_type: 'expense', flow_class: 'consumption' });
+    const subcategoryIds = new Set((rules ?? []).map((rule) => rule.subcategory_id));
+    expect(subcategoryIds.size).toBe(2);
+    expect([...subcategoryIds].every((id) => id !== null)).toBe(true);
   });
 
   it('ends the product rule and skips future planned rows in the same update', async () => {
@@ -68,7 +90,7 @@ describe('product-backed recurring rules', () => {
     }).select('id').single();
     expect(occurrenceError).toBeNull();
     const { data: transaction, error: transactionError } = await user.from('transactions').insert({
-      household_id: householdId, transaction_date: '2026-10-25', transaction_type: 'saving', flow_class: 'saving',
+      household_id: householdId, transaction_date: '2026-10-25', transaction_type: 'expense', flow_class: 'consumption',
       amount: 500_000, description: '적금', status: 'planned', recurring_rule_id: savingsRuleId,
       recurring_occurrence_id: occurrence!.id,
     }).select('id').single();
@@ -100,20 +122,23 @@ describe('product-backed recurring rules', () => {
     expect(error).not.toBeNull();
   });
 
-  it('does not link a saving occurrence to a consumption transaction', async () => {
-    const { data: savings } = await user.from('savings_accounts').insert({
-      household_id: householdId, bank_name: '테스트뱅크', product_name: '두번째 적금', joined_at: '2026-01-01',
-      maturity_date: '2026-12-31', monthly_amount: 300_000, annual_rate: 0.03,
-      monthly_payment_day: 20, auto_recurring: true,
+  // link_recurring_occurrence()는 transaction_type과 flow_class가 모두 같은 posted 거래로만
+  // 연결을 허용한다. 저축이 지출/소비성으로 통합되면서 "저축 예정 vs 일반 소비"는 더 이상 이
+  // 두 축만으로 구분되지 않으므로(카테고리가 다를 뿐), 이 가드가 여전히 실제로 차단하는 경우인
+  // "수입 예정 vs 지출 확정"으로 검증한다.
+  it('does not link a planned income occurrence to a posted expense transaction', async () => {
+    const { data: rule, error: ruleError } = await user.from('recurring_rules').insert({
+      household_id: householdId, source_type: 'manual', start_date: '2026-01-01', frequency: 'monthly',
+      interval_count: 1, day_of_month: 20, default_amount: 300_000, transaction_type: 'income',
+      flow_class: 'cash_in', description: '용돈',
     }).select('id').single();
-    const { data: rule } = await user.from('recurring_rules').select('id')
-      .eq('source_type', 'saving').eq('source_id', savings!.id).single();
+    expect(ruleError).toBeNull();
     const { data: occurrence } = await user.from('recurring_occurrences').insert({
       household_id: householdId, recurring_rule_id: rule!.id, occurrence_date: '2026-09-20',
     }).select('id').single();
     const { data: planned } = await user.from('transactions').insert({
-      household_id: householdId, transaction_date: '2026-09-20', transaction_type: 'saving', flow_class: 'saving',
-      amount: 300_000, description: '적금 예정', status: 'planned', recurring_rule_id: rule!.id,
+      household_id: householdId, transaction_date: '2026-09-20', transaction_type: 'income', flow_class: 'cash_in',
+      amount: 300_000, description: '용돈 예정', status: 'planned', recurring_rule_id: rule!.id,
       recurring_occurrence_id: occurrence!.id,
     }).select('id').single();
     const { data: posted } = await user.from('transactions').insert({

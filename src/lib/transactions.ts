@@ -24,7 +24,10 @@ export type Transaction = {
   needsReview: boolean;
   recurringRuleId: string | null;
   recurringOccurrenceId: string | null;
-  status: 'planned' | 'posted' | 'skipped' | 'cancelled';
+  // 2026-09: 환불/취소는 status로 표현한다 — 'cancelled'/'refunded' 둘 다 "지출이 없었던 것으로
+  // 친다"는 같은 효과(모든 집계가 status='posted'만 세므로 자동으로 빠짐). 취소=애초에 안 쓴 것으로
+  // 처리, 환불=썼다가 돈이 돌아온 것으로 처리 — 의미는 다르지만 집계 관점에서는 동일하게 제외된다.
+  status: 'planned' | 'posted' | 'skipped' | 'cancelled' | 'refunded';
 };
 
 // PRD §1.4 — maps transaction_type to the flow_class analysis axis. Kept as a single
@@ -32,13 +35,6 @@ export type Transaction = {
 export const FLOW_CLASS_BY_TRANSACTION_TYPE: Record<TransactionType, string> = {
   income: 'cash_in',
   expense: 'consumption',
-  saving: 'saving',
-  investment: 'investment',
-  debt_principal: 'debt_principal',
-  finance_cost: 'finance_cost',
-  transfer: 'transfer',
-  asset_adjustment: 'adjustment',
-  refund: 'cash_in',
 };
 
 function mapRow(row: {
@@ -145,7 +141,10 @@ export async function createTransaction(input: {
 export type ImportedTransactionInput = {
   transactionDate: string;
   sourceMonth?: string | null;
-  transactionType: 'income' | 'expense' | 'refund';
+  transactionType: 'income' | 'expense';
+  // 환불/취소로 감지된 원본 행은 이제 transactionType='refund'가 아니라 status='refunded'로
+  // 들어온다(호출부인 TransactionImport.tsx/WorkbookMonthlyImport.tsx가 변환).
+  status?: 'posted' | 'refunded';
   amount: number;
   description: string;
   categoryId?: string | null;
@@ -210,8 +209,8 @@ export async function importTransactions(input: { householdId: string; rows: Imp
       description: row.description.trim(),
       memo: row.memo ?? null,
       include_in_budget: row.transactionType === 'expense',
-      needs_review: row.needsReview ?? row.transactionType === 'refund',
-      status: 'posted',
+      needs_review: row.needsReview ?? row.status === 'refunded',
+      status: row.status ?? 'posted',
     });
   }
   if (rowsToInsert.length === 0) return { insertedCount: 0, duplicateCount };

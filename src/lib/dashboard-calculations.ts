@@ -33,20 +33,22 @@ export function buildDashboardPeriod(transactions: Transaction[], budgets: Month
   const closing = calculateMonthlyClosing(transactions, budgets);
   const spendingByPaymentMethod: Record<string, number> = {};
   for (const transaction of transactions) {
-    if (transaction.status !== 'posted' || (transaction.flowClass !== 'consumption' && transaction.transactionType !== 'refund') || !transaction.paymentMethodId) continue;
-    const signedAmount = transaction.transactionType === 'refund' ? -transaction.amount : transaction.amount;
-    spendingByPaymentMethod[transaction.paymentMethodId] = (spendingByPaymentMethod[transaction.paymentMethodId] ?? 0) + signedAmount;
+    if (transaction.status !== 'posted' || transaction.flowClass !== 'consumption' || !transaction.paymentMethodId) continue;
+    spendingByPaymentMethod[transaction.paymentMethodId] = (spendingByPaymentMethod[transaction.paymentMethodId] ?? 0) + transaction.amount;
   }
   return { ...closing, spendingByPaymentMethod };
 }
 
+// 2026-09: 환불/취소는 이제 별도 transaction_type이 아니라 해당 거래 자체의 status 값
+// ('refunded'/'cancelled')이다 — status==='posted' 필터가 이미 그 거래를 자동으로 제외하므로
+// 더 이상 transactionType==='refund'를 따로 챙길 필요가 없다. saving/cash 드릴다운도 저축이
+// 별도 flow_class였을 때만 의미가 있었으므로 걷어냈다(저축은 이제 소비성지출의 하위 카테고리).
 export function filterDashboardTransactions(transactions: Transaction[], drilldown: string | undefined): Transaction[] {
   if (!drilldown) return [];
-  if (drilldown.startsWith('category:')) return transactions.filter((t) => t.status === 'posted' && (t.flowClass === 'consumption' || t.transactionType === 'refund') && t.categoryId === drilldown.slice(9));
-  if (drilldown.startsWith('payment:')) return transactions.filter((t) => t.status === 'posted' && t.paymentMethodId === drilldown.slice(8) && (t.flowClass === 'consumption' || t.transactionType === 'refund'));
+  if (drilldown.startsWith('category:')) return transactions.filter((t) => t.status === 'posted' && t.flowClass === 'consumption' && t.categoryId === drilldown.slice(9));
+  if (drilldown.startsWith('payment:')) return transactions.filter((t) => t.status === 'posted' && t.paymentMethodId === drilldown.slice(8) && t.flowClass === 'consumption');
   const predicate: Record<string, (t: Transaction) => boolean> = {
-    income: (t) => t.transactionType === 'income', consumption: (t) => t.flowClass === 'consumption' || t.transactionType === 'refund',
-    saving: (t) => t.flowClass === 'saving', cash: (t) => !['transfer', 'adjustment'].includes(t.flowClass),
+    income: (t) => t.transactionType === 'income', consumption: (t) => t.flowClass === 'consumption',
   };
   return transactions.filter((t) => t.status === 'posted' && (predicate[drilldown]?.(t) ?? false));
 }
