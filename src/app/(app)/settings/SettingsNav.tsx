@@ -10,8 +10,16 @@ const items = [
   ['반복 항목 관리', '예정 거래와 정기 지출', '/settings/recurring'],
 ] as const;
 
-export function SettingsNav() {
+// 2026-09 Excel migration follow-up: shown only while there is at least one needs_review=true
+// transaction left (see review/page.tsx) — once everything is reviewed, this entry disappears
+// from the settings menu on its own rather than needing to be removed by hand later.
+export function SettingsNav({ reviewCount = 0 }: { reviewCount?: number }) {
+  const reviewItem = reviewCount > 0 ? ([`검토 필요 거래 (${reviewCount})`, '자동 판단하지 못한 거래를 확인하고 정리하세요', '/review'] as const) : null;
   return <nav aria-label="설정 메뉴" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    {reviewItem && <Link href={reviewItem[2]} className="tds-card group flex min-h-20 items-center justify-between gap-4 border-[var(--tds-yellow-500)] bg-[var(--tds-yellow-50)] p-4 transition hover:border-[var(--tds-yellow-700)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--tds-yellow-700)]">
+      <span className="min-w-0"><span className="block truncate text-sm font-semibold">{reviewItem[0]}</span><span className="mt-1 block truncate text-xs text-[var(--tds-grey-700)]">{reviewItem[1]}</span></span>
+      <span aria-hidden="true" className="shrink-0 text-lg text-[var(--tds-grey-500)] transition group-hover:translate-x-0.5">›</span>
+    </Link>}
     {items.map(([title, description, href]) => <Link key={title} href={href} className="tds-card group flex min-h-20 items-center justify-between gap-4 p-4 transition hover:border-[var(--tds-blue-300)] hover:bg-[var(--tds-blue-50)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--tds-blue-500)]">
       <span className="min-w-0"><span className="block truncate text-sm font-semibold">{title}</span><span className="mt-1 block truncate text-xs text-[var(--tds-grey-600)]">{description}</span></span>
       <span aria-hidden="true" className="shrink-0 text-lg text-[var(--tds-grey-400)] transition group-hover:translate-x-0.5">›</span>

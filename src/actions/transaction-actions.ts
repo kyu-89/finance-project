@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import {
   createTransaction,
   confirmPlannedTransaction,
+  confirmTransactionReview,
   skipPlannedTransaction,
   undoTransaction,
   softDeleteTransaction,
@@ -204,7 +205,7 @@ export async function deleteTransactionAction(_prevState: ActionResult, formData
   if (!id) return fail('삭제할 거래 id가 없습니다.');
   try { await getCurrentHouseholdId(); await softDeleteTransaction(id); }
   catch (error) { return fail(error instanceof Error ? error.message : '거래 삭제에 실패했어요.'); }
-  revalidatePath('/monthly'); revalidatePath('/dashboard'); revalidatePath('/settings/data');
+  revalidatePath('/monthly'); revalidatePath('/dashboard'); revalidatePath('/settings/data'); revalidatePath('/review'); revalidatePath('/settings');
   return ok('거래를 삭제했어요.');
 }
 
@@ -327,6 +328,15 @@ export async function linkRecurringOccurrenceAction(
   }
   revalidatePath('/monthly');
   return ok();
+}
+
+export async function confirmReviewedTransactionAction(_prevState: ActionResult, formData: FormData): Promise<ActionResult> {
+  const id = String(formData.get('id') ?? '');
+  if (!id) return fail('검토 완료할 거래 id가 없습니다.');
+  try { await getCurrentHouseholdId(); await confirmTransactionReview(id); }
+  catch (error) { return fail(error instanceof Error ? error.message : '검토 완료 처리에 실패했어요.'); }
+  revalidatePath('/review'); revalidatePath('/monthly'); revalidatePath('/dashboard'); revalidatePath('/settings');
+  return ok('검토 완료로 표시했어요.');
 }
 
 export async function reviewDuplicateTransactionAction(

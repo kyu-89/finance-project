@@ -4,7 +4,9 @@ import { env } from '@/lib/env';
 
 // Protected app routes — must match the 4 menus + quick-add entry point (PRD §19.1),
 // plus /mfa itself: an anonymous visitor must still be bounced to /login from /mfa/*.
-const PROTECTED_PREFIXES = ['/dashboard', '/monthly', '/finance', '/settings', '/quick-add', '/mfa'];
+// /review (2026-09) is a non-nav settings sub-screen (real transaction data) — protected the
+// same as everything else even though it has no top-level menu slot of its own.
+const PROTECTED_PREFIXES = ['/dashboard', '/monthly', '/finance', '/settings', '/quick-add', '/mfa', '/review'];
 // Routes reachable while only at AAL1 (mid-MFA-flow) even though they're "protected".
 const AAL2_EXEMPT_PREFIXES = ['/mfa'];
 

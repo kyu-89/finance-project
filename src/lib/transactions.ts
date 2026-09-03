@@ -257,6 +257,48 @@ export async function listTransactions(filter: {
   return rows.map(mapRow);
 }
 
+// 2026-09 Excel migration follow-up: surfaces every transaction the migration (or any other
+// import path) flagged needs_review=true so a household member can review/fix/confirm/delete
+// them from a dedicated screen (src/app/(app)/review) rather than hunting through /monthly.
+export async function listTransactionsNeedingReview(householdId: string): Promise<Transaction[]> {
+  const supabase = await createClient();
+  const pageSize = 1000;
+  const rows: Parameters<typeof mapRow>[0][] = [];
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await supabase.from('transactions').select(TRANSACTION_COLUMNS)
+      .eq('household_id', householdId).eq('needs_review', true).is('deleted_at', null)
+      .order('transaction_date', { ascending: false }).order('id', { ascending: true })
+      .range(from, from + pageSize - 1);
+    if (error) throw new Error(`검토 필요 거래 조회 실패: ${error.message}`);
+    rows.push(...(data ?? []));
+    if ((data?.length ?? 0) < pageSize) break;
+  }
+  return rows.map(mapRow);
+}
+
+// Cheap existence/count check for hiding the review entry point once nothing is left to review —
+// select('id') rather than the full TRANSACTION_COLUMNS payload since only the count is needed.
+export async function countTransactionsNeedingReview(householdId: string): Promise<number> {
+  const supabase = await createClient();
+  const { count, error } = await supabase.from('transactions')
+    .select('id', { count: 'exact', head: true })
+    .eq('household_id', householdId).eq('needs_review', true).is('deleted_at', null);
+  if (error) throw new Error(`검토 필요 거래 건수 조회 실패: ${error.message}`);
+  return count ?? 0;
+}
+
+// Marks a transaction as reviewed. Separate from updateTransactionBasics/Classification (which
+// stay generic and never touch needs_review) so editing a transaction elsewhere in the app never
+// silently clears a review flag someone else needs to see — this is an explicit "확정" action.
+export async function confirmTransactionReview(id: string): Promise<void> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from('transactions')
+    .update({ needs_review: false })
+    .eq('id', id).is('deleted_at', null).select('id');
+  if (error) throw new Error(`검토 완료 처리 실패: ${error.message}`);
+  if (data.length !== 1) throw new Error('검토 완료 처리할 거래를 찾지 못했어요.');
+}
+
 export async function promotePastPlannedTransactions(householdId: string, currentMonthStart: string): Promise<void> {
   const supabase = await createClient();
   const { error } = await supabase
