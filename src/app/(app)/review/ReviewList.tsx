@@ -80,6 +80,7 @@ export function ReviewList({ transactions, categories, paymentMethods }: { trans
       )}
       {editing && (
         <TransactionDetailDrawer
+          key={editing.id}
           transaction={editing}
           categories={categories}
           paymentMethods={paymentMethods}

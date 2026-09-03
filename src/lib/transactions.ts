@@ -286,9 +286,9 @@ export async function countTransactionsNeedingReview(householdId: string): Promi
   return count ?? 0;
 }
 
-// Marks a transaction as reviewed. Separate from updateTransactionBasics/Classification (which
-// stay generic and never touch needs_review) so editing a transaction elsewhere in the app never
-// silently clears a review flag someone else needs to see — this is an explicit "확정" action.
+// Marks a transaction as reviewed. Separate from updateTransaction (which stays generic and
+// never touches needs_review) so editing a transaction elsewhere in the app never silently
+// clears a review flag someone else needs to see — this is an explicit "확정" action.
 export async function confirmTransactionReview(id: string): Promise<void> {
   const supabase = await createClient();
   const { data, error } = await supabase.from('transactions')
@@ -431,16 +431,49 @@ export async function updateTransactionCostBehavior(
   }
 }
 
-export async function updateTransactionBasics(input: { id: string; transactionDate: string; amount: number; description: string; memo: string | null; tags?: string[] }): Promise<void> {
-  const supabase = await createClient();
-  const { error } = await supabase.from('transactions').update({ transaction_date: input.transactionDate, amount: input.amount, description: input.description, memo: input.memo, tags: input.tags ?? [] }).eq('id', input.id).is('deleted_at', null).select('id').single();
-  if (error) throw new Error(`거래 수정 실패: ${error.message}`);
-}
+// 2026-09: 등록 드로워(createTransaction)와 같은 필드 세트를 하나의 UPDATE로 저장한다 — 예전에는
+// "거래 정보"(updateTransactionBasics)와 "분류"(updateTransactionClassification)가 같은 행을
+// 컬럼만 나눠 두 번 UPDATE했고, 그래서 드로어에도 저장 버튼이 두 개였다(사용자 지시로 통일).
+// createTransaction과 동일하게 cost_behavior/flow_class를 다시 계산한다 — 거래 유형이 바뀌면
+// 두 값 다 새로 정해져야 하기 때문.
+export async function updateTransaction(input: {
+  id: string;
+  transactionDate: string;
+  amount: number;
+  description: string;
+  memo: string | null;
+  transactionType: TransactionType;
+  categoryId: string | null;
+  categoryDefaultCostBehavior: 'fixed' | 'variable' | null;
+  costBehaviorOverride?: 'fixed' | 'variable' | null;
+  subcategoryId: string | null;
+  paymentMethodId: string | null;
+}): Promise<void> {
+  if (input.amount <= 0) {
+    throw new Error('금액은 0보다 커야 합니다.');
+  }
 
-export async function updateTransactionClassification(input: { id: string; categoryId: string | null; subcategoryId: string | null; paymentMethodId: string | null }): Promise<void> {
   const supabase = await createClient();
-  const { error } = await supabase.from('transactions').update({ category_id: input.categoryId, subcategory_id: input.subcategoryId, payment_method_id: input.paymentMethodId }).eq('id', input.id).is('deleted_at', null).select('id').single();
-  if (error) throw new Error(`거래 분류 수정 실패: ${error.message}`);
+  const costBehavior = resolveCostBehavior(
+    input.transactionType,
+    input.categoryDefaultCostBehavior,
+    input.costBehaviorOverride ?? null,
+  );
+
+  const { data, error } = await supabase.from('transactions').update({
+    transaction_date: input.transactionDate,
+    amount: input.amount,
+    description: input.description,
+    memo: input.memo,
+    transaction_type: input.transactionType,
+    flow_class: FLOW_CLASS_BY_TRANSACTION_TYPE[input.transactionType],
+    cost_behavior: costBehavior,
+    category_id: input.categoryId,
+    subcategory_id: input.subcategoryId,
+    payment_method_id: input.paymentMethodId,
+  }).eq('id', input.id).is('deleted_at', null).select('id');
+  if (error) throw new Error(`거래 수정 실패: ${error.message}`);
+  if (data.length !== 1) throw new Error('수정할 거래를 찾지 못했어요.');
 }
 
 export async function confirmPlannedTransaction(input: {

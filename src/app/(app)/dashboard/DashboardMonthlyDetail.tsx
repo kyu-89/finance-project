@@ -17,8 +17,8 @@ export function DashboardMonthlyDetail({ selectedMonth, detailYear, initialMonth
   const [scope, setScope] = useState<'month' | 'year'>('month');
   const [month, setMonth] = useState(initialMonth);
   // 연도 선택기(Link)로 페이지가 새 detailYear/initialMonth로 다시 렌더되면 이 컴포넌트는 그대로 유지된
-  // 채 props만 바뀐다 — TransactionDetailDrawer의 syncedTransactionId와 같은 패턴으로, prop이 실제로
-  // 바뀐 시점에 렌더 중 내부 상태를 서버가 계산해 내려준 그 연도의 기본 달로 다시 맞춘다.
+  // 채 props만 바뀐다 — "prop이 실제로 바뀐 시점에 렌더 중 내부 상태를 다시 맞추는" React의
+  // adjusting-state-when-a-prop-changes 패턴으로, 서버가 계산해 내려준 그 연도의 기본 달로 재동기화한다.
   const [syncedYear, setSyncedYear] = useState(detailYear);
   if (detailYear !== syncedYear) { setSyncedYear(detailYear); setMonth(initialMonth); }
 
