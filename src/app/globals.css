@@ -954,6 +954,24 @@ button:disabled { cursor: wait; transform: none !important; }
   .analysis-transaction-table td.is-desc { max-width: 120px; }
 }
 
+/* §12 — 항목 × 12개월 히트맵 표(엑셀 연간 시트 대응). 첫 열(항목명)은 좌우 스크롤 중에도
+ * 항상 보이도록 sticky, 계·평균 열은 우측 끝에서 시각적으로 구분되게 굵게. */
+.analysis-heatmap-wrap { min-width: 0; overflow-x: auto; }
+.analysis-heatmap-table { border-collapse: collapse; font-size: 12px; white-space: nowrap; }
+.analysis-heatmap-table th, .analysis-heatmap-table td { padding: 4px; border-bottom: 1px solid var(--tds-grey-100); text-align: center; }
+.analysis-heatmap-table thead th { padding: 6px 4px; color: var(--tds-grey-500); font-weight: 700; }
+.analysis-heatmap-table th.is-label { position: sticky; left: 0; z-index: 1; padding: 8px 12px 8px 4px; background: var(--tds-white); color: var(--tds-grey-800); font-weight: 700; text-align: left; white-space: nowrap; }
+.analysis-heatmap-table thead th.is-label { z-index: 2; }
+.analysis-heatmap-table td.is-total, .analysis-heatmap-table thead th.is-total { border-left: 1px solid var(--tds-grey-200); font-weight: 700; font-variant-numeric: tabular-nums; }
+.analysis-heatmap-cell { display: block; width: 100%; min-width: 64px; padding: 6px 4px; border-radius: 6px; color: var(--tds-grey-800); font-size: 11px; font-variant-numeric: tabular-nums; }
+.analysis-heatmap-cell:disabled { color: var(--tds-grey-300); cursor: default; }
+.analysis-heatmap-cell:not(:disabled):hover { outline: 2px solid var(--tds-grey-300); }
+.analysis-heatmap-cell.is-open { outline: 2px solid var(--tds-grey-900); }
+@media (max-width: 640px) {
+  .analysis-heatmap-table { font-size: 11px; }
+  .analysis-heatmap-cell { min-width: 52px; font-size: 10px; }
+}
+
 /* §3 대시보드 8단계 순서의 마지막 항목(분석 이동 CTA)과 핵심 인사이트 행. */
 .dashboard-analysis-cta { display: flex; min-height: 56px; align-items: center; justify-content: center; border-radius: 16px; background: var(--tds-grey-900); color: var(--tds-white); font-size: 15px; font-weight: 750; text-decoration: none; }
 .dashboard-analysis-cta:hover { background: var(--tds-grey-800); }

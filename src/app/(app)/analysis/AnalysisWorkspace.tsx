@@ -93,10 +93,10 @@ export function AnalysisWorkspace({ initialScope, year, initialMonth, initialTyp
     <AnalysisSummary scope={scope} label={label} totals={totals} previousTotals={scope === 'month' ? previousTotals : null} monthCount={monthCount} />
     <AnalysisCashflowChart scope={scope} monthly={monthlyPoints} daily={dailyPoints} />
 
-    {type === 'income' && <AnalysisIncomeView scope={scope} year={year} months={months} periodTransactions={periodTransactions} allTransactions={transactions} subcategoryNames={incomeSubcategoryNames} />}
-    {type === 'expense' && <AnalysisExpenseView scope={scope} year={year} month={month} months={months} periodTransactions={periodTransactions} allTransactions={transactions} categoryNames={expenseCategoryNames} subcategoryNames={expenseSubcategoryNames} savingsCategoryId={savingsCategoryId} budgets={budgets} categories={categories} totals={totals} />}
+    {type === 'income' && <AnalysisIncomeView scope={scope} year={year} months={months} monthCount={monthCount} periodTransactions={periodTransactions} allTransactions={transactions} subcategoryNames={incomeSubcategoryNames} />}
+    {type === 'expense' && <AnalysisExpenseView scope={scope} year={year} month={month} months={months} monthCount={monthCount} periodTransactions={periodTransactions} allTransactions={transactions} categoryNames={expenseCategoryNames} subcategoryNames={expenseSubcategoryNames} savingsCategoryId={savingsCategoryId} budgets={budgets} categories={categories} totals={totals} />}
     {type === 'reference' && <AnalysisReferenceView scope={scope} year={year} months={months} periodTransactions={periodTransactions} allTransactions={transactions} paymentMethodNames={paymentMethodNames} subcategoryNames={expenseSubcategoryNames} />}
-    {type === 'card' && <AnalysisCardView scope={scope} year={year} months={months} periodTransactions={periodTransactions} allTransactions={transactions} paymentMethods={paymentMethods} />}
+    {type === 'card' && <AnalysisCardView scope={scope} year={year} months={months} monthCount={monthCount} periodTransactions={periodTransactions} allTransactions={transactions} paymentMethods={paymentMethods} />}
   </div>;
 }
 

@@ -105,6 +105,48 @@ export function summarizeCardUsage(transactions: Transaction[], paymentMethods: 
   return { cards, totalExpense, totalReference, total, creditTotal, checkTotal };
 }
 
+// §12 — 원본 엑셀(연간_항목별수입/연간_카드별지출/연간_항목별지출)과 대조하기 좋은 "항목 ×
+// 12개월" 매트릭스. 연간 스코프에서만 의미가 있다 — 수입 소분류/지출 대분류/카드별로 한 해
+// 전체를 한 눈에 스캔하기 위한 것으로, 기존 드릴다운(항목별 합계·비중·개별거래)과는 다른
+// "월별 추이 비교"라는 별도 목적이라 항목당 12칸 배열 형태로 반환한다.
+export type MatrixRow = { id: string; label: string; monthly: number[]; total: number };
+
+function buildMatrix(rows: Transaction[], months: string[], keyFor: (t: Transaction) => string | null, names: Map<string, string>, fallbackLabel: string): MatrixRow[] {
+  const byKey = new Map<string, MatrixRow>();
+  for (const t of rows) {
+    const key = keyFor(t);
+    if (key === null) continue;
+    const monthIndex = months.indexOf(reportMonthOf(t));
+    if (monthIndex === -1) continue;
+    const row = byKey.get(key) ?? { id: key, label: names.get(key) ?? fallbackLabel, monthly: months.map(() => 0), total: 0 };
+    row.monthly[monthIndex] += t.amount;
+    row.total += t.amount;
+    byKey.set(key, row);
+  }
+  return [...byKey.values()].sort((a, b) => b.total - a.total);
+}
+
+// §7 대응 — 수입 소분류 × 월.
+export function summarizeIncomeMatrix(transactions: Transaction[], months: string[], subcategoryNames: Map<string, string>): MatrixRow[] {
+  return buildMatrix(transactions.filter(isIncome), months, (t) => t.subcategoryId ?? 'unassigned', subcategoryNames, '기타 수입');
+}
+
+// §8 대응 — 지출 대분류 × 월(저축성지출도 다른 대분류와 동일하게 한 행일 뿐).
+export function summarizeExpenseMatrix(transactions: Transaction[], months: string[], categoryNames: Map<string, string>): MatrixRow[] {
+  return buildMatrix(transactions.filter(isExpense), months, (t) => t.categoryId ?? 'unassigned', categoryNames, '미분류');
+}
+
+// §10 대응 — 카드(신용·체크만) × 월. summarizeCardUsage와 같은 대상(실제지출+참고거래)을 합쳐
+// 집계한다 — 카드 사용액과 총지출은 다른 개념이라는 원칙을 매트릭스에서도 그대로 지킨다.
+export function summarizeCardUsageMatrix(transactions: Transaction[], months: string[], paymentMethods: PaymentMethod[]): MatrixRow[] {
+  const cardMethods = new Map(paymentMethods.filter((m) => m.methodType === 'credit_card' || m.methodType === 'check_card').map((m) => [m.id, m]));
+  const names = new Map([...cardMethods.values()].map((m) => [m.id, m.name]));
+  return buildMatrix(
+    transactions.filter((t) => t.paymentMethodId && cardMethods.has(t.paymentMethodId) && (isExpense(t) || isReference(t))),
+    months, (t) => t.paymentMethodId, names, '결제수단 미지정',
+  );
+}
+
 // 연간 — 12개월 현금흐름(수입/지출/저축성지출/순현금흐름).
 export function monthlyCashflow(transactions: Transaction[], months: string[], savingsCategoryId: string | null): MonthPoint[] {
   return months.map((month) => {

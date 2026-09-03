@@ -5,8 +5,9 @@ import type { Transaction } from '@/lib/transactions';
 import type { Budget } from '@/lib/budgets';
 import type { CategoryWithSubcategories } from '@/lib/categories';
 import { budgetStatus } from '@/lib/budget-calculations';
-import { summarizeExpenseByCategory } from '@/lib/analysis';
+import { reportMonthOf, summarizeExpenseByCategory, summarizeExpenseMatrix } from '@/lib/analysis';
 import { ExpenseDrilldown, type TransactionExtraColumn } from './AnalysisDrilldown';
+import { AnalysisHeatmapTable } from './AnalysisHeatmapTable';
 
 const won = (value: number) => `${value.toLocaleString('ko-KR')}원`;
 const percent = (value: number | null) => value === null ? '-' : `${(value * 100).toFixed(1)}%`;
@@ -19,8 +20,8 @@ const STATUS_COLOR = { safe: 'text-[var(--color-status-safe)]', caution: 'text-[
 // §8 — 지출 > 대분류 > 소분류 > 개별 거래. 저축성지출은 다른 대분류와 같은 층위의 항목 하나일
 // 뿐이다(별도 계층·탭·차트 시리즈로 만들지 않음). 월간 화면에서는 예산 대비 실제 지출도 여기서
 // 보여준다(BudgetClosingTab에서 이관된 로직 — §14).
-export function AnalysisExpenseView({ scope, month, periodTransactions, categoryNames, subcategoryNames, budgets, categories, totals }: {
-  scope: 'year' | 'month'; year: string; month: string; months: string[];
+export function AnalysisExpenseView({ scope, month, months, monthCount, periodTransactions, categoryNames, subcategoryNames, budgets, categories, totals }: {
+  scope: 'year' | 'month'; year: string; month: string; months: string[]; monthCount: number;
   periodTransactions: Transaction[]; allTransactions: Transaction[];
   categoryNames: Map<string, string>; subcategoryNames: Map<string, string>;
   savingsCategoryId: string | null; budgets: Budget[]; categories: CategoryWithSubcategories[];
@@ -29,6 +30,9 @@ export function AnalysisExpenseView({ scope, month, periodTransactions, category
   const rows = useMemo(() => summarizeExpenseByCategory(periodTransactions, categoryNames, subcategoryNames), [periodTransactions, categoryNames, subcategoryNames]);
   const transactionsFor = (categoryId: string, subcategoryId: string) => periodTransactions.filter((t) => t.status === 'posted' && t.flowClass === 'consumption' && (t.categoryId ?? 'unassigned') === categoryId && (t.subcategoryId ?? 'unassigned') === subcategoryId);
   const extraColumn: TransactionExtraColumn = { label: '소분류', valueFor: (t) => (t.subcategoryId ? subcategoryNames.get(t.subcategoryId) ?? '기타' : '-') };
+  // §12 — 원본 엑셀 연간_항목별지출과 대응하는 대분류 × 12개월 표. 연간 스코프에서만 보여준다.
+  const matrixRows = useMemo(() => scope === 'year' ? summarizeExpenseMatrix(periodTransactions, months, categoryNames) : [], [scope, periodTransactions, months, categoryNames]);
+  const matrixTransactionsFor = (id: string, monthKey: string) => periodTransactions.filter((t) => t.status === 'posted' && t.flowClass === 'consumption' && (t.categoryId ?? 'unassigned') === id && reportMonthOf(t) === monthKey);
 
   const budgetMonth = Number(month.slice(5, 7));
   const budgetByCategory = new Map(budgets.filter((b) => b.month === budgetMonth && b.transactionType === 'expense' && b.categoryId).map((b) => [b.categoryId!, b.amount]));
@@ -38,6 +42,7 @@ export function AnalysisExpenseView({ scope, month, periodTransactions, category
   const budgetedSpent = [...spentByCategory.values()].reduce((sum, v) => sum + v, 0);
 
   return <div className="analysis-view flex flex-col gap-4">
+    {scope === 'year' && <AnalysisHeatmapTable title="지출 대분류 × 월별 표" description="원본 엑셀의 연간 항목별 지출 시트와 같은 구성이에요. 저축성지출도 다른 대분류와 같은 행 하나예요." months={months} rows={matrixRows} monthCount={monthCount} tone="expense" transactionsFor={matrixTransactionsFor} />}
     <section className="tds-card p-5"><h2 className="text-lg font-bold">지출 대분류</h2><p className="mt-1 text-sm text-[var(--tds-grey-700)]">대분류를 누르면 소분류가, 소분류를 누르면 개별 거래가 펼쳐져요.</p><div className="mt-4"><ExpenseDrilldown rows={rows} total={totals.expense} transactionsFor={transactionsFor} extraColumn={extraColumn} /></div></section>
     {scope === 'month' && <section className="tds-card p-5">
       <div className="flex flex-wrap items-end justify-between gap-2"><div><h2 className="text-lg font-bold">예산 대비 실제 지출</h2><p className="mt-1 text-sm text-[var(--tds-grey-700)]">예산 {won(budgetTotal)} · 실제 {won(budgetedSpent)}</p></div><strong className="text-lg tabular-nums">소진율 {percent(budgetTotal > 0 ? budgetedSpent / budgetTotal : null)}</strong></div>
