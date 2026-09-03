@@ -1338,6 +1338,17 @@ input.quick-add-amount {
     min-width: 0;
   }
 
+  /* The desktop <thead> column-header row has no mobile-card equivalent —
+   * the card system labels each field individually via ::before instead.
+   * Confirmed live (real login session, real /monthly data): removing the
+   * legacy .monthly-input-table block also removed the mobile `thead {
+   * display: none }` it happened to carry, so the raw header row rendered
+   * above the cards, wrapping into an unreadable run-together line of all
+   * 9 column names. */
+  .tds-ledger-table thead {
+    display: none;
+  }
+
   .tds-ledger-table tbody {
     display: grid;
     gap: var(--ui-mobile-transaction-card-gap);
@@ -1398,7 +1409,13 @@ input.quick-add-amount {
   }
 
   /* Left region — primary content, no field labels */
-  .tds-ledger-table [data-table-field='transactionType'] { grid-row: 1; grid-column: 1; font-weight: 700; }
+  /* Row 1's other two cells (성격/상태) hold selects at
+   * --ui-mobile-inline-control-height (40px), taller than the 32px base
+   * .tds-table-cell min-height. Grid centers each cell within the row's
+   * auto-sized height (= the tallest sibling), so 유형's shorter box was
+   * floating 4px lower than the selects beside it — matching this field's
+   * min-height to its row makes all three sit flush at the same top. */
+  .tds-ledger-table [data-table-field='transactionType'] { grid-row: 1; grid-column: 1; min-height: var(--ui-mobile-inline-control-height); font-weight: 700; }
   .tds-ledger-table [data-table-field='transactionType']::before { content: none; }
   .tds-ledger-table [data-table-field='amount'] {
     grid-row: 2;
@@ -1435,10 +1452,15 @@ input.quick-add-amount {
     grid-column: 3;
   }
 
+  /* 성격/상태는 select 자체가 값을 보여주고(고정비/변동비, 예정/확정/…), select
+   * 엘리먼트에 이미 접근성 aria-label(`${description} 비용성격` 등)이 별도로
+   * 있어 ::before 라벨은 순수 장식이었다 — 375px에서 라벨 텍스트(2자+gap)가
+   * select의 실사용 텍스트 폭을 갉아먹어 "이번달 제외"가 "이번"까지만 보이는
+   * 원인이었다. 라벨을 없애 그 폭 전부를 select 텍스트에 준다. */
   .tds-ledger-table [data-table-field='costBehavior'] { grid-row: 1; min-height: var(--ui-mobile-inline-control-height); }
-  .tds-ledger-table [data-table-field='costBehavior']::before { content: '성격'; }
+  .tds-ledger-table [data-table-field='costBehavior']::before { content: none; }
   .tds-ledger-table [data-table-field='status'] { grid-row: 1; min-height: var(--ui-mobile-inline-control-height); }
-  .tds-ledger-table [data-table-field='status']::before { content: '상태'; }
+  .tds-ledger-table [data-table-field='status']::before { content: none; }
 
   /* The [확정]/[이번달 제외] button pair (Phase 6) needs more room than a
    * select-sized column-3 slot can give it — confirmed live: crammed into
@@ -1478,7 +1500,7 @@ input.quick-add-amount {
     min-width: 0;
     height: var(--ui-mobile-transaction-control-height);
     min-height: var(--ui-mobile-transaction-control-height);
-    padding-inline: var(--ui-space-2);
+    padding-inline: var(--ui-space-1);
     border-radius: 8px;
     font-size: var(--text-micro);
   }
