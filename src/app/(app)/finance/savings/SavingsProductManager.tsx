@@ -6,6 +6,7 @@ import {
   updateCurrentSavingsAction,
 } from '@/actions/savings-product-actions';
 import { Amount } from '@/components/Amount';
+import { AmountInput } from '@/components/AmountInput';
 import { AssetItem, AssetMetric } from '@/components/AssetItem';
 import { Badge } from '@/components/Badge';
 import { Button } from '@/components/Button';
@@ -36,7 +37,7 @@ export function SavingsProductManager({ deposits, savings, accounts, today }: Pr
         <Field label="예금명"><input name="productName" required className="px-3" /></Field>
         <Field label="가입일"><input name="joinedAt" type="date" required className="px-3" /></Field>
         <Field label="만기일"><input name="maturityDate" type="date" required className="px-3" /></Field>
-        <Field label="원금"><input name="principal" type="number" min="1" step="1" required className="px-3 text-right" /></Field>
+        <Field label="원금"><AmountInput name="principal" required className="px-3 text-right" /></Field>
         <Field label="연이율(%)"><input name="annualRate" type="number" min="0" max="100" step="0.0001" required className="px-3 text-right" /></Field>
         <Field label="과세율(%)"><input name="taxRate" type="number" min="0" max="100" step="0.0001" defaultValue="15.4" required className="px-3 text-right" /></Field>
         <AccountSelect accounts={accounts} />
@@ -54,8 +55,8 @@ export function SavingsProductManager({ deposits, savings, accounts, today }: Pr
         <Field label="적금명"><input name="productName" required className="px-3" /></Field>
         <Field label="가입일"><input name="joinedAt" type="date" required className="px-3" /></Field>
         <Field label="만기일"><input name="maturityDate" type="date" required className="px-3" /></Field>
-        <Field label="월 적립액"><input name="monthlyAmount" type="number" min="1" step="1" required className="px-3 text-right" /></Field>
-        <Field label="현재 저축액"><input name="currentSavings" type="number" min="0" step="1" defaultValue="0" required className="px-3 text-right" /></Field>
+        <Field label="월 적립액"><AmountInput name="monthlyAmount" required className="px-3 text-right" /></Field>
+        <Field label="현재 저축액"><AmountInput name="currentSavings" defaultValue="0" required className="px-3 text-right" /></Field>
         <Field label="연이율(%)"><input name="annualRate" type="number" min="0" max="100" step="0.0001" required className="px-3 text-right" /></Field>
         <Field label="과세율(%)"><input name="taxRate" type="number" min="0" max="100" step="0.0001" defaultValue="15.4" required className="px-3 text-right" /></Field>
         <Field label="이자 방식"><select name="interestMethod" className="px-3"><option value="simple">단리</option><option value="monthly_compound">월복리</option></select></Field>
@@ -129,7 +130,7 @@ function SavingsCard({ item, today }: { item: SavingsAccount; today: string }) {
     footnote={<p className="tds-asset-item-footnote">{item.interestMethod === 'simple' ? '단리' : '월복리'} · 연 {(item.annualRate * 100).toFixed(2)}% · {item.autoRecurring ? `반복납입 ${item.monthlyPaymentDay}일` : '반복납입 꺼짐'}</p>}
     dimmed={item.status !== 'active'}
     actions={item.status === 'active' && <>
-      <form action={balanceAction} className="flex gap-2"><input type="hidden" name="id" value={item.id} /><input name="amount" type="number" min="0" step="1" defaultValue={item.currentSavings} className="min-w-0 flex-1 px-3 text-right" /><Button type="submit" variant="secondary" disabled={balancePending}>현재액 수정</Button></form>
+      <form action={balanceAction} className="flex gap-2"><input type="hidden" name="id" value={item.id} /><AmountInput name="amount" defaultValue={item.currentSavings} className="min-w-0 flex-1 px-3 text-right" /><Button type="submit" variant="secondary" disabled={balancePending}>현재액 수정</Button></form>
       <FormMessage result={balanceState} />
       <EndButtons id={item.id} action={endAction} pending={endPending} />
       <FormMessage result={endState} />

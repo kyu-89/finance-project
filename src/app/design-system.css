@@ -40,8 +40,8 @@
   --ui-ledger-column-behavior: 120px;
   --ui-ledger-column-category: 110px;
   --ui-ledger-column-subcategory: 110px;
-  --ui-ledger-column-description-min: 140px;
-  --ui-ledger-column-amount: 120px;
+  --ui-ledger-column-description-min: 110px;
+  --ui-ledger-column-amount: 150px;
   --ui-ledger-column-payment: 112px;
   --ui-ledger-column-memo: 140px;
   --ui-space-1: 4px;

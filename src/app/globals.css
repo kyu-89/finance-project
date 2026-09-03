@@ -650,7 +650,6 @@ aside[role="dialog"][aria-modal="true"]:not(.app-drawer) { width: min(640px, 100
 .recurring-form legend span { color: var(--tds-grey-500); font-size: 12px; font-weight: 500; }
 .recurring-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .form-field { display: flex; min-width: 0; flex-direction: column; gap: 6px; color: var(--tds-grey-700); font-size: 13px; font-weight: 650; }
-.form-field > span em { margin-left: 5px; color: var(--tds-red-500); font-size: 10px; font-style: normal; }
 .recurring-form > .tds-primary-button { width: 100%; min-height: 48px; }
 .recurring-rule-edit { margin-top: 16px; border-top: 1px solid var(--tds-grey-200); padding-top: 12px; }
 .recurring-rule-edit summary { cursor: pointer; color: var(--tds-blue-600); font-size: 13px; font-weight: 700; }
@@ -861,7 +860,7 @@ button:disabled { cursor: wait; transform: none !important; }
 .monthly-ledger-period-toggle { display: inline-flex; flex: 0 0 auto; gap: 2px; padding: 3px; border-radius: 10px; background: var(--tds-white); }
 .monthly-ledger-period-toggle button { min-height: 36px; padding: 0 10px; border-radius: 8px; color: var(--tds-grey-600); font-size: 12px; font-weight: 750; white-space: nowrap; }
 .monthly-ledger-period-toggle button[data-selected='true'] { background: var(--state-selected-bg); color: var(--state-selected-fg); }
-.monthly-ledger-filter-grid { display: grid; grid-template-columns: minmax(180px, 1.5fr) repeat(2, minmax(130px, 1fr)) repeat(4, minmax(130px, 1fr)); gap: 8px; }
+.monthly-ledger-filter-grid { display: grid; grid-template-columns: minmax(180px, 1.5fr) repeat(5, minmax(130px, 1fr)); gap: 8px; }
 .monthly-ledger-filter-grid input, .monthly-ledger-filter-grid select { min-width: 0; min-height: 44px; padding-inline: 12px; border: 1px solid var(--tds-grey-200); border-radius: 10px; background: var(--tds-white); font-size: 13px; }
 
 @media (max-width: 640px) {

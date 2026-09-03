@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from 'react';
 import { createMonthlyRowAction } from '@/actions/transaction-actions';
+import { AmountInput } from '@/components/AmountInput';
 import { CategoryPicker } from '@/components/CategoryPicker';
 import { FormField } from '@/components/FormField';
 import { FormMessage } from '@/components/FormMessage';
@@ -63,8 +64,8 @@ export function MonthlyDrawerForm({ categories, paymentMethods, transactions, in
         <h3>금액과 내용</h3>
         <div className="monthly-drawer-grid">
           <label className="form-field"><span>내용</span><input name="description" placeholder="예: 장보기, 급여" required /></label>
-          <label className="form-field"><span>금액</span><input name="amount" type="number" inputMode="numeric" min="1" step="1" placeholder="금액을 입력하세요" required /></label>
-          <label className="form-field [grid-column:1/-1]"><span>비고 <em>선택</em></span><input name="memo" placeholder="메모를 입력하세요" /></label>
+          <label className="form-field"><span>금액</span><AmountInput name="amount" required /></label>
+          <label className="form-field [grid-column:1/-1]"><span>비고</span><input name="memo" placeholder="메모를 입력하세요" /></label>
           {transactionType === 'expense' && (
             <FormField as="div" label="결제 수단" required className="[grid-column:1/-1]">
               <PaymentMethodPicker
@@ -74,7 +75,7 @@ export function MonthlyDrawerForm({ categories, paymentMethods, transactions, in
               />
             </FormField>
           )}
-          {transactionType === 'expense' && <label className="form-field"><span>비용 성격 <em>선택</em></span><select name="costBehaviorOverride"><option value="">기본값 사용</option><option value="fixed">고정비</option><option value="variable">변동비</option></select></label>}
+          {transactionType === 'expense' && <label className="form-field"><span>비용 성격</span><select name="costBehaviorOverride"><option value="">기본값 사용</option><option value="fixed">고정비</option><option value="variable">변동비</option></select></label>}
         </div>
       </div>
       <input type="hidden" name="transactionType" value={transactionType} />
