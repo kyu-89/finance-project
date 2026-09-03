@@ -73,9 +73,17 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   // "월별 상세" 위젯의 연도 선택기(2026-09). 위의 24개월 트렌드 창(month 기준 상대값)과는 별개로,
   // 사용자가 임의의 캘린더 연도를 고를 수 있어야 한다 — 마이그레이션으로 2023년 말~2026년 데이터가
   // 들어와 있는데, 기존 창은 항상 "오늘 기준 최근 24개월"이라 그보다 오래된 연도는 볼 방법이 없었다.
-  const detailYear = query.detailYear && /^\d{4}$/.test(query.detailYear) ? query.detailYear : month.slice(0, 4);
+  // 기본값은 "이번 달"이 아니라 "전월"이다(이번 달은 대개 아직 안 끝나서 데이터가 비어 보임) — 그래서
+  // ?detailYear=가 없으면 전월이 속한 연도를 기본 연도로 쓴다(1월엔 전월이 작년 12월이라 연도가
+  // 자연스럽게 넘어간다).
+  const previousMonth = shiftMonth(month, -1);
+  const detailYear = query.detailYear && /^\d{4}$/.test(query.detailYear) ? query.detailYear : previousMonth.slice(0, 4);
   const detailFrom = `${detailYear}-01-01`; const detailTo = `${detailYear}-12-31`;
   const detailMonths = Array.from({ length: 12 }, (_, index) => `${detailYear}-${String(index + 1).padStart(2, '0')}`);
+  // 사용자가 명시적으로 다른 연도를 고른 경우: 그 연도가 "오늘이 속한 연도"면 오늘 달을, 아니면 그
+  // 연도의 12월을(가장 최근에 끝난 달) 기본으로 보여준다. 아무것도 안 고른 최초 진입이면 위에서 구한
+  // 전월 그대로.
+  const initialDetailMonth = query.detailYear ? (detailYear === month.slice(0, 4) ? month : `${detailYear}-12`) : previousMonth;
   const referenceDataPromise = Promise.all([
     computeCurrentNetWorth(household.id, today),
     listAssetValueHistory(household.id, 36),
@@ -142,7 +150,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           </div>
         </div>
         {/* 드릴다운은 이미 내부에 여러 섹션을 가진 넓은 컴포넌트라 컬럼에 넣지 않고 전체 폭 유지. */}
-        <DashboardMonthlyDetail selectedMonth={month} detailYear={detailYear} availableYears={availableYears} monthly={detailMonthlyTrend} incomeMonthly={detailIncomeMonthlyDetail} incomeCurrent={incomeCurrentDetail} expenseMonthly={detailExpenseMonthlyDetail} expenseCurrent={categoryRows} expensePayments={paymentRows} transactionDetails={detailTransactionDetails} />
+        <DashboardMonthlyDetail selectedMonth={month} detailYear={detailYear} initialMonth={initialDetailMonth} availableYears={availableYears} monthly={detailMonthlyTrend} incomeMonthly={detailIncomeMonthlyDetail} incomeCurrent={incomeCurrentDetail} expenseMonthly={detailExpenseMonthlyDetail} expenseCurrent={categoryRows} expensePayments={paymentRows} transactionDetails={detailTransactionDetails} />
       </>}
       debt={<DashboardDebtOverview totalDebt={netWorth.totalDebt} debtRatio={debtRatio} principal={current.debtPrincipal} financeCost={current.financeCost} annual={annualDebtRows} />}
       risk={<DashboardRiskOverview insurances={insurances} />}
