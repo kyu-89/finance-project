@@ -1,47 +1,41 @@
 'use client';
 
 import { useMemo } from 'react';
+import { Amount } from '@/components/Amount';
 import { SectionHeader } from '@/components/SectionHeader';
-import type { Transaction } from '@/lib/transactions';
+import { StatCard } from '@/components/StatCard';
 import type { PaymentMethod } from '@/lib/payment-methods';
+import type { Transaction } from '@/lib/transactions';
 import { summarizeCardUsage, type AnalysisRow } from '@/lib/analysis';
 import { SimpleDrilldown, type TransactionExtraColumn } from './AnalysisDrilldown';
 
-const won = new Intl.NumberFormat('ko-KR');
-const money = (value: number) => `${won.format(Math.round(value))}원`;
-
-// §10 — 원본 엑셀의 연간_카드별지출에 대응하는, 일반 지출 분석과 분리된 카드 사용 분석. 신용/
-// 체크카드 결제수단만 대상이고, "실제 지출(저축성지출 포함)"과 "참고 거래"를 항상 구분해서
-// 보여준다 — 카드 사용액과 가계 총지출은 다른 개념이라는 걸 문구로 계속 명시한다.
-// 2026-09(사용자 지시: "분석쪽 화면 다시 재정리... 카드 사용은 지출 하단에 보여줘... 수입 >
-// 지출 > 카드사용 > 참고 거래 순으로 아코디언 적용해") — 연간 스코프의 엑셀-그대로 표(모든
-// 결제수단 포함)는 AnnualReportView 하나로 통합됐고, 이 뷰는 이제 월간 스코프 전용(지출
-// 아코디언 다음 칸)이라 연간 매트릭스 히트맵을 갖지 않는다.
-// 2026-09(사용자 지시: "컬럼이나 디자인 시스템이 일관되지 않아") — 개별 거래 표의 extraColumn을
-// "구분"(실제지출/참고거래 텍스트)에서 나머지 셋과 같은 종류인 "카테고리"(대분류)로 바꿨다.
-// 실제지출/참고거래 구분은 여전히 금액 색상(참고 거래=회색 neutral)으로 구분되니 텍스트
-// 컬럼으로 또 보여줄 필요가 없었다.
 export function AnalysisCardView({ periodTransactions, paymentMethods, categoryNames }: {
   periodTransactions: Transaction[];
   paymentMethods: PaymentMethod[];
   categoryNames: Map<string, string>;
 }) {
   const usage = useMemo(() => summarizeCardUsage(periodTransactions, paymentMethods), [periodTransactions, paymentMethods]);
-  const cardRows: AnalysisRow[] = usage.cards.map((c) => ({ id: c.id, label: c.label, value: c.totalAmount, count: c.count }));
-  const transactionsFor = (id: string) => periodTransactions.filter((t) => t.status === 'posted' && t.paymentMethodId === id && (t.flowClass === 'consumption' || t.transactionType === 'reference'));
+  const cardRows: AnalysisRow[] = usage.cards.map((card) => ({ id: card.id, label: card.label, value: card.totalAmount, count: card.count }));
+  const transactionsFor = (id: string) => periodTransactions.filter((transaction) => transaction.status === 'posted' && transaction.paymentMethodId === id && (transaction.flowClass === 'consumption' || transaction.transactionType === 'reference'));
   const creditShare = usage.total > 0 ? usage.creditTotal / usage.total : 0;
-  const extraColumn: TransactionExtraColumn = { label: '카테고리', valueFor: (t) => (t.categoryId ? categoryNames.get(t.categoryId) ?? '기타' : '-') };
+  const extraColumn: TransactionExtraColumn = { label: '카테고리', valueFor: (transaction) => (transaction.categoryId ? categoryNames.get(transaction.categoryId) ?? '기타' : '-') };
 
-  return <div className="analysis-view flex flex-col gap-4">
-    <section className="tds-card p-5">
-      <h2 className="text-lg font-bold">전체 카드 사용액</h2>
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="tds-card p-4"><p className="text-xs text-[var(--tds-grey-500)]">실제 지출 카드 사용액</p><p className="mt-2 text-xl font-bold tabular-nums">{money(usage.totalExpense)}</p></div>
-        <div className="tds-card p-4"><p className="text-xs text-[var(--tds-grey-500)]">참고 거래 카드 사용액</p><p className="mt-2 text-xl font-bold tabular-nums">{money(usage.totalReference)}</p></div>
-        <div className="tds-card p-4"><p className="text-xs text-[var(--tds-grey-500)]">전체 카드 사용액</p><p className="mt-2 text-xl font-bold tabular-nums">{money(usage.total)}</p></div>
-      </div>
-      <p className="mt-3 text-xs text-[var(--tds-grey-500)]">카드 사용액은 가계 총지출과 다른 개념이에요 — 참고 거래 카드 사용액은 총지출에 포함되지 않아요. 신용카드 {(creditShare * 100).toFixed(0)}% · 체크카드 {((1 - creditShare) * 100).toFixed(0)}%</p>
-    </section>
-    <section className="tds-card tds-section-card"><SectionHeader title="카드별 상세" description="카드를 누르면 실제 지출·참고 거래를 포함한 개별 거래를 확인할 수 있어요." /><div><SimpleDrilldown rows={cardRows} total={usage.total} emptyText="카드로 결제된 거래가 없어요" transactionsFor={transactionsFor} extraColumn={extraColumn} /></div></section>
-  </div>;
+  return (
+    <div className="analysis-view flex flex-col gap-4">
+      <section className="tds-card tds-section-card">
+        <SectionHeader title="전체 카드 사용액" description="카드 사용액은 가구 총지출과 다른 개념이에요." />
+        <div className="tds-summary-grid">
+          <StatCard label="실제 지출 카드 사용액" value={<Amount value={usage.totalExpense} type="expense" size="medium" />} />
+          <StatCard label="참고 거래 카드 사용액" value={<Amount value={usage.totalReference} size="medium" />} />
+          <StatCard label="전체 카드 사용액" value={<Amount value={usage.total} size="medium" />} />
+        </div>
+        <p className="text-xs text-[var(--tds-grey-500)]">참고 거래 카드 사용액은 총지출에 포함하지 않아요. 신용카드 {(creditShare * 100).toFixed(0)}% · 체크카드 {((1 - creditShare) * 100).toFixed(0)}%</p>
+      </section>
+
+      <section className="tds-card tds-section-card">
+        <SectionHeader title="카드별 상세" description="카드를 누르면 실제 지출·참고 거래를 포함한 개별 거래를 확인할 수 있어요." />
+        <div><SimpleDrilldown rows={cardRows} total={usage.total} emptyText="카드로 결제된 거래가 없어요" transactionsFor={transactionsFor} extraColumn={extraColumn} /></div>
+      </section>
+    </div>
+  );
 }
