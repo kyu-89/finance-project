@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Amount } from '@/components/Amount';
 import { EmptyState } from '@/components/EmptyState';
+import { SectionHeader } from '@/components/SectionHeader';
 import type { AnnualReportRow } from '@/lib/annual-report';
 import type { Transaction } from '@/lib/transactions';
 
@@ -24,8 +25,7 @@ export function AnnualReportTable({ title, description, months, rows, tone, show
   const colorVar = tone === 'income' ? '--chart-income' : '--chart-expense';
 
   return <section className="tds-card p-5">
-    <h2 className="text-lg font-bold">{title}</h2>
-    <p className="mt-1 text-sm text-[var(--tds-grey-700)]">{description}</p>
+    <SectionHeader title={title} description={description} />
     {rows.length === 0 ? <div className="mt-4"><EmptyState title="표시할 데이터가 없어요" description="거래가 기록되면 엑셀과 같은 구조의 표를 보여드립니다." /></div> : <>
       <div className="analysis-heatmap-wrap mt-4">
         <table className="tds-data-table analysis-heatmap-table annual-report-table">
