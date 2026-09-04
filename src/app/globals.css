@@ -889,7 +889,7 @@ button:disabled { cursor: wait; transform: none !important; }
 /* 월간관리에는 화면 상단의 단일 거래 추가 CTA가 있으므로 모바일 전역 FAB와 중복하지 않는다. */
 body:has(.monthly-page-flow) .mobile-fab { display: none; }
 @media (max-width: 640px) {
-  .monthly-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .monthly-summary-grid { grid-template-columns: minmax(0, 1fr); }
 }
 .monthly-work-links { overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
 .monthly-work-links::-webkit-scrollbar { display: none; }

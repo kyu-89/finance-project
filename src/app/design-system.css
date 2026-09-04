@@ -1337,12 +1337,8 @@ input.quick-add-amount {
    * available to every value. MonthSummary renders 수입/지출/잔액 in that
    * order, so the 3rd StatCard is 잔액; no JSX change needed. */
   .tds-summary-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--ui-space-2);
-  }
-
-  .tds-summary-grid .tds-stat-card:nth-child(3) {
-    grid-column: 1 / -1;
   }
 
   .tds-summary-grid .tds-stat-card {
@@ -1367,11 +1363,13 @@ input.quick-add-amount {
    * for a 7-digit 원 amount at that size. Target the inner element directly. */
   .tds-summary-grid .tds-stat-card-value .amount-large {
     font-size: var(--amount-medium);
+    white-space: nowrap;
   }
 
   .tds-summary-grid .tds-stat-card-value {
-    overflow-wrap: anywhere;
-    white-space: normal;
+    min-width: 0;
+    overflow: visible;
+    white-space: nowrap;
   }
 
   /* A percentage-breakdown meta line ("소비성 68% · 저축·투자·상환 32%") has no
