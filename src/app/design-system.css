@@ -834,6 +834,37 @@ a.tds-chip {
   color: var(--color-text-secondary);
 }
 
+/* Monthly summary cards use the same metric anatomy as StatCard. Keep this
+ * compatibility selector until the monthly summary markup is migrated, so
+ * every menu reads the same component tokens rather than screen-local sizes. */
+.tds-summary-grid .monthly-summary-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--ui-space-1);
+  padding: var(--ui-card-padding);
+}
+
+.tds-summary-grid .monthly-summary-card > span {
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption);
+  font-weight: 600;
+}
+
+.tds-summary-grid .monthly-summary-card > strong {
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: clamp(24px, 2.2vw, var(--amount-large));
+  font-weight: 750;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.tds-summary-grid .monthly-summary-card.is-income > strong { color: var(--color-positive); }
+.tds-summary-grid .monthly-summary-card.is-expense > strong { color: var(--color-negative); }
+
 /* Metric anatomy is shared even when a legacy screen still renders its
  * summary with utility classes. This keeps label/value/meta rhythm identical
  * while those screens are migrated to StatCard incrementally. */
@@ -1540,6 +1571,10 @@ input.quick-add-amount {
   .tds-summary-grid .tds-stat-card-value .amount-large {
     font-size: var(--amount-medium);
     white-space: nowrap;
+  }
+
+  .tds-summary-grid .monthly-summary-card > strong {
+    font-size: var(--amount-medium);
   }
 
   .tds-summary-grid .tds-stat-card-value {

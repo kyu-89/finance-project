@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { MonthlyInputTab } from './MonthlyInputTab';
+import { Amount } from '@/components/Amount';
+import { StatCard } from '@/components/StatCard';
 import type { Transaction } from '@/lib/transactions';
 import type { CategoryWithSubcategories } from '@/lib/categories';
 import type { PaymentMethod } from '@/lib/payment-methods';
@@ -20,7 +22,7 @@ export function MonthlyPageTabs({ transactions, selectedMonth, categories, payme
   const referenceCount = posted.filter((t) => t.transactionType === 'reference').length;
   return <div className="monthly-page-flow flex flex-col gap-4">
     <section className="monthly-command-center" aria-label="이번 달 요약">
-      <div className="monthly-summary-grid">
+      <div className="tds-summary-grid">
         <Summary label="수입" value={income} tone="income" />
         <Summary label="지출" value={expense} tone="expense" />
         <Summary label="저축성 지출" value={savings} tone="expense" />
@@ -36,4 +38,8 @@ export function MonthlyPageTabs({ transactions, selectedMonth, categories, payme
   </div>;
 }
 
-function Summary({ label, value, suffix = '원', tone, detail }: { label: string; value: number; suffix?: string; tone: 'income' | 'expense' | 'planned'; detail?: string }) { return <article className={`monthly-summary-card is-${tone}`}><span>{label}</span><strong>{value.toLocaleString('ko-KR')}{suffix}</strong>{detail && <small>{detail}</small>}</article>; }
+function Summary({ label, value, tone }: { label: string; value: number; tone: 'income' | 'expense' | 'planned' }) {
+  const amountType = tone === 'income' ? 'income' : tone === 'expense' ? 'expense' : 'neutral';
+  const cardTone = tone === 'income' ? 'positive' : tone === 'expense' ? 'negative' : 'neutral';
+  return <StatCard label={label} tone={cardTone} value={<Amount value={Math.abs(value)} type={amountType} size="large" />} />;
+}

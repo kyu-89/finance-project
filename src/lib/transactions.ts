@@ -310,9 +310,41 @@ export async function countTransactionsNeedingReview(householdId: string): Promi
 // clears a review flag someone else needs to see — this is an explicit "확정" action.
 export async function confirmTransactionReview(id: string): Promise<void> {
   const supabase = await createClient();
+  const { data: reviewRow, error: readError } = await supabase.from('transactions')
+    .select('id, household_id, transaction_date, transaction_type, amount, description, source_month')
+    .eq('id', id).eq('needs_review', true).is('deleted_at', null).maybeSingle();
+  if (readError) throw new Error(`검토 필요 거래 조회 실패: ${readError.message}`);
+  if (!reviewRow) throw new Error('검토 완료 처리할 거래를 찾지 못했어요.');
+
+  // Import review rows can coexist with the canonical monthly row when the same
+  // workbook entry was imported through both paths. Only merge when there is one
+  // exact, already-confirmed row with an owning source month; ambiguous matches
+  // must remain visible for manual review.
+  const { data: canonicalRows, error: duplicateReadError } = await supabase.from('transactions')
+    .select('id')
+    .eq('household_id', reviewRow.household_id)
+    .eq('transaction_date', reviewRow.transaction_date)
+    .eq('transaction_type', reviewRow.transaction_type)
+    .eq('amount', reviewRow.amount)
+    .eq('description', reviewRow.description)
+    .eq('needs_review', false)
+    .not('source_month', 'is', null)
+    .is('deleted_at', null)
+    .neq('id', id);
+  if (duplicateReadError) throw new Error(`중복 거래 확인 실패: ${duplicateReadError.message}`);
+
+  if (canonicalRows?.length === 1) {
+    const { data, error } = await supabase.from('transactions')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', id).eq('needs_review', true).is('deleted_at', null).select('id');
+    if (error) throw new Error(`중복 검토 거래 정리 실패: ${error.message}`);
+    if (data.length !== 1) throw new Error('중복 검토 거래를 정리하지 못했어요.');
+    return;
+  }
+
   const { data, error } = await supabase.from('transactions')
     .update({ needs_review: false })
-    .eq('id', id).is('deleted_at', null).select('id');
+    .eq('id', id).eq('needs_review', true).is('deleted_at', null).select('id');
   if (error) throw new Error(`검토 완료 처리 실패: ${error.message}`);
   if (data.length !== 1) throw new Error('검토 완료 처리할 거래를 찾지 못했어요.');
 }
