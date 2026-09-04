@@ -14,6 +14,7 @@ import { MonthlyDrawerForm as MonthlyRowForm } from './MonthlyDrawerForm';
 import { TransactionStatusEditor } from '@/components/TransactionStatusEditor';
 import { TransactionDetailDrawer } from './TransactionDetailDrawer';
 import { findRecurringDuplicateCandidates, type DuplicateCandidate } from '@/lib/recurring-duplicates';
+import { SectionHeader } from '@/components/SectionHeader';
 
 // No optional row models (sorting/filtering/etc.) are needed for this first-pass read-only
 // table, so the feature registry is empty — the core row model is automatic in v9.
@@ -172,12 +173,6 @@ export function MonthlyInputTab({
       && (status === 'all' || transaction.status === status)
       && (!normalizedQuery || `${transaction.description} ${transaction.memo ?? ''}`.toLowerCase().includes(normalizedQuery));
   }), [initialTransactions, type, group, category, subcategory, costBehavior, status, query]);
-  const orderedTransactions = useMemo(() => [...initialTransactions].sort((a, b) => {
-    if (a.status === 'planned' && b.status !== 'planned') return -1;
-    if (a.status !== 'planned' && b.status === 'planned') return 1;
-    return a.transactionDate.localeCompare(b.transactionDate);
-  }), [initialTransactions]);
-  const plannedTransactions = orderedTransactions.filter((transaction) => transaction.status === 'planned');
   const visiblePlannedTransactions = visibleTransactions.filter((transaction) => transaction.status === 'planned');
   const visiblePostedTransactions = visibleTransactions.filter((transaction) => transaction.status !== 'planned');
 
@@ -197,10 +192,8 @@ export function MonthlyInputTab({
         <select value={costBehavior} onChange={(event) => setCostBehavior(event.target.value as typeof costBehavior)} aria-label="비용성격"><option value="all">모든 비용성격</option><option value="fixed">고정비</option><option value="variable">변동비</option></select>
         <select value={status} onChange={(event) => setStatus(event.target.value as typeof status)} aria-label="상태"><option value="all">모든 상태</option><option value="planned">예정</option><option value="posted">확정</option><option value="skipped">이번 달 제외</option><option value="cancelled">취소</option><option value="refunded">환불</option></select>
       </div></section>
-      <section className={`monthly-planned-queue ${plannedTransactions.length ? 'has-items' : 'is-clear'}`} aria-label="예정 거래 처리 현황"><div><span className="monthly-kicker">예정 거래 처리</span><strong>{plannedTransactions.length ? `${plannedTransactions.length}건이 처리 대기 중이에요` : '처리할 예정 거래가 없어요'}</strong></div><p>{plannedTransactions.length ? '확정 또는 이번 달 제외 버튼을 눌러 처리하세요.' : '반복 거래가 생성되면 이 영역과 거래 목록 상단에 먼저 표시됩니다.'}</p></section>
-
-      {visiblePlannedTransactions.length > 0 && <section className="monthly-transaction-section"><div className="monthly-transaction-section-heading"><div><h2>예정 거래</h2><p>확인 후 확정 또는 이번 달 제외 버튼을 눌러 처리하세요.</p></div><strong>{visiblePlannedTransactions.length}건</strong></div><MonthlyTransactionTable transactions={visiblePlannedTransactions} categories={categories} paymentMethods={paymentMethods} duplicateCandidates={duplicateCandidates} /></section>}
-      <section className="monthly-transaction-section"><div className="monthly-transaction-section-heading"><div><h2>이번 달 거래</h2><p>선택한 달의 수입·지출과 자산 거래를 관리하세요.</p></div><strong>{visiblePostedTransactions.length}건</strong></div><MonthlyTransactionTable transactions={visiblePostedTransactions} categories={categories} paymentMethods={paymentMethods} duplicateCandidates={duplicateCandidates} /></section>
+      {visiblePlannedTransactions.length > 0 && <section className="monthly-transaction-section"><SectionHeader title="예정 거래" description="확인 후 상태 드롭다운에서 확정 또는 이번 달 제외를 선택하세요." action={<span className="text-sm font-semibold text-[var(--tds-grey-600)]">{visiblePlannedTransactions.length}건</span>} /><MonthlyTransactionTable transactions={visiblePlannedTransactions} categories={categories} paymentMethods={paymentMethods} duplicateCandidates={duplicateCandidates} /></section>}
+      <section className="monthly-transaction-section"><SectionHeader title="이번 달 거래" description="선택한 달의 수입·지출과 참고 거래를 관리해요." action={<span className="text-sm font-semibold text-[var(--tds-grey-600)]">{visiblePostedTransactions.length}건</span>} /><MonthlyTransactionTable transactions={visiblePostedTransactions} categories={categories} paymentMethods={paymentMethods} duplicateCandidates={duplicateCandidates} /></section>
     </div>
   );
 }
