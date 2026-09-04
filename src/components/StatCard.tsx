@@ -14,7 +14,7 @@ export function StatCard({
   return (
     <article className={`tds-card tds-stat-card ${className}`.trim()}>
       <span className="tds-stat-card-label">{label}</span>
-      <strong className={`tds-stat-card-value tds-stat-card-value-${tone}`}>{value}</strong>
+      <div className={`tds-stat-card-value tds-stat-card-value-${tone}`}>{value}</div>
       {meta && <small className="tds-stat-card-meta">{meta}</small>}
     </article>
   );

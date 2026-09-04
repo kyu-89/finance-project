@@ -744,6 +744,37 @@ a.tds-chip {
   color: var(--color-text-secondary);
 }
 
+/* Metric anatomy is shared even when a legacy screen still renders its
+ * summary with utility classes. This keeps label/value/meta rhythm identical
+ * while those screens are migrated to StatCard incrementally. */
+.tds-card.p-5 > p:first-child:has(+ strong),
+.tds-card.p-5 > strong:first-child {
+  margin: 0;
+}
+
+.tds-card.p-5 > p:first-child + strong {
+  display: block;
+  margin-top: var(--ui-space-1);
+  font-size: var(--text-title-2);
+  line-height: 1.25;
+  font-weight: 750;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.tds-card.p-5 > p:first-child + strong.text-\[var\(--tds-blue-500\)\],
+.tds-card.p-5 > p:first-child + strong.text-\[var\(--tds-blue-600\)\] {
+  color: var(--color-positive);
+}
+
+.tds-card.p-5 > p:first-child + strong + p {
+  margin-top: var(--ui-space-2);
+  font-size: var(--text-caption);
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+}
+
 .tds-section-header {
   display: flex;
   flex-wrap: wrap;
