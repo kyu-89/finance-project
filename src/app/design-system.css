@@ -793,6 +793,14 @@ a.tds-chip {
   font-weight: 750;
   color: var(--color-text);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.tds-stat-card-value .amount-large {
+  display: inline-block;
+  max-width: 100%;
+  font-size: clamp(24px, 2.2vw, var(--amount-large));
+  white-space: nowrap;
 }
 
 .tds-stat-card-value-positive { color: var(--color-positive); }
@@ -1347,6 +1355,27 @@ input.quick-add-amount {
     width: 100%;
     max-width: none;
     padding: calc(var(--ui-space-6) + env(safe-area-inset-top)) var(--ui-mobile-gutter) calc(var(--ui-mobile-bottom-nav-height) + var(--ui-space-5) + env(safe-area-inset-bottom));
+  }
+
+  /* Page headers are a single reading column on touch screens. Keeping the
+   * desktop row layout here lets a right-side action consume the title's
+   * flex width, which can collapse long Korean headings into one character
+   * per line (most visible on 자산·금융). The action becomes a full-width
+   * second row so every page header shares the same mobile rhythm. */
+  .tds-page > .tds-page-header.tds-page-header,
+  .tds-page > .monthly-page-header.monthly-page-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: var(--ui-space-4);
+  }
+
+  .tds-page > .tds-page-header > :first-child,
+  .tds-page > .tds-page-header > :last-child:not(:first-child),
+  .tds-page > .monthly-page-header > :first-child,
+  .tds-page > .monthly-page-header > :last-child:not(:first-child) {
+    width: 100%;
+    min-width: 0;
   }
 
   .quick-add-shell {
