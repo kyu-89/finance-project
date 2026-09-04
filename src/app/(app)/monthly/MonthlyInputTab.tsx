@@ -25,8 +25,8 @@ const TRANSACTION_TYPE_LABEL: Record<Transaction['transactionType'], string> = {
 // 보여준다(makeColumns의 transactionGroup 컬럼). 모바일 카드에서는 그 컬럼 셀을 유형 셀과 같은
 // 그리드 칸(2행 1열)에 justify-self로 나란히 배치해 "지출/수입 옆에 나란히" 보이게 한다
 // (design-system.css의 [data-table-field='transactionGroup'] 참고).
-const INCOME_GROUP_LABEL: Record<'fixed' | 'additional', string> = { fixed: '고정수입', additional: '부가 수입' };
-const EXPENSE_GROUP_LABEL: Record<'savings' | 'consumption', string> = { savings: '저축성지출', consumption: '소비성지출' };
+const INCOME_GROUP_LABEL: Record<'fixed' | 'additional', string> = { fixed: '고정 수입', additional: '부가 수입' };
+const EXPENSE_GROUP_LABEL: Record<'savings' | 'consumption', string> = { savings: '저축성 지출', consumption: '소비성 지출' };
 function groupLabelFor(transaction: Transaction): string | null {
   if (transaction.transactionType === 'income' && transaction.incomeGroup) return INCOME_GROUP_LABEL[transaction.incomeGroup];
   if (transaction.transactionType === 'expense' && transaction.expenseGroup) return EXPENSE_GROUP_LABEL[transaction.expenseGroup];
@@ -53,6 +53,28 @@ function CostBehaviorEditor({ transaction }: { transaction: Transaction }) {
     selectClassName="tds-inline-select transaction-inline-select"
     feedback="compact"
   />;
+}
+
+function TransactionAddChooser({ categories, paymentMethods }: { categories: CategoryWithSubcategories[]; paymentMethods: PaymentMethod[] }) {
+  const [transactionType, setTransactionType] = useState<Transaction['transactionType'] | null>(null);
+  return transactionType ? (
+    <div className="monthly-add-chooser-form">
+      <button type="button" className="monthly-add-chooser-back" onClick={() => setTransactionType(null)}>← 거래 유형 다시 선택</button>
+      <MonthlyRowForm initialTransactionType={transactionType} categories={categories} paymentMethods={paymentMethods} />
+    </div>
+  ) : (
+    <div className="monthly-add-chooser" aria-label="거래 유형 선택">
+      <p>기록할 거래 유형을 선택해 주세요.</p>
+      <div className="monthly-add-chooser-options">
+        {(['income', 'expense', 'reference'] as const).map((type) => (
+          <button key={type} type="button" className={`monthly-add-option is-${type}`} onClick={() => setTransactionType(type)}>
+            <strong>{TRANSACTION_TYPE_LABEL[type]}</strong>
+            <span>{type === 'income' ? '들어온 돈' : type === 'expense' ? '쓴 돈' : '참고로 남길 거래'}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 // Column order is a shared rule, not a per-screen choice: 날짜 · 유형 · 거래 구분 ·
@@ -161,14 +183,14 @@ export function MonthlyInputTab({
 
   return (
     <div className="monthly-input-panel flex flex-col gap-4">
-      <div className="monthly-cta monthly-quick-actions"><AddDrawer title="수입 추가" description="이번 달에 들어온 돈을 기록하세요." triggerLabel="수입 추가"><MonthlyRowForm initialTransactionType="income" categories={categories} paymentMethods={paymentMethods} /></AddDrawer><AddDrawer title="지출 추가" description="이번 달에 쓴 돈을 기록하세요." triggerLabel="지출 추가"><MonthlyRowForm initialTransactionType="expense" categories={categories} paymentMethods={paymentMethods} /></AddDrawer><AddDrawer title="참고 거래 추가" description="수입·지출로 보기 어렵지만 기록은 남겨야 하는 거래를 등록하세요." triggerLabel="참고 거래 추가"><MonthlyRowForm initialTransactionType="reference" categories={categories} paymentMethods={paymentMethods} /></AddDrawer></div>
+      <div className="monthly-cta monthly-quick-actions"><AddDrawer title="거래 추가" description="기록할 거래 유형을 선택하고 내용을 입력하세요." triggerLabel="거래 추가"><TransactionAddChooser categories={categories} paymentMethods={paymentMethods} /></AddDrawer></div>
       <section className="monthly-ledger-filters" aria-label="이번 달 거래 필터"><div className="monthly-ledger-filter-heading"><div><span className="monthly-kicker">거래 조회</span><strong>{selectedMonth.replace('-', '년 ')}월 거래</strong></div></div><div className="monthly-ledger-filter-grid">
         <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="내용·메모 검색" aria-label="내용·메모 검색" />
         <select value={type} onChange={(event) => { const next = event.target.value as typeof type; setType(next); setGroup('all'); setCategory('all'); setSubcategory('all'); }} aria-label="유형"><option value="all">모든 유형</option><option value="income">수입</option><option value="expense">지출</option><option value="reference">참고 거래</option></select>
         <select value={group} onChange={(event) => setGroup(event.target.value as typeof group)} aria-label="거래 구분" disabled={type !== 'income' && type !== 'expense'}>
           <option value="all">모든 거래 구분</option>
-          {type === 'income' && <><option value="fixed">고정수입</option><option value="additional">부가 수입</option></>}
-          {type === 'expense' && <><option value="consumption">소비성지출</option><option value="savings">저축성지출</option></>}
+          {type === 'income' && <><option value="fixed">고정 수입</option><option value="additional">부가 수입</option></>}
+          {type === 'expense' && <><option value="consumption">소비성 지출</option><option value="savings">저축성 지출</option></>}
         </select>
         <select value={category} onChange={(event) => { setCategory(event.target.value); setSubcategory('all'); }} aria-label="대분류"><option value="all">모든 대분류</option>{availableCategories.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
         <select value={subcategory} onChange={(event) => setSubcategory(event.target.value)} aria-label="소분류" disabled={!selectedCategory}><option value="all">모든 소분류</option>{selectedCategory?.subcategories.map((sub) => <option key={sub.id} value={sub.id}>{sub.name}</option>)}</select>

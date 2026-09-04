@@ -12,13 +12,13 @@ import type { PaymentMethod } from '@/lib/payment-methods';
 export function MonthlyPageTabs({ transactions, selectedMonth, categories, paymentMethods }: { transactions: Transaction[]; selectedMonth: string; categories: CategoryWithSubcategories[]; paymentMethods: PaymentMethod[] }) {
   const posted = transactions.filter((transaction) => transaction.status === 'posted');
   const income = posted.filter((transaction) => transaction.transactionType === 'income').reduce((sum, transaction) => sum + transaction.amount, 0);
-  const expense = posted.filter((transaction) => transaction.flowClass === 'consumption').reduce((sum, transaction) => sum + transaction.amount, 0);
+  const expense = posted.filter((transaction) => transaction.transactionType === 'expense').reduce((sum, transaction) => sum + transaction.amount, 0);
   const savingsCategoryId = categories.find((c) => c.name === '저축성지출')?.id;
-  const savings = savingsCategoryId ? posted.filter((t) => t.flowClass === 'consumption' && t.categoryId === savingsCategoryId).reduce((sum, t) => sum + t.amount, 0) : 0;
+  const savings = savingsCategoryId ? posted.filter((t) => t.transactionType === 'expense' && t.categoryId === savingsCategoryId).reduce((sum, t) => sum + t.amount, 0) : 0;
   const plannedRows = transactions.filter((transaction) => transaction.status === 'planned');
   const plannedAmount = plannedRows.reduce((sum, t) => sum + t.amount, 0);
   const referenceCount = posted.filter((t) => t.transactionType === 'reference').length;
-  return <div className="flex flex-col gap-4">
+  return <div className="monthly-page-flow flex flex-col gap-4">
     <section className="monthly-command-center" aria-label="이번 달 요약"><div className="monthly-command-copy"><p className="monthly-kicker">이번 달 흐름 보기</p><h2>이번 달의 자금 흐름을 정리해요</h2><p>선택한 연월의 확정 거래와 예정 거래를 구분해 보여드려요. 예정 거래를 먼저 처리하고 수입·지출을 추가해 보세요.</p></div>
       <div className="monthly-summary-grid">
         <Summary label="이번 달 수입" value={income} tone="income" />

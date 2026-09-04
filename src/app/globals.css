@@ -184,6 +184,12 @@ textarea {
 .home-ranked-row > div { min-width: 0; }
 
 .monthly-view-hint { color: var(--tds-grey-700); font-size: 14px; }
+.monthly-page-flow { min-width: 0; }
+.monthly-summary-strip { display: grid; gap: 14px; padding: 18px 20px; border: 1px solid var(--tds-grey-200); border-radius: 18px; background: var(--tds-white); }
+.monthly-summary-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-width: 0; }
+.monthly-summary-heading > div { min-width: 0; }
+.monthly-summary-heading h2 { margin-top: 4px; color: var(--tds-grey-900); font-size: var(--text-title-2); letter-spacing: -.03em; white-space: nowrap; }
+.monthly-summary-meta { color: var(--tds-grey-600); font-size: 12px; white-space: nowrap; }
 .monthly-command-center { display: grid; gap: 18px; padding: 20px; border: 1px solid var(--tds-grey-200); border-radius: 20px; background: linear-gradient(135deg, var(--tds-white), var(--tds-blue-50)); }
 .monthly-command-copy { max-width: 620px; }
 .monthly-kicker { color: var(--tds-blue-600); font-size: 12px; font-weight: 800; }
@@ -199,8 +205,24 @@ textarea {
 .monthly-summary-card.is-planned strong { color: var(--tds-grey-700); }
 .monthly-analysis-cta { display: inline-flex; align-self: flex-start; align-items: center; gap: 4px; padding: 10px 16px; border-radius: 12px; background: var(--tds-grey-900); color: var(--tds-white); font-size: 13px; font-weight: 700; text-decoration: none; }
 .monthly-analysis-cta:hover { background: var(--tds-grey-800); }
-.monthly-quick-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.monthly-quick-actions { display: flex; gap: 8px; }
 .monthly-quick-actions > * { flex: 1 1 150px; }
+.monthly-add-chooser { display: grid; gap: 16px; }
+.monthly-add-chooser > p { color: var(--tds-grey-700); font-size: 14px; }
+.monthly-add-chooser-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.monthly-add-option { display: grid; min-height: 76px; gap: 5px; padding: 14px; border: 1px solid var(--tds-grey-200); border-radius: 12px; background: var(--tds-white); color: var(--tds-grey-900); text-align: left; transition: border-color .15s ease, background-color .15s ease; }
+.monthly-add-option:hover, .monthly-add-option:focus-visible { border-color: var(--tds-blue-500); background: var(--tds-blue-50); }
+.monthly-add-option strong { font-size: 14px; white-space: nowrap; }
+.monthly-add-option span { color: var(--tds-grey-600); font-size: 12px; white-space: nowrap; }
+.monthly-add-option.is-expense strong { color: var(--tds-red-500); }
+.monthly-add-option.is-income strong { color: var(--tds-blue-600); }
+.monthly-add-chooser-back { justify-self: start; min-height: 36px; padding-inline: 0; color: var(--tds-blue-600); font-size: 13px; font-weight: 700; }
+.monthly-command-center { padding: 0; border: 0; border-radius: 0; background: transparent; }
+.monthly-command-copy { max-width: none; }
+.monthly-command-copy h2 { font-size: var(--text-title-2); }
+.monthly-command-copy p:last-child { max-width: 760px; }
+.monthly-summary-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.monthly-summary-card { min-height: 82px; }
 .monthly-planned-queue { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 16px; border: 1px solid var(--tds-grey-200); border-radius: 16px; background: var(--tds-white); }
 .monthly-planned-queue.has-items { border-color: color-mix(in oklab, var(--tds-yellow-700) 26%, var(--tds-grey-200)); background: var(--tds-yellow-50); }
 .monthly-planned-queue.is-clear { background: var(--tds-grey-50); }
@@ -702,6 +724,13 @@ button:disabled { cursor: wait; transform: none !important; }
 
 
 @media (max-width: 640px) {
+  .monthly-summary-strip { padding: 16px; }
+  .monthly-summary-heading { align-items: flex-start; }
+  .monthly-summary-heading h2 { font-size: 18px; }
+  .monthly-summary-meta { overflow: hidden; text-overflow: ellipsis; }
+  .monthly-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .monthly-add-chooser-options { grid-template-columns: 1fr; }
+  .monthly-add-option { min-height: 56px; }
   .monthly-command-center { padding: 16px; }
   .monthly-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .monthly-summary-card { padding: 12px; }
@@ -844,6 +873,14 @@ button:disabled { cursor: wait; transform: none !important; }
 
 /* Shared mobile hierarchy: the month navigator and period filter are one control row. */
 .home-month-row { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 10px; }
+.monthly-command-center { padding: 0; border: 0; border-radius: 0; background: transparent; }
+.monthly-summary-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.monthly-summary-card { min-height: 82px; }
+/* 월간관리에는 화면 상단의 단일 거래 추가 CTA가 있으므로 모바일 전역 FAB와 중복하지 않는다. */
+body:has(.monthly-page-flow) .mobile-fab { display: none; }
+@media (max-width: 640px) {
+  .monthly-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 .monthly-work-links { overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
 .monthly-work-links::-webkit-scrollbar { display: none; }
 .monthly-work-links > span, .monthly-work-links > a { flex: 0 0 auto; white-space: nowrap; }

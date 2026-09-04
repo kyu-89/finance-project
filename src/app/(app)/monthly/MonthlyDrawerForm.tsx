@@ -64,8 +64,8 @@ export function MonthlyDrawerForm({ categories, paymentMethods, initialTransacti
         <h3>기본 정보</h3>
         <div className="monthly-drawer-grid">
           <label className="form-field"><span>거래 유형</span><select value={transactionType} onChange={(event) => { setTransactionType(event.target.value as TransactionType); resetClassification(); }}><option value="expense">지출</option><option value="income">수입</option><option value="reference">참고 거래</option></select></label>
-          {transactionType === 'income' && <label className="form-field"><span>거래 구분</span><select name="incomeGroup" value={incomeGroup} onChange={(event) => setIncomeGroup(event.target.value as typeof incomeGroup)}><option value="fixed">고정수입</option><option value="additional">부가 수입</option></select></label>}
-          {transactionType === 'expense' && <label className="form-field"><span>거래 구분</span><select value={expenseGroup} onChange={(event) => { setExpenseGroup(event.target.value as typeof expenseGroup); resetClassification(); }}><option value="consumption">소비성지출</option><option value="savings">저축성지출</option></select></label>}
+          {transactionType === 'income' && <label className="form-field"><span>거래 구분</span><select name="incomeGroup" value={incomeGroup} onChange={(event) => setIncomeGroup(event.target.value as typeof incomeGroup)}><option value="fixed">고정 수입</option><option value="additional">부가 수입</option></select></label>}
+          {transactionType === 'expense' && <label className="form-field"><span>거래 구분</span><select value={expenseGroup} onChange={(event) => { setExpenseGroup(event.target.value as typeof expenseGroup); resetClassification(); }}><option value="consumption">소비성 지출</option><option value="savings">저축성 지출</option></select></label>}
           <label className="form-field"><span>거래일</span><input type="date" name="transactionDate" required /></label>
           {/* 칩은 줄바꿈되며 세로로 자라기 때문에, 2열 그리드에서 짧은 필드와 나란히 두면
               어색하다. 두 열을 다 쓰게 한다(`1 / -1`이라 모바일 1열에서도 안전하다). */}

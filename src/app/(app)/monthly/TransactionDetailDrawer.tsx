@@ -70,8 +70,8 @@ export function TransactionDetailDrawer({ transaction, support, event, categorie
         <h3>기본 정보</h3>
         <div className="monthly-drawer-grid">
           <label className="form-field"><span>거래 유형</span><select value={transactionType} onChange={(event) => { setTransactionType(event.target.value as Transaction['transactionType']); resetClassification(); }}><option value="expense">지출</option><option value="income">수입</option><option value="reference">참고 거래</option></select></label>
-          {transactionType === 'income' && <label className="form-field"><span>거래 구분</span><select name="incomeGroup" value={incomeGroup} onChange={(event) => setIncomeGroup(event.target.value as typeof incomeGroup)}><option value="fixed">고정수입</option><option value="additional">부가 수입</option></select></label>}
-          {transactionType === 'expense' && <label className="form-field"><span>거래 구분</span><select value={expenseGroup} onChange={(event) => { setExpenseGroup(event.target.value as typeof expenseGroup); resetClassification(); }}><option value="consumption">소비성지출</option><option value="savings">저축성지출</option></select></label>}
+          {transactionType === 'income' && <label className="form-field"><span>거래 구분</span><select name="incomeGroup" value={incomeGroup} onChange={(event) => setIncomeGroup(event.target.value as typeof incomeGroup)}><option value="fixed">고정 수입</option><option value="additional">부가 수입</option></select></label>}
+          {transactionType === 'expense' && <label className="form-field"><span>거래 구분</span><select value={expenseGroup} onChange={(event) => { setExpenseGroup(event.target.value as typeof expenseGroup); resetClassification(); }}><option value="consumption">소비성 지출</option><option value="savings">저축성 지출</option></select></label>}
           <label className="form-field"><span>거래일</span><input type="date" name="transactionDate" defaultValue={transaction.transactionDate} required /></label>
           <FormField as="div" label="대분류 / 소분류" required={isCategoryRequired} className="[grid-column:1/-1]">
             <CategoryPicker
