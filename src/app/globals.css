@@ -211,7 +211,7 @@ textarea {
 .monthly-summary-card.is-expense strong { color: var(--tds-red-500); }
 .monthly-summary-card.is-wealth strong { color: var(--tds-green-500); }
 .monthly-summary-card.is-planned strong { color: var(--tds-grey-700); }
-.monthly-analysis-cta { display: inline-flex; align-self: flex-start; align-items: center; gap: 4px; padding: 10px 16px; border-radius: 12px; background: var(--tds-grey-900); color: var(--tds-white); font-size: 13px; font-weight: 700; text-decoration: none; }
+.monthly-analysis-cta { display: flex; width: 100%; min-height: 56px; align-items: center; justify-content: center; gap: 4px; border-radius: 16px; background: var(--tds-grey-900); color: var(--tds-white); font-size: 15px; font-weight: 750; text-decoration: none; }
 .monthly-analysis-cta:hover { background: var(--tds-grey-800); }
 .monthly-quick-actions { display: flex; gap: 8px; }
 .monthly-quick-actions > * { flex: 1 1 150px; }
