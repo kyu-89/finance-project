@@ -4,6 +4,7 @@ import { listPaymentMethods } from '@/lib/payment-methods';
 import { listRecentUsage } from '@/lib/transactions';
 import { QuickAddForm } from './QuickAddForm';
 import { listAccounts } from '@/lib/accounts';
+import { PageHeader } from '@/components/PageHeader';
 
 export default async function QuickAddPage({
   searchParams,
@@ -30,8 +31,7 @@ export default async function QuickAddPage({
 
   return (
     <div className="tds-page max-w-2xl">
-      <h1 className="tds-title mb-2">거래를 기록해요</h1>
-      <p className="mb-6 text-[15px] text-[var(--tds-grey-700)]">금액부터 입력하면 빠르게 저장할 수 있어요.</p>
+      <PageHeader eyebrow="거래" title="거래를 기록해요" description="금액부터 입력하면 빠르게 저장할 수 있어요." />
       <QuickAddForm
         categories={categories.filter((c) => c.isActive)}
         paymentMethods={activePaymentMethods}
