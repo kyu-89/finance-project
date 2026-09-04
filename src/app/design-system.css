@@ -532,6 +532,29 @@
   color: var(--tds-blue-700);
 }
 
+/* Back navigation has one shared hit area and baseline across every
+ * subpage. Feature folders must not tune its spacing independently. */
+.tds-back-link {
+  display: inline-flex;
+  min-height: var(--ui-control-height);
+  align-items: center;
+  gap: var(--ui-space-2);
+  color: var(--tds-blue-600);
+  font-size: var(--text-caption);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.tds-back-link:hover {
+  color: var(--tds-blue-700);
+}
+
+.tds-back-link:focus-visible {
+  border-radius: 8px;
+  outline: 2px solid var(--tds-blue-500);
+  outline-offset: 3px;
+}
+
 :where(button, [role="button"], a):not(:disabled):active {
   transform: none;
   opacity: 1;

@@ -5,7 +5,7 @@ import Link from 'next/link';
 // 가장 첫 요소(제목보다 위)로 사용한다.
 export function FinanceBackLink() {
   return (
-    <Link href="/finance" className="text-sm font-semibold text-[var(--tds-blue-500)]">
+    <Link href="/finance" className="tds-back-link">
       ← 자산·금융 전체
     </Link>
   );
