@@ -27,7 +27,11 @@ export function MonthlyPageTabs({ transactions, selectedMonth, categories, payme
         <Summary label="저축성 지출" value={savings} tone="expense" />
         <Summary label="순현금흐름" value={income - expense} tone={income - expense >= 0 ? 'income' : 'expense'} />
       </div>
-      <div className="monthly-command-meta"><span>예정 거래 {plannedRows.length}건{plannedAmount > 0 ? ` · ${plannedAmount.toLocaleString('ko-KR')}원` : ''}</span><span>참고 거래 {referenceCount}건</span><Link href={`/analysis?scope=month&month=${selectedMonth}&type=expense`} prefetch className="monthly-analysis-cta">수입·지출 분석 보기 →</Link></div>
+      <div className="monthly-command-meta">
+        <article className="monthly-priority-card is-planned"><span>예정 거래</span><strong>{plannedRows.length}건</strong><small>{plannedAmount > 0 ? `${plannedAmount.toLocaleString('ko-KR')}원 · 확정 또는 제외할 거래` : '확정할 거래가 없어요'}</small></article>
+        <article className="monthly-priority-card is-reference"><span>참고 거래</span><strong>{referenceCount}건</strong><small>수입·지출 합계와 분리해서 관리해요</small></article>
+        <Link href={`/analysis?scope=month&month=${selectedMonth}&type=expense`} prefetch className="monthly-analysis-cta">수입·지출 분석 보기 →</Link>
+      </div>
     </section>
     <section className="monthly-workspace" aria-label="월간 관리 작업"><div className="monthly-workspace-content" role="tabpanel"><MonthlyInputTab initialTransactions={transactions} selectedMonth={selectedMonth} categories={categories} paymentMethods={paymentMethods} /></div></section>
   </div>;
