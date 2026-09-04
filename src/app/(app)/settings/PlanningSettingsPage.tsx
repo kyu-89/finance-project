@@ -5,14 +5,15 @@ import { HouseholdPlanning, type PlanningSection } from './HouseholdPlanning';
 import { SettingsBackLink } from './SettingsBackLink';
 import { PageHeader } from '@/components/PageHeader';
 
-export async function PlanningSettingsPage({ section, title, description }: { section: PlanningSection; title: string; description: string }) {
+export async function PlanningSettingsPage({ section, title, description }: { section?: PlanningSection; title: string; description: string }) {
   const household = await ensureHouseholdForCurrentUser();
   let goals: Awaited<ReturnType<typeof listFinancialGoals>> = [];
   let tasks: Awaited<ReturnType<typeof listFinancialTasks>> = [];
 
-  if (section === 'goals') {
+  if (!section || section === 'goals') {
     goals = await listFinancialGoals(household.id);
-  } else {
+  }
+  if (!section || section === 'tasks') {
     const today = todayInSeoul();
     const { toDate } = monthRangeFromSeoulDateString(`${today.slice(0, 7)}-01`);
     tasks = await listFinancialTasks(household.id, today, toDate);

@@ -927,6 +927,17 @@ a.tds-chip {
   flex: 0 0 auto;
 }
 
+@media (max-width: 639px) {
+  .tds-section-header-action {
+    width: 100%;
+  }
+
+  .tds-section-header-action > :is(button, a, label) {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 /* Legacy section cards still appear in import, asset-detail, and historical
  * report routes. Give their existing heading/description markup the exact
  * same type rhythm as SectionHeader while those routes migrate gradually. */

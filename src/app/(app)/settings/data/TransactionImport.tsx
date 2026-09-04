@@ -5,6 +5,7 @@ import { useActionState, useMemo, useState } from 'react';
 import { importTransactionsAction } from '@/actions/import-actions';
 import { FormField } from '@/components/FormField';
 import { FormMessage } from '@/components/FormMessage';
+import { SectionHeader } from '@/components/SectionHeader';
 import { INITIAL_ACTION_STATE } from '@/lib/action-result';
 import type { Category } from '@/lib/categories';
 import type { PaymentMethod } from '@/lib/payment-methods';
@@ -43,7 +44,7 @@ export function TransactionImport({ categories, paymentMethods }: { categories: 
   function updateMapping(field: ImportField, value: string) { setMapping((current) => ({ ...current, [field]: value || undefined })); }
 
   return <div className="flex flex-col gap-5">
-    <section className="tds-card p-5"><h2 className="text-lg font-bold">데이터 가져오기</h2><p className="mt-1 text-sm text-[var(--tds-grey-700)]">카드사·은행 홈페이지에서 받은 원본 파일을 그대로 올려도 돼요. 파일은 서버에 보관하지 않고 거래로 변환해요.</p><label className="tds-button-secondary mt-4 flex w-full cursor-pointer items-center justify-center px-4"><span>Excel·CSV 파일 선택</span><input className="sr-only" type="file" accept=".xlsx,.xls,.csv" onChange={(event) => { const file = event.target.files?.[0]; if (file) void handleFile(file); }} /></label>{fileName && <p className="mt-3 text-sm">선택한 파일: <strong>{fileName}</strong></p>}{parseMessage && <p role="alert" className="mt-3 rounded-xl bg-[oklch(0.96_0.025_22)] px-4 py-3 text-sm text-[var(--tds-red-500)]">{parseMessage}</p>}</section>
+    <section className="tds-card p-5"><SectionHeader title="데이터 가져오기" description="카드사·은행 홈페이지에서 받은 원본 파일을 그대로 올려도 돼요. 파일은 서버에 보관하지 않고 거래로 변환해요." /><label className="tds-button-secondary mt-4 flex w-full cursor-pointer items-center justify-center px-4"><span>Excel·CSV 파일 선택</span><input className="sr-only" type="file" accept=".xlsx,.xls,.csv" onChange={(event) => { const file = event.target.files?.[0]; if (file) void handleFile(file); }} /></label>{fileName && <p className="mt-3 text-sm">선택한 파일: <strong>{fileName}</strong></p>}{parseMessage && <p role="alert" className="mt-3 rounded-xl bg-[oklch(0.96_0.025_22)] px-4 py-3 text-sm text-[var(--tds-red-500)]">{parseMessage}</p>}</section>
     {sheets.length > 1 && <section className="tds-card p-5"><FormField label="가져올 시트"><select className="tds-input" value={sheetName} onChange={(event) => selectSheet(event.target.value)}>{sheets.map((sheet) => <option key={sheet.name}>{sheet.name}</option>)}</select></FormField></section>}
     {headers.length > 0 && <>
       <section className="tds-card p-5"><h2 className="text-lg font-bold">2. 열 확인</h2><p className="mt-1 text-sm text-[var(--tds-grey-700)]">카드사마다 열 이름이 달라 자동으로 연결했어요. 맞지 않는 열만 바꿔 주세요.</p><div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{fields.map((field) => <FormField key={field.key} label={field.label} required={field.required}><select className="tds-input" value={mapping[field.key] ?? ''} onChange={(event) => updateMapping(field.key, event.target.value)}><option value="">선택 안 함</option>{headers.map((header, index) => <option key={`${header}-${index}`} value={header}>{header || `(열 ${index + 1})`}</option>)}</select></FormField>)}</div></section>
