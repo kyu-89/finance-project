@@ -1327,6 +1327,20 @@ input.quick-add-amount {
  * keeps these three comparable at a glance in one row. Force 3 columns and
  * compact the card's own type scale to fit. */
 @media (max-width: 640px) {
+  .tds-chart-card .tds-section-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--ui-space-2);
+  }
+
+  .tds-chart-card .tds-section-header-action {
+    width: 100%;
+  }
+
+  .tds-chart-card .tds-chart-legend {
+    justify-content: flex-start;
+  }
+
   /* A real render at 375px (3 equal columns, --text-title-3=16px, ~85px of
    * usable width per card) proved won amounts with 6-7 digits ("4,350,000원")
    * don't fit and were being ellipsis-truncated to "4,3…" — reading the
