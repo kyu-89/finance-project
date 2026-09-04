@@ -1,4 +1,4 @@
-import type { Transaction } from '@/lib/transactions';
+import type { TransactionSummary } from '@/lib/transactions';
 import type { PaymentMethod } from '@/lib/payment-methods';
 
 // "분석" 메뉴(대시보드/월간관리에서 분리된 전용 분석 화면, 2026-09)의 순수 집계 함수 모음.
@@ -18,16 +18,17 @@ export type CardUsageRow = { id: string; label: string; methodType: string; expe
 export type MonthPoint = { month: string; income: number; expense: number; savings: number; net: number };
 export type DayPoint = { date: string; income: number; expense: number; savings: number };
 
-export const reportMonthOf = (t: Transaction) => t.sourceMonth ?? t.transactionDate.slice(0, 7);
+export type AnalysisTransaction = TransactionSummary;
+export const reportMonthOf = (t: AnalysisTransaction) => t.sourceMonth ?? t.transactionDate.slice(0, 7);
 
 // annual-report.ts(§12 연간 리포트)도 이 네 필터를 그대로 재사용한다 — "수입/지출/참고거래를
 // 어떻게 판별하는가"라는 규칙은 이 파일 하나에만 있어야 하고, 두 번째 정의가 생기면 반드시 어긋난다.
-export const posted = (t: Transaction) => t.status === 'posted';
-export const isIncome = (t: Transaction) => posted(t) && t.transactionType === 'income';
-export const isExpense = (t: Transaction) => posted(t) && t.flowClass === 'consumption';
-export const isReference = (t: Transaction) => posted(t) && t.transactionType === 'reference';
+export const posted = (t: AnalysisTransaction) => t.status === 'posted';
+export const isIncome = (t: AnalysisTransaction) => posted(t) && t.transactionType === 'income';
+export const isExpense = (t: AnalysisTransaction) => posted(t) && t.flowClass === 'consumption';
+export const isReference = (t: AnalysisTransaction) => posted(t) && t.transactionType === 'reference';
 
-export function periodTotals(transactions: Transaction[], savingsCategoryId: string | null) {
+export function periodTotals(transactions: AnalysisTransaction[], savingsCategoryId: string | null) {
   const income = transactions.filter(isIncome).reduce((sum, t) => sum + t.amount, 0);
   const expense = transactions.filter(isExpense).reduce((sum, t) => sum + t.amount, 0);
   const savings = savingsCategoryId
@@ -42,7 +43,7 @@ export function periodTotals(transactions: Transaction[], savingsCategoryId: str
 }
 
 // §7 — 수입은 대분류가 하나뿐이라 바로 소분류를 보여준다.
-export function summarizeIncomeBySubcategory(transactions: Transaction[], subcategoryNames: Map<string, string>): AnalysisRow[] {
+export function summarizeIncomeBySubcategory(transactions: AnalysisTransaction[], subcategoryNames: Map<string, string>): AnalysisRow[] {
   const rows = new Map<string, AnalysisRow>();
   for (const t of transactions.filter(isIncome)) {
     const id = t.subcategoryId ?? 'unassigned';
@@ -60,7 +61,7 @@ export function summarizeIncomeBySubcategory(transactions: Transaction[], subcat
 // 1단계다. 소분류 정보는 사라지지 않고 개별 거래 표의 "소분류" 컬럼으로 옮겨갔다
 // (AnalysisExpenseView의 extraColumn 참고) — 그래서 subcategoryNames는 이제 이 함수가 아니라
 // 그 컬럼을 만드는 호출부에서 쓴다.
-export function summarizeExpenseByCategory(transactions: Transaction[], categoryNames: Map<string, string>): AnalysisRow[] {
+export function summarizeExpenseByCategory(transactions: AnalysisTransaction[], categoryNames: Map<string, string>): AnalysisRow[] {
   const rows = new Map<string, AnalysisRow>();
   for (const t of transactions.filter(isExpense)) {
     const id = t.categoryId ?? 'unassigned';
@@ -72,7 +73,7 @@ export function summarizeExpenseByCategory(transactions: Transaction[], category
 }
 
 // §9 — 참고 거래 > 결제수단.
-export function summarizeReferenceByPaymentMethod(transactions: Transaction[], paymentMethodNames: Map<string, string>): AnalysisRow[] {
+export function summarizeReferenceByPaymentMethod(transactions: AnalysisTransaction[], paymentMethodNames: Map<string, string>): AnalysisRow[] {
   const rows = new Map<string, AnalysisRow>();
   for (const t of transactions.filter(isReference)) {
     const id = t.paymentMethodId ?? 'unassigned';
@@ -86,7 +87,7 @@ export function summarizeReferenceByPaymentMethod(transactions: Transaction[], p
 // §10 — 카드별 지출: 실제 지출(저축성지출 포함, expense 전부)과 참고 거래를 결제수단별로 나눠
 // 더한다. method_type이 credit_card/check_card인 결제수단만 "카드"로 집계하고, 결제수단이 없거나
 // 현금·계좌이체 등이면 제외한다. 수입은 애초에 대상에서 뺀다.
-export function summarizeCardUsage(transactions: Transaction[], paymentMethods: PaymentMethod[]) {
+export function summarizeCardUsage(transactions: AnalysisTransaction[], paymentMethods: PaymentMethod[]) {
   const cardMethods = new Map(paymentMethods.filter((m) => m.methodType === 'credit_card' || m.methodType === 'check_card').map((m) => [m.id, m]));
   const rows = new Map<string, CardUsageRow>();
   for (const t of transactions) {
@@ -108,7 +109,7 @@ export function summarizeCardUsage(transactions: Transaction[], paymentMethods: 
 }
 
 // 연간 — 12개월 현금흐름(수입/지출/저축성지출/순현금흐름).
-export function monthlyCashflow(transactions: Transaction[], months: string[], savingsCategoryId: string | null): MonthPoint[] {
+export function monthlyCashflow(transactions: AnalysisTransaction[], months: string[], savingsCategoryId: string | null): MonthPoint[] {
   return months.map((month) => {
     const rows = transactions.filter((t) => reportMonthOf(t) === month);
     const totals = periodTotals(rows, savingsCategoryId);
@@ -119,11 +120,11 @@ export function monthlyCashflow(transactions: Transaction[], months: string[], s
 // §3 — 대시보드 "핵심 인사이트". 실제 데이터로 뒷받침되는 문장만 만든다(사용자 지시: "근거 없는
 // 문장을 생성하지 않는다") — 비교 대상 달에 데이터가 아예 없으면 그 인사이트는 만들지 않는다.
 export function generateInsights(input: {
-  currentMonth: Transaction[]; previousMonth: Transaction[]; trailing3Months: Transaction[];
+  currentMonth: AnalysisTransaction[]; previousMonth: AnalysisTransaction[]; trailing3Months: AnalysisTransaction[];
   categoryNames: Map<string, string>; incomeSubcategoryNames: Map<string, string>;
 }): string[] {
   const insights: string[] = [];
-  const byCategory = (rows: Transaction[]) => { const map = new Map<string, number>(); for (const t of rows) if (t.status === 'posted' && t.flowClass === 'consumption' && t.categoryId) map.set(t.categoryId, (map.get(t.categoryId) ?? 0) + t.amount); return map; };
+  const byCategory = (rows: AnalysisTransaction[]) => { const map = new Map<string, number>(); for (const t of rows) if (t.status === 'posted' && t.flowClass === 'consumption' && t.categoryId) map.set(t.categoryId, (map.get(t.categoryId) ?? 0) + t.amount); return map; };
   const current = byCategory(input.currentMonth);
   const previous = byCategory(input.previousMonth);
 
@@ -159,7 +160,7 @@ export function generateInsights(input: {
 }
 
 // 월간 — 선택한 달의 일별 현금흐름.
-export function dailyCashflow(transactions: Transaction[], monthStart: string, monthEnd: string, savingsCategoryId: string | null): DayPoint[] {
+export function dailyCashflow(transactions: AnalysisTransaction[], monthStart: string, monthEnd: string, savingsCategoryId: string | null): DayPoint[] {
   const days: DayPoint[] = [];
   const start = new Date(`${monthStart}T00:00:00Z`); const end = new Date(`${monthEnd}T00:00:00Z`);
   for (let d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {

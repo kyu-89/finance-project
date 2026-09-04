@@ -40,6 +40,12 @@ export type Transaction = {
   status: 'planned' | 'posted' | 'skipped' | 'cancelled' | 'refunded';
 };
 
+/** 대시보드·분석 집계에 필요한 최소 거래 표현입니다. */
+export type TransactionSummary = Pick<Transaction,
+  'id' | 'transactionDate' | 'sourceMonth' | 'transactionType' | 'flowClass' |
+  'paymentMethodId' | 'categoryId' | 'subcategoryId' | 'amount' | 'description' | 'status'
+>;
+
 // PRD §1.4 — maps transaction_type to the flow_class analysis axis. Kept as a single
 // source of truth so no two call sites can disagree on which flow_class a type maps to.
 export const FLOW_CLASS_BY_TRANSACTION_TYPE: Record<TransactionType, string> = {
@@ -88,6 +94,7 @@ function mapRow(row: {
 // parse the select-string type at compile time to produce the typed row shape, and a widened
 // `string` makes that parse fail with a generic, untyped `GenericStringError` result.
 const TRANSACTION_COLUMNS = `id, household_id, transaction_date, source_month, transaction_type, flow_class, cost_behavior, payment_method_id, account_id, income_group, expense_group, parent_transaction_id, category_id, subcategory_id, amount, description, memo, tags, include_in_budget, needs_review, recurring_rule_id, recurring_occurrence_id, status`;
+const TRANSACTION_SUMMARY_COLUMNS = 'id, transaction_date, source_month, transaction_type, flow_class, payment_method_id, category_id, subcategory_id, amount, description, status';
 
 export async function createTransaction(input: {
   householdId: string;
@@ -273,6 +280,56 @@ export async function listTransactions(filter: {
     if ((data?.length ?? 0) < pageSize) break;
   }
   return rows.map(mapRow);
+}
+
+/**
+ * 차트·요약용 경량 조회입니다. 거래 상세 화면은 listTransactions를 사용하고,
+ * 집계 화면은 이 조회로 불필요한 상세 컬럼과 변환 비용을 줄입니다.
+ */
+export async function listTransactionSummaries(filter: {
+  householdId: string;
+  fromDate?: string;
+  toDate?: string;
+  reportMonthFrom?: string;
+  reportMonthTo?: string;
+}): Promise<TransactionSummary[]> {
+  const supabase = await createClient();
+  const pageSize = 1000;
+  const rows: Array<{
+    id: string; transaction_date: string; source_month: string | null; transaction_type: string;
+    flow_class: string; payment_method_id: string | null; category_id: string | null;
+    subcategory_id: string | null; amount: number; description: string; status: string;
+  }> = [];
+  for (let from = 0; ; from += pageSize) {
+    let query = supabase.from('transactions').select(TRANSACTION_SUMMARY_COLUMNS)
+      .eq('household_id', filter.householdId).is('deleted_at', null)
+      .order('transaction_date', { ascending: false }).order('id', { ascending: true })
+      .range(from, from + pageSize - 1);
+    if (filter.reportMonthFrom && filter.reportMonthTo && filter.fromDate && filter.toDate) {
+      query = query.or(`and(source_month.gte.${filter.reportMonthFrom},source_month.lte.${filter.reportMonthTo}),and(source_month.is.null,transaction_date.gte.${filter.fromDate},transaction_date.lte.${filter.toDate})`);
+    } else {
+      if (filter.fromDate) query = query.gte('transaction_date', filter.fromDate);
+      if (filter.toDate) query = query.lte('transaction_date', filter.toDate);
+    }
+    const { data, error } = await query;
+    if (error) throw new Error(`거래 요약 조회 실패: ${error.message}`);
+    rows.push(...(data ?? []));
+    if ((data?.length ?? 0) < pageSize) break;
+  }
+
+  return rows.map((row) => ({
+    id: row.id,
+    transactionDate: row.transaction_date,
+    sourceMonth: row.source_month,
+    transactionType: row.transaction_type as Transaction['transactionType'],
+    flowClass: row.flow_class,
+    paymentMethodId: row.payment_method_id,
+    categoryId: row.category_id,
+    subcategoryId: row.subcategory_id,
+    amount: row.amount,
+    description: row.description,
+    status: row.status as Transaction['status'],
+  }));
 }
 
 // 2026-09 Excel migration follow-up: surfaces every transaction the migration (or any other

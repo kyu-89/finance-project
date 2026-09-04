@@ -4,7 +4,7 @@ import { todayInSeoul } from '@/lib/date';
 import { getDashboardHomeSummary, type HomeRecent } from '@/lib/dashboard-home';
 import { computeCurrentNetWorth } from '@/lib/snapshots';
 import { materializeRecurringRulesForRange } from '@/lib/recurring-rules';
-import { listTransactions } from '@/lib/transactions';
+import { listTransactionSummaries } from '@/lib/transactions';
 import { listCategoriesWithSubcategories } from '@/lib/categories';
 import { generateInsights, periodTotals, reportMonthOf } from '@/lib/analysis';
 import { AnalysisCashflowChart } from '../analysis/AnalysisCashflowChart';
@@ -43,7 +43,7 @@ export default async function DashboardPage() {
     getDashboardHomeSummary({ householdId: household.id, from: monthStart, to: monthEndDate, monthStart, monthEnd: monthEndDate }),
     listCategoriesWithSubcategories(household.id),
     computeCurrentNetWorth(household.id, today),
-    listTransactions({ householdId: household.id, fromDate: `${trailingStart}-01`, toDate: monthEndDate, reportMonthFrom: trailingStart, reportMonthTo: month }),
+    listTransactionSummaries({ householdId: household.id, fromDate: `${trailingStart}-01`, toDate: monthEndDate, reportMonthFrom: trailingStart, reportMonthTo: month }),
   ]);
 
   const categoryNames = new Map(categories.filter((c) => c.transactionType === 'expense').map((c) => [c.id, c.name]));

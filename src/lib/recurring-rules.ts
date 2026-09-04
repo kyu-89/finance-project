@@ -371,24 +371,44 @@ export async function materializeRecurringRulesForRange(
       occurrence_date: occurrenceDate,
     })));
 
-  if (occurrenceRows.length > 0) {
-    const { error: occurrenceError } = await supabase.from('recurring_occurrences').upsert(
-      occurrenceRows,
-      { onConflict: 'recurring_rule_id,occurrence_date', ignoreDuplicates: true },
-    );
-    if (occurrenceError) throw new Error(`반복 회차 생성 실패: ${occurrenceError.message}`);
+  if (occurrenceRows.length === 0) return 0;
+
+  const { data: insertedOccurrences, error: occurrenceError } = await supabase.from('recurring_occurrences').upsert(
+    occurrenceRows,
+    { onConflict: 'recurring_rule_id,occurrence_date', ignoreDuplicates: true },
+  ).select('id, recurring_rule_id, occurrence_date');
+  if (occurrenceError) throw new Error(`반복 회차 생성 실패: ${occurrenceError.message}`);
+
+  // 정상 경로에서는 새 회차만 처리한다. 다만 과거 데이터에 회차만 있고
+  // 예정 거래가 누락된 경우는 중복 회차가 감지될 때만 찾아 복구한다.
+  let occurrencesToMaterialize = insertedOccurrences ?? [];
+  if (occurrencesToMaterialize.length < occurrenceRows.length) {
+    const { data: existingOccurrences, error: existingError } = await supabase
+      .from('recurring_occurrences')
+      .select('id, recurring_rule_id, occurrence_date')
+      .eq('household_id', householdId)
+      .in('recurring_rule_id', rules.map((rule) => rule.id))
+      .gte('occurrence_date', fromDate)
+      .lte('occurrence_date', toDate);
+    if (existingError) throw new Error(`반복 회차 복구 조회 실패: ${existingError.message}`);
+    const existingIds = (existingOccurrences ?? []).map((occurrence) => occurrence.id);
+    if (existingIds.length > 0) {
+      const { data: linkedTransactions, error: linkedError } = await supabase
+        .from('transactions')
+        .select('recurring_occurrence_id')
+        .eq('household_id', householdId)
+        .in('recurring_occurrence_id', existingIds)
+        .is('deleted_at', null);
+      if (linkedError) throw new Error(`반복 거래 연결 확인 실패: ${linkedError.message}`);
+      const linkedIds = new Set((linkedTransactions ?? []).map((row) => row.recurring_occurrence_id));
+      const missingOccurrences = (existingOccurrences ?? []).filter((occurrence) => !linkedIds.has(occurrence.id));
+      occurrencesToMaterialize = [...occurrencesToMaterialize, ...missingOccurrences.filter(
+        (missing) => !occurrencesToMaterialize.some((current) => current.id === missing.id),
+      )];
+    }
   }
 
-  const { data: occurrences, error: readError } = await supabase
-    .from('recurring_occurrences')
-    .select('id, recurring_rule_id, occurrence_date')
-    .eq('household_id', householdId)
-    .in('recurring_rule_id', rules.map((rule) => rule.id))
-    .gte('occurrence_date', fromDate)
-    .lte('occurrence_date', toDate);
-  if (readError) throw new Error(`반복 회차 조회 실패: ${readError.message}`);
-
-  const transactionRows = (occurrences ?? []).flatMap((occurrence) => {
+  const transactionRows = occurrencesToMaterialize.flatMap((occurrence) => {
     const rule = ruleById.get(occurrence.recurring_rule_id);
     if (!rule) return [];
     return [{
@@ -416,10 +436,12 @@ export async function materializeRecurringRulesForRange(
     .upsert(transactionRows, { onConflict: 'recurring_occurrence_id', ignoreDuplicates: true })
     .select('id');
   if (transactionError) throw new Error(`반복 예정거래 생성 실패: ${transactionError.message}`);
+  if (!inserted?.length) return 0;
   const supportRules = rules.filter((rule) => rule.source_type === 'support' && rule.transaction_type === 'income');
   if (supportRules.length > 0) {
     const supportRuleIds = supportRules.map((rule) => rule.id);
-    const { data: supportTransactions, error: supportTransactionError } = await supabase.from('transactions').select('id, recurring_rule_id, amount').eq('household_id', householdId).eq('status', 'planned').in('recurring_rule_id', supportRuleIds).is('deleted_at', null);
+    const insertedIds = inserted.map((row) => row.id);
+    const { data: supportTransactions, error: supportTransactionError } = await supabase.from('transactions').select('id, recurring_rule_id, amount').eq('household_id', householdId).eq('status', 'planned').in('id', insertedIds).in('recurring_rule_id', supportRuleIds).is('deleted_at', null);
     if (supportTransactionError) throw new Error(`지원금 예정 상세 연결 실패: ${supportTransactionError.message}`);
     const supportNameByRule = new Map(supportRules.map((rule) => [rule.id, rule.description]));
     const totalExpectedByRule = new Map<string, number>();
