@@ -20,7 +20,6 @@ export function MonthlyPageTabs({ transactions, selectedMonth, categories, payme
   const referenceCount = posted.filter((t) => t.transactionType === 'reference').length;
   return <div className="monthly-page-flow flex flex-col gap-4">
     <section className="monthly-command-center" aria-label="이번 달 요약">
-      <div className="monthly-command-copy"><p className="monthly-kicker">월간 관리</p><h2>{selectedMonth.replace('-', '년 ')}월의 돈 흐름</h2><p>이번 달 거래를 기록하고 예정 거래를 확정하거나 제외하세요.</p></div>
       <div className="monthly-summary-grid">
         <Summary label="수입" value={income} tone="income" />
         <Summary label="지출" value={expense} tone="expense" />
