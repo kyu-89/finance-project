@@ -28,7 +28,7 @@ export function AnnualReportTable({ title, description, months, rows, tone, show
     <p className="mt-1 text-sm text-[var(--tds-grey-700)]">{description}</p>
     {rows.length === 0 ? <div className="mt-4"><EmptyState title="표시할 데이터가 없어요" description="거래가 기록되면 엑셀과 같은 구조의 표를 보여드립니다." /></div> : <>
       <div className="analysis-heatmap-wrap mt-4">
-        <table className="analysis-heatmap-table annual-report-table">
+        <table className="tds-data-table analysis-heatmap-table annual-report-table">
           <thead><tr>
             {showGroupColumn && <th className="is-label">대분류</th>}
             <th className={showGroupColumn ? 'is-label annual-report-label-secondary' : 'is-label'}>항목</th>
@@ -83,7 +83,7 @@ function HeatmapTransactionRows({ transactions }: { transactions: Transaction[] 
   const shown = sorted.slice(0, TRANSACTION_CAP);
   if (!sorted.length) return <p className="analysis-transaction-note">거래가 없어요.</p>;
   return <div className="analysis-transaction-table-wrap" style={{ paddingLeft: 0 }}>
-    <table className="analysis-transaction-table">
+    <table className="tds-data-table analysis-transaction-table">
       <thead><tr><th>날짜</th><th>내용</th><th className="is-amount">금액</th></tr></thead>
       <tbody>{shown.map((t) => <tr key={t.id}>
         <td>{t.transactionDate}</td>

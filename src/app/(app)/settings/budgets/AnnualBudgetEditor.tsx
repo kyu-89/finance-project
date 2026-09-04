@@ -35,7 +35,7 @@ export function AnnualBudgetEditor({ year, categories, budgets }: { year: number
     </div>
     <p className="text-xs text-[var(--tds-grey-600)]">{selectedMonth === null ? '전체 연간 계획을 한 번에 확인하고 입력합니다.' : `${selectedMonth}월 예산만 편집합니다. 다른 월의 기존 값은 유지됩니다.`}</p>
     <div className="annual-budget-scroll table-surface min-w-0 w-full max-w-full">
-      <table className={selectedMonth === null ? 'min-w-[1500px] text-sm' : 'min-w-[620px] text-sm'}><thead><tr><th className="sticky left-0 z-10 min-w-36 bg-white px-3 py-3 text-left">카테고리</th>
+      <table className={`tds-data-table ${selectedMonth === null ? 'min-w-[1500px] text-sm' : 'min-w-[620px] text-sm'}`}><thead><tr><th className="sticky left-0 z-10 min-w-36 bg-white px-3 py-3 text-left">카테고리</th>
         {Array.from({ length: 12 }, (_, index) => index + 1).filter((month) => selectedMonth === null || month === selectedMonth).map((month) => <th key={month} className="min-w-24 px-2 py-3 text-right">{month}월</th>)}
         <th className="min-w-28 px-3 py-3 text-right">연 합계</th><th className="min-w-28 px-3 py-3 text-right">월평균</th></tr></thead>
         <tbody>{rows.map(({ categoryId, transactionType, label }) => {
