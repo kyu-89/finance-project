@@ -65,7 +65,7 @@ export default async function DashboardPage() {
   const recent: HomeRecent[] = [...currentMonthTransactions].filter((t) => t.status === 'posted').sort((a, b) => b.transactionDate.localeCompare(a.transactionDate)).slice(0, 5).map((t) => ({ id: t.id, transactionDate: t.transactionDate, transactionType: t.transactionType, flowClass: t.flowClass, amount: t.amount, description: t.description }));
 
   return <div data-page="home" className="tds-page home-page">
-    <PageHeader eyebrow="우리집 가계부" title="우리 집 재무 현황" description="우리 집의 자산과 이번 달 돈의 흐름을 한눈에 확인해요." />
+    <PageHeader eyebrow="우리집 가계부" title="우리 집 재무 현황" description="우리 집의 자산과 돈의 흐름을 한눈에 확인해요." />
 
     {/* 1. 확인이 필요한 알림 */}
     {(summary.reviewCount > 0 || plannedRows.length > 0) && <aside className="dashboard-alert-strip" aria-label="확인할 알림"><span aria-hidden="true">●</span><div><strong>확인할 일이 있어요</strong><p>{summary.reviewCount > 0 ? `검토가 필요한 거래 ${summary.reviewCount}건` : ''}{summary.reviewCount > 0 && plannedRows.length > 0 ? ' · ' : ''}{plannedRows.length > 0 ? `예정 거래 ${plannedRows.length}건 · ${money(plannedAmount)}` : ''}</p></div><Link href="/monthly" prefetch className="tds-text-link">월간관리에서 확인</Link></aside>}
@@ -98,16 +98,16 @@ export default async function DashboardPage() {
 
     {/* 5. 핵심 인사이트 — 근거 있는 문장만 표시(§3) */}
     {insights.length > 0 && <section className="tds-card tds-section-card" aria-label="핵심 인사이트">
-      <SectionHeader title="핵심 인사이트" description="확정된 거래를 기준으로 계산했어요." />
+      <SectionHeader title="핵심 인사이트" description="기록된 거래를 바탕으로 정리했어요." />
       <ul className="tds-section-card-list">{insights.map((text) => <li key={text} className="dashboard-insight-row">{text}</li>)}</ul>
     </section>}
 
     {/* 6. 최근 6개월 추이 미리보기 */}
-    <AnalysisCashflowChart scope="year" monthly={trendMonthly} daily={[]} title="최근 6개월 추이" description="확정 거래 기준 · 자세히 보려면 분석 메뉴로 이동하세요" />
+    <AnalysisCashflowChart scope="year" monthly={trendMonthly} daily={[]} title="최근 6개월 추이" description="최근 6개월의 수입과 지출 흐름이에요." />
 
     {/* 7. 최근 거래 */}
     <section className="tds-card tds-section-card" aria-label="최근 거래">
-      <SectionHeader title="최근 거래" description="가장 최근에 기록된 거래입니다." action={<Link href="/monthly" prefetch className="tds-text-link">전체 보기</Link>} />
+      <SectionHeader title="최근 거래" description="최근에 기록한 거래를 보여드려요." action={<Link href="/monthly" prefetch className="tds-text-link">전체 보기</Link>} />
       <div className="tds-section-card-list">
         {recent.length
           ? recent.map((row) => <ListItem key={row.id} title={row.description || '내용 없음'} metadata={row.transactionDate} trailing={<Amount value={row.amount} type={row.transactionType === 'income' ? 'income' : row.transactionType === 'reference' ? 'neutral' : 'expense'} size="small" showSign />} />)
