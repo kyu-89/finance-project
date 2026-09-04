@@ -62,7 +62,7 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
     <div className="tds-page">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div><h1 className="tds-title mb-2">월간 내역을 관리해요</h1>
-          <p className="text-sm text-[var(--tds-grey-700)]">{fromDate} ~ {toDate} · 활성 반복항목은 예정 거래로 자동 채워져요.</p>
+          <p className="text-sm text-[var(--tds-grey-700)]">{fromDate} ~ {toDate} · 활성 반복 거래는 예정 거래로 자동 채워져요.</p>
           {(categoryFilterName || subcategoryFilterName || selectedRecurringRule) && <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-[var(--tds-blue-50)] px-3 py-1.5 text-xs font-semibold text-[var(--tds-blue-600)]">{selectedRecurringRule ? '연결된 예정거래만 보는 중' : `${subcategoryFilterName ?? categoryFilterName} 거래만 보는 중`} <Link href={`/monthly?month=${selectedMonth}`} className="underline underline-offset-2">필터 해제</Link></p>}
         </div>
         <nav aria-label="월 선택" className="flex items-center gap-2">

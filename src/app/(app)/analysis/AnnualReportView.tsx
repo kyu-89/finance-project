@@ -58,7 +58,7 @@ export function AnnualReportView({ year, months, periodTransactions, categories,
     />
     <AnnualReportTable
       title={`${year}년 항목별 지출`}
-      description="원본 엑셀 [연간_항목별지출]과 같은 구조예요. 저축성지출과 나머지 전체(소비성지출)를 나누고, 대분류별로 보여줘요."
+      description="원본 엑셀 [연간_항목별지출]과 같은 구조예요. 지출을 대분류별로 나누고, 각 항목의 소분류와 금액을 보여줘요."
       months={months} rows={expenseCategoryRows} tone="expense" transactionsFor={expenseCategoryTransactionsFor}
     />
     <AnnualReportTable

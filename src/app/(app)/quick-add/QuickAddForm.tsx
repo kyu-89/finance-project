@@ -176,7 +176,7 @@ export function QuickAddForm({
       {transactionType === 'income' && (
         <FormField label="거래 구분">
           <select value={incomeGroup} onChange={(e) => setIncomeGroup(e.target.value as typeof incomeGroup)} className="px-4">
-            <option value="fixed">고정수입</option><option value="additional">부가 수입</option>
+            <option value="fixed">고정 수입</option><option value="additional">부가 수입</option>
           </select>
         </FormField>
       )}
@@ -184,7 +184,7 @@ export function QuickAddForm({
       {transactionType === 'expense' && (
         <FormField label="거래 구분">
           <select value={expenseGroup} onChange={(e) => { setExpenseGroup(e.target.value as typeof expenseGroup); resetClassification(); }} className="px-4">
-            <option value="consumption">소비성지출</option><option value="savings">저축성지출</option>
+            <option value="consumption">소비성 지출</option><option value="savings">저축성 지출</option>
           </select>
         </FormField>
       )}
