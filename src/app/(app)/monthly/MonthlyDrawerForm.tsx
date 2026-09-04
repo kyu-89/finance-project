@@ -20,10 +20,15 @@ export function MonthlyDrawerForm({ categories, paymentMethods, initialTransacti
   const [subcategoryId, setSubcategoryId] = useState('');
   const [paymentMethodId, setPaymentMethodId] = useState('');
   const [transactionType, setTransactionType] = useState<TransactionType>(initialTransactionType);
-  // 2026-09(사용자 지시): income_group("고정수입"/"추가수입")을 등록 드로워에도 노출한다 — 전에는
-  // /quick-add에만 있었다. expense_group(저축성지출/소비성지출)은 여기 없다 — 카테고리 하나로
-  // 이미 100% 결정되는 값이라 별도 입력을 받지 않고 DB 트리거가 항상 자동으로 맞춘다.
   const [incomeGroup, setIncomeGroup] = useState<'fixed' | 'additional'>('fixed');
+  // 2026-09(사용자 지시): "지출도 수입처럼 거래 구분(저축성지출/소비성지출)을 똑같이 선택할 수
+  // 있어야 한다" — income_group과 완전히 같은 자리·같은 모양의 드롭다운으로 구현한다. 다만
+  // 실제 저장되는 expense_group 컬럼은 여전히 category_id로만 DB 트리거가 자동 결정한다(모순
+  // 저장을 막기 위함, 사용자 승인 사항) — 이 드롭다운은 그 아래 대분류 선택지를 저축성지출
+  // 하나로 좁히거나 나머지로 좁히는 "필터" 역할을 해서, 사용자가 고른 구분과 실제 저장되는
+  // 카테고리가 항상 저절로 일치하게 만든다.
+  const [expenseGroup, setExpenseGroup] = useState<'savings' | 'consumption'>('consumption');
+  const savingsCategory = categories.find((category) => category.transactionType === 'expense' && category.name === '저축성지출');
   const [state, formAction, pending] = useActionState(createMonthlyRowAction, INITIAL_ACTION_STATE);
   const { notifySuccess } = useDrawerControls();
   // 2026-09(사용자 지시): 저장 성공하면 토스트를 띄우고 드로워를 닫는다 — 토스트는 드로워
@@ -42,7 +47,9 @@ export function MonthlyDrawerForm({ categories, paymentMethods, initialTransacti
   // 강제하지 않고 두 유형의 대분류를 모두 후보로 보여준다(선택 안 해도 저장 가능).
   const availableCategories = transactionType === 'reference'
     ? categories.filter((category) => category.isActive)
-    : categories.filter((category) => category.transactionType === transactionType && category.isActive);
+    : transactionType === 'expense'
+      ? categories.filter((category) => category.transactionType === 'expense' && category.isActive && (expenseGroup === 'savings' ? category.id === savingsCategory?.id : category.id !== savingsCategory?.id))
+      : categories.filter((category) => category.transactionType === transactionType && category.isActive);
 
   function resetClassification() {
     setCategoryId('');
@@ -57,15 +64,16 @@ export function MonthlyDrawerForm({ categories, paymentMethods, initialTransacti
         <h3>기본 정보</h3>
         <div className="monthly-drawer-grid">
           <label className="form-field"><span>거래 유형</span><select value={transactionType} onChange={(event) => { setTransactionType(event.target.value as TransactionType); resetClassification(); }}><option value="expense">지출</option><option value="income">수입</option><option value="reference">참고 거래</option></select></label>
-          {transactionType === 'income' && <label className="form-field"><span>거래 구분</span><select name="incomeGroup" value={incomeGroup} onChange={(event) => setIncomeGroup(event.target.value as typeof incomeGroup)}><option value="fixed">고정수입</option><option value="additional">추가수입</option></select></label>}
+          {transactionType === 'income' && <label className="form-field"><span>거래 구분</span><select name="incomeGroup" value={incomeGroup} onChange={(event) => setIncomeGroup(event.target.value as typeof incomeGroup)}><option value="fixed">고정수입</option><option value="additional">부가 수입</option></select></label>}
+          {transactionType === 'expense' && <label className="form-field"><span>거래 구분</span><select value={expenseGroup} onChange={(event) => { setExpenseGroup(event.target.value as typeof expenseGroup); resetClassification(); }}><option value="consumption">소비성지출</option><option value="savings">저축성지출</option></select></label>}
           <label className="form-field"><span>거래일</span><input type="date" name="transactionDate" required /></label>
           {/* 칩은 줄바꿈되며 세로로 자라기 때문에, 2열 그리드에서 짧은 필드와 나란히 두면
               어색하다. 두 열을 다 쓰게 한다(`1 / -1`이라 모바일 1열에서도 안전하다). */}
           <FormField as="div" label="대분류 / 소분류" required={isCategoryRequired} className="[grid-column:1/-1]">
             <CategoryPicker
-              // 거래 유형이 바뀌면 후보 대분류 목록 자체가 달라지므로 피커 내부 선택 상태도
-              // 버려야 한다 — resetClassification()이 비우는 폼 상태와 짝을 맞춘다.
-              key={transactionType}
+              // 거래 유형이나 지출 구분이 바뀌면 후보 대분류 목록 자체가 달라지므로 피커 내부
+              // 선택 상태도 버려야 한다 — resetClassification()이 비우는 폼 상태와 짝을 맞춘다.
+              key={`${transactionType}-${expenseGroup}`}
               categories={availableCategories}
               allowClearSubcategory
               onSelect={(category, pickedSubcategoryId) => {

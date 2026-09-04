@@ -37,6 +37,11 @@ export function TransactionDetailDrawer({ transaction, support, event, categorie
   // 2026-09(사용자 지시): 등록 드로워와 대칭으로 수정 드로워에도 거래 구분(income_group)을
   // 노출한다. expense_group은 카테고리로 자동 결정돼 여기서 따로 입력받지 않는다.
   const [incomeGroup, setIncomeGroup] = useState<'fixed' | 'additional'>(transaction.incomeGroup ?? 'fixed');
+  // 2026-09(사용자 지시): 등록 드로워와 대칭으로 지출도 거래 구분(저축성지출/소비성지출)을 같은
+  // 자리에서 고를 수 있어야 한다 — MonthlyDrawerForm과 완전히 같은 방식(대분류 선택지를 좁히는
+  // 필터). 실제 저장 값은 여전히 category_id로 DB 트리거가 자동 결정한다.
+  const [expenseGroup, setExpenseGroup] = useState<'savings' | 'consumption'>(transaction.expenseGroup ?? 'consumption');
+  const savingsCategory = categories.find((category) => category.transactionType === 'expense' && category.name === '저축성지출');
   const [categoryId, setCategoryId] = useState(transaction.categoryId ?? '');
   const [subcategoryId, setSubcategoryId] = useState(transaction.subcategoryId ?? '');
   const [paymentMethodId, setPaymentMethodId] = useState(transaction.paymentMethodId ?? '');
@@ -47,7 +52,9 @@ export function TransactionDetailDrawer({ transaction, support, event, categorie
   const missingRequiredPick = (isCategoryRequired && !categoryId) || (transactionType === 'expense' && !paymentMethodId);
   const availableCategories = transactionType === 'reference'
     ? categories.filter((category) => category.isActive || category.id === categoryId)
-    : categories.filter((category) => category.transactionType === transactionType && (category.isActive || category.id === categoryId));
+    : transactionType === 'expense'
+      ? categories.filter((category) => category.transactionType === 'expense' && (category.isActive || category.id === categoryId) && (expenseGroup === 'savings' ? category.id === savingsCategory?.id : category.id !== savingsCategory?.id))
+      : categories.filter((category) => category.transactionType === transactionType && (category.isActive || category.id === categoryId));
 
   function resetClassification() {
     setCategoryId('');
@@ -63,13 +70,14 @@ export function TransactionDetailDrawer({ transaction, support, event, categorie
         <h3>기본 정보</h3>
         <div className="monthly-drawer-grid">
           <label className="form-field"><span>거래 유형</span><select value={transactionType} onChange={(event) => { setTransactionType(event.target.value as Transaction['transactionType']); resetClassification(); }}><option value="expense">지출</option><option value="income">수입</option><option value="reference">참고 거래</option></select></label>
-          {transactionType === 'income' && <label className="form-field"><span>거래 구분</span><select name="incomeGroup" value={incomeGroup} onChange={(event) => setIncomeGroup(event.target.value as typeof incomeGroup)}><option value="fixed">고정수입</option><option value="additional">추가수입</option></select></label>}
+          {transactionType === 'income' && <label className="form-field"><span>거래 구분</span><select name="incomeGroup" value={incomeGroup} onChange={(event) => setIncomeGroup(event.target.value as typeof incomeGroup)}><option value="fixed">고정수입</option><option value="additional">부가 수입</option></select></label>}
+          {transactionType === 'expense' && <label className="form-field"><span>거래 구분</span><select value={expenseGroup} onChange={(event) => { setExpenseGroup(event.target.value as typeof expenseGroup); resetClassification(); }}><option value="consumption">소비성지출</option><option value="savings">저축성지출</option></select></label>}
           <label className="form-field"><span>거래일</span><input type="date" name="transactionDate" defaultValue={transaction.transactionDate} required /></label>
           <FormField as="div" label="대분류 / 소분류" required={isCategoryRequired} className="[grid-column:1/-1]">
             <CategoryPicker
-              // 거래 유형이 바뀌면 후보 대분류 목록 자체가 달라지므로 피커 내부 선택 상태도
-              // 버려야 한다 — resetClassification()이 비우는 폼 상태와 짝을 맞춘다.
-              key={transactionType}
+              // 거래 유형이나 지출 구분이 바뀌면 후보 대분류 목록 자체가 달라지므로 피커 내부
+              // 선택 상태도 버려야 한다 — resetClassification()이 비우는 폼 상태와 짝을 맞춘다.
+              key={`${transactionType}-${expenseGroup}`}
               categories={availableCategories}
               initialCategoryId={categoryId || null}
               initialSubcategoryId={subcategoryId || null}

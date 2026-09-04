@@ -863,7 +863,7 @@ button:disabled { cursor: wait; transform: none !important; }
 .monthly-ledger-period-toggle { display: inline-flex; flex: 0 0 auto; gap: 2px; padding: 3px; border-radius: 10px; background: var(--tds-white); }
 .monthly-ledger-period-toggle button { min-height: 36px; padding: 0 10px; border-radius: 8px; color: var(--tds-grey-600); font-size: 12px; font-weight: 750; white-space: nowrap; }
 .monthly-ledger-period-toggle button[data-selected='true'] { background: var(--state-selected-bg); color: var(--state-selected-fg); }
-.monthly-ledger-filter-grid { display: grid; grid-template-columns: minmax(180px, 1.5fr) repeat(5, minmax(130px, 1fr)); gap: 8px; }
+.monthly-ledger-filter-grid { display: grid; grid-template-columns: minmax(180px, 1.5fr) repeat(6, minmax(130px, 1fr)); gap: 8px; }
 .monthly-ledger-filter-grid input, .monthly-ledger-filter-grid select { min-width: 0; min-height: 44px; padding-inline: 12px; border: 1px solid var(--tds-grey-200); border-radius: 10px; background: var(--tds-white); font-size: 13px; }
 
 @media (max-width: 640px) {

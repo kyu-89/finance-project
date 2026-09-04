@@ -45,6 +45,12 @@ export function QuickAddForm({
   const [subcategoryId, setSubcategoryId] = useState('');
   const [transactionType, setTransactionType] = useState<TransactionType>('expense');
   const [incomeGroup, setIncomeGroup] = useState<'fixed' | 'additional'>('fixed');
+  // 2026-09(사용자 지시): 월간관리 등록/수정 드로워와 완전히 같은 자리·같은 방식으로 통일한다 —
+  // "거래 구분"은 거래 유형 바로 다음에 오고, 지출도 수입처럼 선택 가능해야 한다(저축성지출/
+  // 소비성지출). 실제 저장되는 expense_group은 여전히 category_id로 DB 트리거가 자동 결정—
+  // 이 드롭다운은 그 아래 대분류 선택지를 좁히는 필터 역할이다.
+  const [expenseGroup, setExpenseGroup] = useState<'savings' | 'consumption'>('consumption');
+  const savingsCategory = categories.find((category) => category.transactionType === 'expense' && category.name === '저축성지출');
   const [paymentMethodId, setPaymentMethodId] = useState('');
   const [showSavedBanner, setShowSavedBanner] = useState(false);
   const [state, formAction, pending] = useActionState(createQuickTransactionAction, INITIAL_ACTION_STATE);
@@ -56,7 +62,9 @@ export function QuickAddForm({
   const isCategoryRequired = transactionType !== 'reference';
   const availableCategories = transactionType === 'reference'
     ? categories.filter((category) => category.isActive)
-    : categories.filter((category) => category.transactionType === transactionType && category.isActive);
+    : transactionType === 'expense'
+      ? categories.filter((category) => category.transactionType === 'expense' && category.isActive && (expenseGroup === 'savings' ? category.id === savingsCategory?.id : category.id !== savingsCategory?.id))
+      : categories.filter((category) => category.transactionType === transactionType && category.isActive);
 
   // The quick-add form is a same-segment navigation target (`/quick-add?saved=...`), so React
   // state above survives the redirect — without this the user taps 저장 and sees no visible
@@ -77,6 +85,7 @@ export function QuickAddForm({
     setPaymentMethodId('');
     setTransactionType('expense');
     setIncomeGroup('fixed');
+    setExpenseGroup('consumption');
   }
 
   // Auto-hide the confirmation banner after a few seconds. Unlike the reset above, this setState
@@ -164,9 +173,25 @@ export function QuickAddForm({
         </select>
       </FormField>
 
+      {transactionType === 'income' && (
+        <FormField label="거래 구분">
+          <select value={incomeGroup} onChange={(e) => setIncomeGroup(e.target.value as typeof incomeGroup)} className="px-4">
+            <option value="fixed">고정수입</option><option value="additional">부가 수입</option>
+          </select>
+        </FormField>
+      )}
+
+      {transactionType === 'expense' && (
+        <FormField label="거래 구분">
+          <select value={expenseGroup} onChange={(e) => { setExpenseGroup(e.target.value as typeof expenseGroup); resetClassification(); }} className="px-4">
+            <option value="consumption">소비성지출</option><option value="savings">저축성지출</option>
+          </select>
+        </FormField>
+      )}
+
       <FormField as="div" label="대분류 / 소분류" required={isCategoryRequired}>
         <CategoryPicker
-          key={transactionType}
+          key={`${transactionType}-${expenseGroup}`}
           categories={availableCategories}
           recentCategoryIds={recentCategoryIds}
           recentSubcategoryIdsByCategory={recentSubcategoryIdsByCategory}
@@ -207,7 +232,7 @@ export function QuickAddForm({
         </FormField>
       )}
 
-      {transactionType === 'income' && <><FormField label="거래 구분"><select value={incomeGroup} onChange={(e) => setIncomeGroup(e.target.value as typeof incomeGroup)} className="px-4"><option value="fixed">고정수입</option><option value="additional">추가수입</option></select></FormField><FormField label="입금계좌"><select name="accountId" className="px-4"><option value="">선택 안 함</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.bankName} {account.accountName}</option>)}</select></FormField></>}
+      {transactionType === 'income' && <FormField label="입금계좌"><select name="accountId" className="px-4"><option value="">선택 안 함</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.bankName} {account.accountName}</option>)}</select></FormField>}
 
       <button
         type="submit"

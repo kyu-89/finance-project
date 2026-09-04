@@ -20,10 +20,12 @@ import { findRecurringDuplicateCandidates, type DuplicateCandidate } from '@/lib
 const features = tableFeatures({});
 const columnHelper = createColumnHelper<typeof features, Transaction>();
 const TRANSACTION_TYPE_LABEL: Record<Transaction['transactionType'], string> = { income: '수입', expense: '지출', reference: '참고 거래' };
-// 2026-09(사용자 지시): income_group/expense_group을 "거래 구분"으로 유형 칸 바로 옆에 보여준다
-// (새 컬럼을 추가하지 않고 유형 칸 안에 같이 넣는다 — 모바일에서 "지출/수입 표시 영역"에 이미
-// 여유 공간이 있어서, 새 그리드 열을 만드는 대신 그 자리를 재사용하는 게 더 깔끔하다).
-const INCOME_GROUP_LABEL: Record<'fixed' | 'additional', string> = { fixed: '고정수입', additional: '추가수입' };
+// 2026-09(사용자 지시): "'거래 구분' 컬럼 넣으라고 했잖아. '유형' 컬럼 우측에" — income_group/
+// expense_group을 유형 칸 안에 끼워 넣는 대신, "유형" 바로 오른쪽의 독립된 "거래 구분" 컬럼으로
+// 보여준다(makeColumns의 transactionGroup 컬럼). 모바일 카드에서는 그 컬럼 셀을 유형 셀과 같은
+// 그리드 칸(2행 1열)에 justify-self로 나란히 배치해 "지출/수입 옆에 나란히" 보이게 한다
+// (design-system.css의 [data-table-field='transactionGroup'] 참고).
+const INCOME_GROUP_LABEL: Record<'fixed' | 'additional', string> = { fixed: '고정수입', additional: '부가 수입' };
 const EXPENSE_GROUP_LABEL: Record<'savings' | 'consumption', string> = { savings: '저축성지출', consumption: '소비성지출' };
 function groupLabelFor(transaction: Transaction): string | null {
   if (transaction.transactionType === 'income' && transaction.incomeGroup) return INCOME_GROUP_LABEL[transaction.incomeGroup];
@@ -53,14 +55,15 @@ function CostBehaviorEditor({ transaction }: { transaction: Transaction }) {
   />;
 }
 
-// Column order is a shared rule, not a per-screen choice: 날짜 · 유형 · 대분류 ·
-// 소분류 · 내용 · 금액 · 결제수단 · 비고 · 성격 · 상태. The desktop table's columns and
-// the mobile card's row groups (see .tds-ledger-table in design-system.css) both
+// Column order is a shared rule, not a per-screen choice: 날짜 · 유형 · 거래 구분 ·
+// 대분류 · 소분류 · 내용 · 금액 · 결제수단 · 비고 · 성격 · 상태. The desktop table's columns
+// and the mobile card's row groups (see .tds-ledger-table in design-system.css) both
 // follow this order; --ui-ledger-columns there must stay in this same sequence.
 function makeColumns() {
   return columnHelper.columns([
     columnHelper.accessor('transactionDate', { header: '날짜' }),
-    columnHelper.accessor('transactionType', { header: '유형', cell: (info) => { const group = groupLabelFor(info.row.original); return <span className="monthly-type-cell">{TRANSACTION_TYPE_LABEL[info.getValue()]}{group && <span className="monthly-type-group">{group}</span>}</span>; } }),
+    columnHelper.accessor('transactionType', { header: '유형', cell: (info) => TRANSACTION_TYPE_LABEL[info.getValue()] }),
+    columnHelper.display({ id: 'transactionGroup', header: '거래 구분', cell: (info) => groupLabelFor(info.row.original) }),
     columnHelper.accessor('categoryId', { header: '대분류', cell: () => null }),
     columnHelper.accessor('subcategoryId', { header: '소분류', cell: () => null }),
     columnHelper.accessor('description', { header: '내용' }),
@@ -88,7 +91,7 @@ function MonthlyTransactionTable({ transactions, categories, paymentMethods, dup
   const categoryById = useMemo(() => new Map(categories.flatMap((category) => [category, ...category.subcategories]).map((item) => [item.id, item.name])), [categories]);
   const paymentMethodById = useMemo(() => new Map(paymentMethods.map((method) => [method.id, method.name])), [paymentMethods]);
   const [selected, setSelected] = useState<Transaction | null>(null);
-  return <div className="table-surface"><table className="tds-data-table tds-ledger-table monthly-input-table border-collapse"><thead>{table.getHeaderGroups().map((headerGroup) => <tr key={headerGroup.id} className="border-b text-left">{headerGroup.headers.map((header) => <th key={header.id} data-table-field={header.column.id} data-table-align={header.column.id === 'amount' ? 'right' : ['transactionDate', 'status', 'transactionType', 'costBehavior'].includes(header.column.id) ? 'center' : undefined} className="tds-table-cell">{header.isPlaceholder ? null : <table.FlexRender header={header} />}</th>)}</tr>)}</thead><tbody>{table.getRowModel().rows.map((row) => {
+  return <div className="table-surface"><table className="tds-data-table tds-ledger-table monthly-input-table border-collapse"><thead>{table.getHeaderGroups().map((headerGroup) => <tr key={headerGroup.id} className="border-b text-left">{headerGroup.headers.map((header) => <th key={header.id} data-table-field={header.column.id} data-table-align={header.column.id === 'amount' ? 'right' : ['transactionDate', 'status', 'transactionType', 'transactionGroup', 'costBehavior'].includes(header.column.id) ? 'center' : undefined} className="tds-table-cell">{header.isPlaceholder ? null : <table.FlexRender header={header} />}</th>)}</tr>)}</thead><tbody>{table.getRowModel().rows.map((row) => {
         const transaction = row.original;
         // 행 전체를 클릭하면 상세 드로어가 열려야 한다(사용자 지시: "거래의 건을 클릭하면 수정할
         // 수 있어야해") — 단, 성격/상태 칸의 select·button은 그 자체로 즉시 저장되는 인라인
@@ -97,7 +100,7 @@ function MonthlyTransactionTable({ transactions, categories, paymentMethods, dup
           if ((event.target as HTMLElement).closest('select, button, a, input, textarea, label')) return;
           setSelected(transaction);
         };
-        return <tr key={row.id} className="tds-table-row border-b last:border-b-0" data-row-status={transaction.status === 'cancelled' || transaction.status === 'refunded' ? transaction.status : undefined} onClick={openDetail}>{row.getAllCells().map((cell) => { const value = cell.column.id === 'categoryId' ? categoryById.get(transaction.categoryId ?? '') ?? '미분류' : cell.column.id === 'subcategoryId' ? categoryById.get(transaction.subcategoryId ?? '') ?? '없음' : cell.column.id === 'paymentMethodId' ? paymentMethodById.get(transaction.paymentMethodId ?? '') ?? '미지정' : null; return <td key={cell.id} data-table-field={cell.column.id} data-table-align={cell.column.id === 'amount' ? 'right' : ['transactionDate', 'status', 'transactionType', 'costBehavior'].includes(cell.column.id) ? 'center' : undefined} data-flow={cell.column.id === 'transactionType' ? transaction.transactionType : undefined} className={`tds-table-cell ${['amount', 'transactionType'].includes(cell.column.id) ? 'font-semibold' : ''}`}>{cell.column.id === 'description' ? <button type="button" className="monthly-description-button" onClick={() => setSelected(transaction)}>{transaction.description}</button> : <><table.FlexRender cell={cell} />{value}</>}</td>; })}</tr>;
+        return <tr key={row.id} className="tds-table-row border-b last:border-b-0" data-row-status={transaction.status === 'cancelled' || transaction.status === 'refunded' ? transaction.status : undefined} onClick={openDetail}>{row.getAllCells().map((cell) => { const value = cell.column.id === 'categoryId' ? categoryById.get(transaction.categoryId ?? '') ?? '미분류' : cell.column.id === 'subcategoryId' ? categoryById.get(transaction.subcategoryId ?? '') ?? '없음' : cell.column.id === 'paymentMethodId' ? paymentMethodById.get(transaction.paymentMethodId ?? '') ?? '미지정' : null; return <td key={cell.id} data-table-field={cell.column.id} data-table-align={cell.column.id === 'amount' ? 'right' : ['transactionDate', 'status', 'transactionType', 'transactionGroup', 'costBehavior'].includes(cell.column.id) ? 'center' : undefined} data-flow={cell.column.id === 'transactionType' ? transaction.transactionType : undefined} className={`tds-table-cell ${['amount', 'transactionType'].includes(cell.column.id) ? 'font-semibold' : ''}`}>{cell.column.id === 'description' ? <button type="button" className="monthly-description-button" onClick={() => setSelected(transaction)}>{transaction.description}</button> : <><table.FlexRender cell={cell} />{value}</>}</td>; })}</tr>;
       })}</tbody></table>{pageCount > 1 && <nav className="monthly-table-pagination" aria-label="거래 목록 페이지 이동"><span>{(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, transactions.length)} / {transactions.length}건</span><div><button type="button" disabled={currentPage === 1} onClick={() => setPage((current) => current - 1)}><span className="sr-only">이전 페이지</span>이전</button><strong>{currentPage} / {pageCount}</strong><button type="button" disabled={currentPage === pageCount} onClick={() => setPage((current) => current + 1)}><span className="sr-only">다음 페이지</span>다음</button></div></nav>}{selected && <TransactionDetailDrawer key={selected.id} transaction={selected} candidates={duplicateCandidates[selected.id] ?? []} categories={categories} paymentMethods={paymentMethods} onClose={() => setSelected(null)} />}</div>;
 }
 
@@ -116,6 +119,12 @@ export function MonthlyInputTab({
   // 유형 → 대분류 → 소분류는 서로 종속된 필터다: 유형을 좁히면 대분류 후보가, 대분류를 고르면
   // 소분류 후보가 그 안에서만 걸러진다(카테고리 자체가 income/expense 중 하나에만 속하므로).
   const [type, setType] = useState<'all' | 'income' | 'expense' | 'reference'>('all');
+  // 2026-09(사용자 지시): "거래 조회 필터 모든 유형 우측에 거래 구분 필터 추가해서 모든 유형
+  // 선택값에 따라서 선택할 수 있게 만들어. 모든 대분류와 모든 소분류 인터랙션 조건처럼" — 유형이
+  // income이면 고정수입/부가 수입, expense면 소비성지출/저축성지출로 후보가 바뀌고, 그 밖(전체·
+  // 참고 거래)에는 거래 구분 개념이 없어 '모든 거래 구분' 하나만 남는다(유형→대분류처럼 유형이
+  // 바뀌면 group도 'all'로 리셋).
+  const [group, setGroup] = useState<'all' | 'fixed' | 'additional' | 'savings' | 'consumption'>('all');
   const [category, setCategory] = useState('all');
   const [subcategory, setSubcategory] = useState('all');
   const [costBehavior, setCostBehavior] = useState<'all' | 'fixed' | 'variable'>('all');
@@ -134,12 +143,13 @@ export function MonthlyInputTab({
   const visibleTransactions = useMemo(() => initialTransactions.filter((transaction) => {
     const normalizedQuery = query.trim().toLowerCase();
     return (type === 'all' || transaction.transactionType === type)
+      && (group === 'all' || (transaction.transactionType === 'income' ? transaction.incomeGroup === group : transaction.transactionType === 'expense' ? transaction.expenseGroup === group : false))
       && (category === 'all' || transaction.categoryId === category)
       && (subcategory === 'all' || transaction.subcategoryId === subcategory)
       && (costBehavior === 'all' || transaction.costBehavior === costBehavior)
       && (status === 'all' || transaction.status === status)
       && (!normalizedQuery || `${transaction.description} ${transaction.memo ?? ''}`.toLowerCase().includes(normalizedQuery));
-  }), [initialTransactions, type, category, subcategory, costBehavior, status, query]);
+  }), [initialTransactions, type, group, category, subcategory, costBehavior, status, query]);
   const orderedTransactions = useMemo(() => [...initialTransactions].sort((a, b) => {
     if (a.status === 'planned' && b.status !== 'planned') return -1;
     if (a.status !== 'planned' && b.status === 'planned') return 1;
@@ -154,7 +164,12 @@ export function MonthlyInputTab({
       <div className="monthly-cta monthly-quick-actions"><AddDrawer title="수입 추가" description="이번 달에 들어온 돈을 기록하세요." triggerLabel="수입 추가"><MonthlyRowForm initialTransactionType="income" categories={categories} paymentMethods={paymentMethods} /></AddDrawer><AddDrawer title="지출 추가" description="이번 달에 쓴 돈을 기록하세요." triggerLabel="지출 추가"><MonthlyRowForm initialTransactionType="expense" categories={categories} paymentMethods={paymentMethods} /></AddDrawer><AddDrawer title="참고 거래 추가" description="수입·지출로 보기 어렵지만 기록은 남겨야 하는 거래를 등록하세요." triggerLabel="참고 거래 추가"><MonthlyRowForm initialTransactionType="reference" categories={categories} paymentMethods={paymentMethods} /></AddDrawer></div>
       <section className="monthly-ledger-filters" aria-label="이번 달 거래 필터"><div className="monthly-ledger-filter-heading"><div><span className="monthly-kicker">거래 조회</span><strong>{selectedMonth.replace('-', '년 ')}월 거래</strong></div></div><div className="monthly-ledger-filter-grid">
         <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="내용·메모 검색" aria-label="내용·메모 검색" />
-        <select value={type} onChange={(event) => { const next = event.target.value as typeof type; setType(next); setCategory('all'); setSubcategory('all'); }} aria-label="유형"><option value="all">모든 유형</option><option value="income">수입</option><option value="expense">지출</option><option value="reference">참고 거래</option></select>
+        <select value={type} onChange={(event) => { const next = event.target.value as typeof type; setType(next); setGroup('all'); setCategory('all'); setSubcategory('all'); }} aria-label="유형"><option value="all">모든 유형</option><option value="income">수입</option><option value="expense">지출</option><option value="reference">참고 거래</option></select>
+        <select value={group} onChange={(event) => setGroup(event.target.value as typeof group)} aria-label="거래 구분" disabled={type !== 'income' && type !== 'expense'}>
+          <option value="all">모든 거래 구분</option>
+          {type === 'income' && <><option value="fixed">고정수입</option><option value="additional">부가 수입</option></>}
+          {type === 'expense' && <><option value="consumption">소비성지출</option><option value="savings">저축성지출</option></>}
+        </select>
         <select value={category} onChange={(event) => { setCategory(event.target.value); setSubcategory('all'); }} aria-label="대분류"><option value="all">모든 대분류</option>{availableCategories.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
         <select value={subcategory} onChange={(event) => setSubcategory(event.target.value)} aria-label="소분류" disabled={!selectedCategory}><option value="all">모든 소분류</option>{selectedCategory?.subcategories.map((sub) => <option key={sub.id} value={sub.id}>{sub.name}</option>)}</select>
         <select value={costBehavior} onChange={(event) => setCostBehavior(event.target.value as typeof costBehavior)} aria-label="비용성격"><option value="all">모든 비용성격</option><option value="fixed">고정비</option><option value="variable">변동비</option></select>

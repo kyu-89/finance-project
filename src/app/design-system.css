@@ -37,6 +37,7 @@
   --ui-ledger-column-date: 120px;
   --ui-ledger-column-state: 140px;
   --ui-ledger-column-type: 92px;
+  --ui-ledger-column-group: 96px;
   --ui-ledger-column-behavior: 120px;
   --ui-ledger-column-category: 110px;
   --ui-ledger-column-subcategory: 110px;
@@ -236,12 +237,11 @@
  * carry the income/expense color. */
 .tds-ledger-table tbody [data-table-field='transactionType'] { color: var(--chart-expense); }
 .tds-ledger-table tbody [data-table-field='transactionType'][data-flow='income'] { color: var(--chart-income); }
-/* 2026-09(사용자 지시): 거래 구분(income_group/expense_group)을 유형 칸 안에 같이 보여준다 —
- * 데스크톱은 좁은 칼럼(92px)이라 두 줄로 쌓고, 모바일 카드는 "지출/수입" 옆에 여유가 있어서
- * 가로로 나란히 붙인다("정돈되고 예쁘게" — 사용자 지시). */
-.monthly-type-cell { display: inline-flex; flex-direction: column; align-items: center; gap: 1px; }
-.monthly-type-group { color: var(--tds-grey-500); font-size: 10px; font-weight: 600; white-space: nowrap; }
 .tds-ledger-table tbody [data-table-field='transactionType'][data-flow='reference'] { color: var(--tds-grey-600); }
+/* 2026-09(사용자 지시): "'거래 구분' 컬럼 넣으라고 했잖아. '유형' 컬럼 우측에" — income_group/
+ * expense_group은 유형 칸 안이 아니라 그 옆의 독립된 "거래 구분" 컬럼으로 존재한다(makeColumns
+ * 참고). 값이 없는 거래(참고 거래, 구분 미지정)에서는 배지 자체를 숨긴다. */
+.tds-ledger-table [data-table-field='transactionGroup'] { color: var(--tds-grey-600); font-weight: 600; }
 .tds-ledger-table [data-table-field='description'] .monthly-description-button { color: inherit; }
 
 /* 행 전체가 클릭 가능한 영역이다(상세 드로어 열기) — 성격/상태 칸의 select 등 자체 조작
@@ -341,10 +341,10 @@
 @media (min-width: 641px) {
   .tds-ledger-table {
     /* 내용/비고 둘 다 자유 텍스트라 남는 폭을 똑같이 나눠 갖는다(1fr씩, 어느 한쪽에 더 주지 않음). */
-    --ui-ledger-columns: var(--ui-ledger-column-date) var(--ui-ledger-column-type) var(--ui-ledger-column-category) var(--ui-ledger-column-subcategory) minmax(var(--ui-ledger-column-description-min), 1fr) var(--ui-ledger-column-amount) var(--ui-ledger-column-payment) minmax(var(--ui-ledger-column-memo), 1fr) var(--ui-ledger-column-behavior) var(--ui-ledger-column-state);
+    --ui-ledger-columns: var(--ui-ledger-column-date) var(--ui-ledger-column-type) var(--ui-ledger-column-group) var(--ui-ledger-column-category) var(--ui-ledger-column-subcategory) minmax(var(--ui-ledger-column-description-min), 1fr) var(--ui-ledger-column-amount) var(--ui-ledger-column-payment) minmax(var(--ui-ledger-column-memo), 1fr) var(--ui-ledger-column-behavior) var(--ui-ledger-column-state);
     display: block;
     width: 100%;
-    min-width: 1204px;
+    min-width: 1300px;
   }
 
   .tds-ledger-table thead,
@@ -1500,12 +1500,25 @@ input.quick-add-amount {
     grid-row: 1;
     grid-column: 1;
   }
-  .tds-ledger-table [data-table-field='transactionType'] { grid-row: 2; grid-column: 1; font-size: var(--text-micro); font-weight: 700; }
+  .tds-ledger-table [data-table-field='transactionType'] { grid-row: 2; grid-column: 1; justify-self: start; font-size: var(--text-micro); font-weight: 700; }
   .tds-ledger-table [data-table-field='transactionType']::before { content: none; }
-  /* "지출"/"수입" 옆에 남는 공간을 거래 구분 표시에 쓴다(사용자 지시) — 데스크톱의 세로 배치
-   * 대신 가로로 나란히, 작은 배지 모양으로 붙인다. */
-  .tds-ledger-table [data-table-field='transactionType'] .monthly-type-cell { flex-direction: row; gap: 6px; }
-  .tds-ledger-table [data-table-field='transactionType'] .monthly-type-group { padding: 1px 6px; border-radius: 99px; background: var(--tds-grey-100); font-size: 9px; }
+  /* "거래 구분"은 별도 컬럼이지만(사용자 지시: "'거래 구분' 컬럼 넣으라고 했잖아") "지출"/"수입"
+   * 옆의 남는 공간에 나란히 보여달라는 요청도 함께 있었다 — 같은 그리드 셀(2행 1열)을 공유하고
+   * justify-self로 좌우 끝에 배치해 시각적으로 나란히 붙인 배지처럼 보이게 한다. */
+  .tds-ledger-table [data-table-field='transactionGroup'] {
+    grid-row: 2;
+    grid-column: 1;
+    justify-self: end;
+    padding: 1px 6px;
+    border-radius: 99px;
+    background: var(--tds-grey-100);
+    color: var(--tds-grey-500);
+    font-size: 9px;
+    font-weight: 600;
+    min-height: 0;
+  }
+  .tds-ledger-table [data-table-field='transactionGroup']:empty { display: none; }
+  .tds-ledger-table [data-table-field='transactionGroup']::before { content: none; }
   /* A 7+ digit amount can still be wider than column 1's 100px floor.
    * text-overflow:ellipsis never actually took effect here (it doesn't
    * apply to a flex container's anonymous text item), so a too-narrow box
