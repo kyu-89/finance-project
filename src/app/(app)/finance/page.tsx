@@ -1,7 +1,7 @@
-import Link from 'next/link';
 import { Amount } from '@/components/Amount';
 import { PageHeader } from '@/components/PageHeader';
 import { StatCard } from '@/components/StatCard';
+import { MenuCard } from '@/components/MenuCard';
 import { todayInSeoul } from '@/lib/date';
 import { ensureHouseholdForCurrentUser } from '@/lib/household';
 import { calculateNetWorthChange } from '@/lib/net-worth';
@@ -52,12 +52,12 @@ export default async function FinancePage() {
       </section>
 
       <nav className="mt-6 grid gap-4 md:grid-cols-2" aria-label="자산·금융 관리 메뉴">
-        <Menu href="/finance/accounts" title="계좌·증권" text="입출금·증권 계좌의 현재 잔액을 관리해요." />
-        <Menu href="/finance/savings" title="예금·적금" text="가입 현황과 이자·만기 정보를 관리해요." />
-        <Menu href="/finance/loans" title="대출" text="대출 잔액과 월별 원금·이자 상환을 관리해요." />
-        <Menu href="/finance/insurances" title="보험" text="보장 내용과 보험료·갱신 일정을 관리해요." />
-        <Menu href="/finance/assets" title="기타자산" text="부동산·자동차·금속 등 자산을 관리해요." />
-        <Menu href="/finance/investments" title="투자 거래" text="매수·매도 내역과 투자금 흐름을 관리해요." />
+        <MenuCard href="/finance/accounts" title="계좌·증권" description="입출금·증권 계좌의 현재 잔액을 관리해요." />
+        <MenuCard href="/finance/savings" title="예금·적금" description="가입 현황과 이자·만기 정보를 관리해요." />
+        <MenuCard href="/finance/loans" title="대출" description="대출 잔액과 월별 원금·이자 상환을 관리해요." />
+        <MenuCard href="/finance/insurances" title="보험" description="보장 내용과 보험료·갱신 일정을 관리해요." />
+        <MenuCard href="/finance/assets" title="기타자산" description="부동산·자동차·금속 등 자산을 관리해요." />
+        <MenuCard href="/finance/investments" title="투자 거래" description="매수·매도 내역과 투자금 흐름을 관리해요." />
       </nav>
     </div>
   );
@@ -74,8 +74,4 @@ function MetricCard({ label, value, type = 'neutral', detail }: {
 
 function Mini({ label, value }: { label: string; value: number }) {
   return <div><p className="text-xs text-[var(--tds-grey-500)]">{label}</p><strong className="tabular-nums">{won.format(value)}원</strong></div>;
-}
-
-function Menu({ href, title, text }: { href: string; title: string; text: string }) {
-  return <Link href={href} className="tds-card p-6 transition hover:-translate-y-0.5 hover:shadow-lg"><h2 className="text-xl font-bold">{title}</h2><p className="mt-2 text-sm text-[var(--tds-grey-700)]">{text}</p></Link>;
 }

@@ -48,7 +48,7 @@ export function AnnualReportView({ year, months, periodTransactions, categories,
   return <div className="flex flex-col gap-5">
     <AnnualReportTable
       title={`${year}년 항목별 수입`}
-      description="원본 엑셀 [연간_항목별수입]과 같은 구조예요. 급여·수당·상여는 주소득, 나머지는 부소득으로 묶어요(거래 등록 시 고르는 '거래 구분'과는 다른 분류예요)."
+      description="급여·수당·상여는 주소득, 나머지는 부소득으로 묶어요(거래 등록 시 고르는 '거래 구분'과는 다른 분류예요)."
       months={months} rows={incomeRows} tone="income" transactionsFor={incomeTransactionsFor}
     />
     <AnnualReportTable
