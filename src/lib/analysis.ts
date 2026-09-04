@@ -131,9 +131,18 @@ export function summarizeIncomeMatrix(transactions: Transaction[], months: strin
   return buildMatrix(transactions.filter(isIncome), months, (t) => t.subcategoryId ?? 'unassigned', subcategoryNames, '기타 수입');
 }
 
-// §8 대응 — 지출 대분류 × 월(저축성지출도 다른 대분류와 동일하게 한 행일 뿐).
+// §8 대응 — 지출 대분류 × 월(저축성지출도 다른 대분류와 동일하게 한 행일 뿐). 원본 엑셀의
+// 연간_항목별지출 시트와 대응.
 export function summarizeExpenseMatrix(transactions: Transaction[], months: string[], categoryNames: Map<string, string>): MatrixRow[] {
   return buildMatrix(transactions.filter(isExpense), months, (t) => t.categoryId ?? 'unassigned', categoryNames, '미분류');
+}
+
+// 2026-09(사용자 지시: "연간_항목별지출과 연간_세부항목별지출은 데이터 항목이나 구조가 달라서
+// 분리해야할 것 같다") — 연간_항목별지출은 대분류 단위(14~16행), 연간_세부항목별지출은 전체
+// 지출 소분류 단위(저축성지출 9개 포함 전체 카테고리의 소분류, 훨씬 더 많은 행)로 서로 다른
+// 원본 시트다. summarizeExpenseMatrix(대분류)와 별개로, 소분류 단위 매트릭스를 따로 둔다.
+export function summarizeExpenseSubcategoryMatrix(transactions: Transaction[], months: string[], subcategoryNames: Map<string, string>): MatrixRow[] {
+  return buildMatrix(transactions.filter(isExpense), months, (t) => t.subcategoryId ?? 'unassigned', subcategoryNames, '기타');
 }
 
 // §10 대응 — 카드(신용·체크만) × 월. summarizeCardUsage와 같은 대상(실제지출+참고거래)을 합쳐

@@ -8,6 +8,7 @@ import {
   summarizeCardUsageMatrix,
   summarizeExpenseByCategory,
   summarizeExpenseMatrix,
+  summarizeExpenseSubcategoryMatrix,
   summarizeIncomeBySubcategory,
   summarizeIncomeMatrix,
   summarizeReferenceByPaymentMethod,
@@ -231,6 +232,21 @@ describe('summarizeExpenseMatrix', () => {
     ], MATRIX_MONTHS, names);
     expect(rows).toHaveLength(2);
     expect(rows.find((r) => r.id === SAVINGS_CATEGORY_ID)).toEqual({ id: SAVINGS_CATEGORY_ID, label: '저축성지출', monthly: [0, 300_000, 0], total: 300_000 });
+  });
+});
+
+// 연간_항목별지출(대분류)과 연간_세부항목별지출(소분류)은 서로 다른 시트라(사용자 지시) 별도
+// 매트릭스 함수로 분리했다 — summarizeExpenseMatrix와 달리 subcategoryId로 묶는다.
+describe('summarizeExpenseSubcategoryMatrix', () => {
+  it('buckets by subcategory across every category, independent of the category-level matrix', () => {
+    const names = new Map([['sub-deposit', '예/적금'], ['sub-mart', '시장/마트']]);
+    const rows = summarizeExpenseSubcategoryMatrix([
+      tx({ categoryId: SAVINGS_CATEGORY_ID, subcategoryId: 'sub-deposit', amount: 300_000, transactionDate: '2026-02-10' }),
+      tx({ categoryId: FOOD_CATEGORY_ID, subcategoryId: 'sub-mart', amount: 50_000, transactionDate: '2026-01-05' }),
+    ], MATRIX_MONTHS, names);
+    expect(rows).toHaveLength(2);
+    expect(rows.find((r) => r.id === 'sub-deposit')).toEqual({ id: 'sub-deposit', label: '예/적금', monthly: [0, 300_000, 0], total: 300_000 });
+    expect(rows.find((r) => r.id === 'sub-mart')).toEqual({ id: 'sub-mart', label: '시장/마트', monthly: [50_000, 0, 0], total: 50_000 });
   });
 });
 

@@ -5,7 +5,7 @@ import type { Transaction } from '@/lib/transactions';
 import type { Budget } from '@/lib/budgets';
 import type { CategoryWithSubcategories } from '@/lib/categories';
 import { budgetStatus } from '@/lib/budget-calculations';
-import { reportMonthOf, summarizeExpenseByCategory, summarizeExpenseMatrix } from '@/lib/analysis';
+import { reportMonthOf, summarizeExpenseByCategory, summarizeExpenseMatrix, summarizeExpenseSubcategoryMatrix } from '@/lib/analysis';
 import { ExpenseDrilldown, type TransactionExtraColumn } from './AnalysisDrilldown';
 import { AnalysisHeatmapTable } from './AnalysisHeatmapTable';
 
@@ -30,9 +30,13 @@ export function AnalysisExpenseView({ scope, month, months, monthCount, periodTr
   const rows = useMemo(() => summarizeExpenseByCategory(periodTransactions, categoryNames, subcategoryNames), [periodTransactions, categoryNames, subcategoryNames]);
   const transactionsFor = (categoryId: string, subcategoryId: string) => periodTransactions.filter((t) => t.status === 'posted' && t.flowClass === 'consumption' && (t.categoryId ?? 'unassigned') === categoryId && (t.subcategoryId ?? 'unassigned') === subcategoryId);
   const extraColumn: TransactionExtraColumn = { label: '소분류', valueFor: (t) => (t.subcategoryId ? subcategoryNames.get(t.subcategoryId) ?? '기타' : '-') };
-  // §12 — 원본 엑셀 연간_항목별지출과 대응하는 대분류 × 12개월 표. 연간 스코프에서만 보여준다.
+  // §12 — 원본 엑셀 연간_항목별지출(대분류)과 연간_세부항목별지출(소분류)은 데이터 항목·구조가
+  // 서로 다른 별개 시트라(사용자 지시) 매트릭스 표도 따로 둔다 — 대분류 14~16행짜리 표 하나로
+  // 두 시트를 겸하지 않는다. 연간 스코프에서만 보여준다.
   const matrixRows = useMemo(() => scope === 'year' ? summarizeExpenseMatrix(periodTransactions, months, categoryNames) : [], [scope, periodTransactions, months, categoryNames]);
   const matrixTransactionsFor = (id: string, monthKey: string) => periodTransactions.filter((t) => t.status === 'posted' && t.flowClass === 'consumption' && (t.categoryId ?? 'unassigned') === id && reportMonthOf(t) === monthKey);
+  const subcategoryMatrixRows = useMemo(() => scope === 'year' ? summarizeExpenseSubcategoryMatrix(periodTransactions, months, subcategoryNames) : [], [scope, periodTransactions, months, subcategoryNames]);
+  const subcategoryMatrixTransactionsFor = (id: string, monthKey: string) => periodTransactions.filter((t) => t.status === 'posted' && t.flowClass === 'consumption' && (t.subcategoryId ?? 'unassigned') === id && reportMonthOf(t) === monthKey);
 
   const budgetMonth = Number(month.slice(5, 7));
   const budgetByCategory = new Map(budgets.filter((b) => b.month === budgetMonth && b.transactionType === 'expense' && b.categoryId).map((b) => [b.categoryId!, b.amount]));
@@ -43,6 +47,7 @@ export function AnalysisExpenseView({ scope, month, months, monthCount, periodTr
 
   return <div className="analysis-view flex flex-col gap-4">
     {scope === 'year' && <AnalysisHeatmapTable title="지출 대분류 × 월별 표" description="원본 엑셀의 연간 항목별 지출 시트와 같은 구성이에요. 저축성지출도 다른 대분류와 같은 행 하나예요." months={months} rows={matrixRows} monthCount={monthCount} tone="expense" transactionsFor={matrixTransactionsFor} />}
+    {scope === 'year' && <AnalysisHeatmapTable title="지출 소분류 × 월별 표" description="원본 엑셀의 연간 세부항목별 지출 시트와 같은 구성이에요. 대분류 표와는 별개로, 모든 카테고리의 소분류를 한 층위로 보여줘요." months={months} rows={subcategoryMatrixRows} monthCount={monthCount} tone="expense" transactionsFor={subcategoryMatrixTransactionsFor} />}
     <section className="tds-card p-5"><h2 className="text-lg font-bold">지출 대분류</h2><p className="mt-1 text-sm text-[var(--tds-grey-700)]">대분류를 누르면 소분류가, 소분류를 누르면 개별 거래가 펼쳐져요.</p><div className="mt-4"><ExpenseDrilldown rows={rows} total={totals.expense} transactionsFor={transactionsFor} extraColumn={extraColumn} /></div></section>
     {scope === 'month' && <section className="tds-card p-5">
       <div className="flex flex-wrap items-end justify-between gap-2"><div><h2 className="text-lg font-bold">예산 대비 실제 지출</h2><p className="mt-1 text-sm text-[var(--tds-grey-700)]">예산 {won(budgetTotal)} · 실제 {won(budgetedSpent)}</p></div><strong className="text-lg tabular-nums">소진율 {percent(budgetTotal > 0 ? budgetedSpent / budgetTotal : null)}</strong></div>
