@@ -21,10 +21,12 @@ export type DayPoint = { date: string; income: number; expense: number; savings:
 
 export const reportMonthOf = (t: Transaction) => t.sourceMonth ?? t.transactionDate.slice(0, 7);
 
-const posted = (t: Transaction) => t.status === 'posted';
-const isIncome = (t: Transaction) => posted(t) && t.transactionType === 'income';
-const isExpense = (t: Transaction) => posted(t) && t.flowClass === 'consumption';
-const isReference = (t: Transaction) => posted(t) && t.transactionType === 'reference';
+// annual-report.ts(§12 연간 리포트)도 이 네 필터를 그대로 재사용한다 — "수입/지출/참고거래를
+// 어떻게 판별하는가"라는 규칙은 이 파일 하나에만 있어야 하고, 두 번째 정의가 생기면 반드시 어긋난다.
+export const posted = (t: Transaction) => t.status === 'posted';
+export const isIncome = (t: Transaction) => posted(t) && t.transactionType === 'income';
+export const isExpense = (t: Transaction) => posted(t) && t.flowClass === 'consumption';
+export const isReference = (t: Transaction) => posted(t) && t.transactionType === 'reference';
 
 export function periodTotals(transactions: Transaction[], savingsCategoryId: string | null) {
   const income = transactions.filter(isIncome).reduce((sum, t) => sum + t.amount, 0);

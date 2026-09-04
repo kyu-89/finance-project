@@ -63,7 +63,9 @@ export function AnalysisHeatmapTable({ title, description, months, rows, monthCo
   </section>;
 }
 
-function HeatmapTransactionRows({ transactions }: { transactions: Transaction[] }) {
+// AnnualReportTable(§12 연간 리포트)도 셀을 펼쳤을 때 같은 모양의 개별 거래 표를 쓴다 — export해서
+// 재사용한다(두 번째 구현을 만들면 반드시 어긋난다).
+export function HeatmapTransactionRows({ transactions }: { transactions: Transaction[] }) {
   const sorted = [...transactions].sort((a, b) => b.transactionDate.localeCompare(a.transactionDate));
   const shown = sorted.slice(0, TRANSACTION_CAP);
   if (!sorted.length) return <p className="analysis-transaction-note">거래가 없어요.</p>;

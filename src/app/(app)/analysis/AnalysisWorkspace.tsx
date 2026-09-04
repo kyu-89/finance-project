@@ -15,6 +15,7 @@ import { AnalysisIncomeView } from './AnalysisIncomeView';
 import { AnalysisExpenseView } from './AnalysisExpenseView';
 import { AnalysisReferenceView } from './AnalysisReferenceView';
 import { AnalysisCardView } from './AnalysisCardView';
+import { AnnualReportView } from './AnnualReportView';
 
 function monthEnd(month: string) {
   const [year, m] = month.split('-').map(Number);
@@ -23,7 +24,10 @@ function monthEnd(month: string) {
 
 const won = new Intl.NumberFormat('ko-KR');
 const money = (value: number) => `${won.format(Math.round(value))}원`;
-const TYPE_LABEL = { income: '수입', expense: '지출', reference: '참고 거래', card: '카드 사용' } as const;
+// 2026-09(사용자 지시: "연간 리포트라는 별도 섹션이 좋을 것 같아") — 원본 엑셀 [연간_…] 4개
+// 시트를 그대로 재현하는 탭. 수입/지출/참고 거래/카드 사용과는 목적이 달라(월별 추이 확인이
+// 아니라 "엑셀 그대로") 별도 탭으로 둔다.
+const TYPE_LABEL = { income: '수입', expense: '지출', reference: '참고 거래', card: '카드 사용', annualReport: '연간 리포트' } as const;
 export type AnalysisType = keyof typeof TYPE_LABEL;
 
 function shiftMonth(month: string, offset: number) {
@@ -97,6 +101,7 @@ export function AnalysisWorkspace({ initialScope, year, initialMonth, initialTyp
     {type === 'expense' && <AnalysisExpenseView scope={scope} year={year} month={month} months={months} monthCount={monthCount} periodTransactions={periodTransactions} allTransactions={transactions} categoryNames={expenseCategoryNames} subcategoryNames={expenseSubcategoryNames} savingsCategoryId={savingsCategoryId} budgets={budgets} categories={categories} totals={totals} />}
     {type === 'reference' && <AnalysisReferenceView scope={scope} year={year} months={months} periodTransactions={periodTransactions} allTransactions={transactions} paymentMethodNames={paymentMethodNames} subcategoryNames={expenseSubcategoryNames} />}
     {type === 'card' && <AnalysisCardView scope={scope} year={year} months={months} monthCount={monthCount} periodTransactions={periodTransactions} allTransactions={transactions} paymentMethods={paymentMethods} />}
+    {type === 'annualReport' && <AnnualReportView scope={scope} year={year} months={months} periodTransactions={periodTransactions} categories={categories} paymentMethods={paymentMethods} />}
   </div>;
 }
 

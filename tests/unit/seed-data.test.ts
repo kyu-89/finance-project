@@ -3,8 +3,11 @@ import { DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_SUBCATEGORY_NAMES } from '@/
 import { DEFAULT_PAYMENT_METHOD_NAMES } from '@/lib/payment-methods';
 
 describe('seed data', () => {
-  it('defines exactly the 14 PRD expense categories, each with at least one subcategory', () => {
-    expect(DEFAULT_EXPENSE_CATEGORIES).toHaveLength(14);
+  // 2026-09(사용자 지시: "용돈지출은 지출 대분류에 용돈지출 소분류에 남편용돈으로 처리해") —
+  // PRD §4.3의 14개에 용돈지출(원본 2023년 엑셀엔 있었지만 이 시드 목록엔 빠져 있던 대분류)을
+  // 추가해 15개가 됐다.
+  it('defines exactly the 15 expense categories, each with at least one subcategory', () => {
+    expect(DEFAULT_EXPENSE_CATEGORIES).toHaveLength(15);
     for (const category of DEFAULT_EXPENSE_CATEGORIES) {
       expect(category.subcategoryNames.length).toBeGreaterThan(0);
     }

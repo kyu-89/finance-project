@@ -41,11 +41,16 @@ export const DEFAULT_EXPENSE_CATEGORIES: {
   { name: '의류비', subcategoryNames: ['의류', '패션잡화', '세탁비', '기타 의류'], defaultCostBehavior: 'variable' },
   { name: '미용비', subcategoryNames: ['화장품구입', '헤어샵', '기타 미용'], defaultCostBehavior: 'variable' },
   { name: '교육계발비', subcategoryNames: ['학원', '도서', '강의', '기타 교육', '기타 자기계발'], defaultCostBehavior: 'variable' },
-  { name: '문화생활비', subcategoryNames: ['영화/관람', '여가', '여행', 'OTT', '남편 용돈', '종소세세금', '지방세세금', '기타 문화생활'], defaultCostBehavior: 'variable' },
+  { name: '문화생활비', subcategoryNames: ['영화/관람', '여가', '여행', 'OTT', '종소세세금', '지방세세금', '기타 문화생활'], defaultCostBehavior: 'variable' },
   { name: '의료비', subcategoryNames: ['병원', '의약품', '영양제', '기타 의료비'], defaultCostBehavior: 'variable' },
   { name: '유류교통비', subcategoryNames: ['자동차보험', '자동차세', '유류비', '기타 유지비', '버스/지하철', '택시', '기차', '항공', '기타 교통'], defaultCostBehavior: 'variable' },
   { name: '통신비', subcategoryNames: ['핸드폰', '인터넷/IPTV', '우편/택배', '기타 통신'], defaultCostBehavior: 'fixed' },
   { name: '이벤트지출', subcategoryNames: ['축의금', '부조금', '기부금', '모임회비', '선물', '기타 경조사'], defaultCostBehavior: 'variable' },
+  // 2026-09(사용자 지시): "용돈지출은 지출 대분류에 용돈지출 소분류에 남편용돈으로 처리해" —
+  // 원래(2023년 원본 엑셀) 독립된 지출 대분류였는데 이 시드 목록엔 빠져 있었고 "남편 용돈"이
+  // 문화생활비 소분류로 잘못 들어가 있었다(마이그레이션 20260909140000으로 기존 가계 데이터도
+  // 정리). 새 가계는 처음부터 올바른 구조로 시드되도록 여기 추가한다.
+  { name: '용돈지출', subcategoryNames: ['남편 용돈'], defaultCostBehavior: null },
 ];
 
 // PRD §4.3 — 수입 소분류 초기값. Income has a single implicit 대분류 ("수입") per §4.2's

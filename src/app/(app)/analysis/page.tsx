@@ -8,7 +8,7 @@ import { AnalysisWorkspace } from './AnalysisWorkspace';
 
 const monthPattern = /^\d{4}-(0[1-9]|1[0-2])$/;
 const yearPattern = /^\d{4}$/;
-const TYPES = ['income', 'expense', 'reference', 'card'] as const;
+const TYPES = ['income', 'expense', 'reference', 'card', 'annualReport'] as const;
 type AnalysisType = (typeof TYPES)[number];
 
 function shiftMonth(month: string, offset: number) {

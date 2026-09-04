@@ -972,6 +972,21 @@ button:disabled { cursor: wait; transform: none !important; }
   .analysis-heatmap-cell { min-width: 52px; font-size: 10px; }
 }
 
+/* §12 — "연간 리포트"(사용자 지시: "엑셀 그대로의 구조로 보고싶어. 모든 열과 행의 데이터,
+ * 구조, 위계 등"). 원본 엑셀의 "○○계"/"총계"/"○○ 비율"/"계" 행을 실제 항목 행과 시각적으로
+ * 구분한다 — item은 기존 히트맵 셀 그대로, 나머지는 클릭할 수 없는 정적 값(annual-report-static-cell)에
+ * 굵게+옅은 배경을 준다. 연간_세부항목별지출만 대분류 열이 있어(showGroupColumn) 첫 열이 두
+ * 개가 되는데, sticky는 항상 그 행의 "맨 왼쪽" 열 하나에만 걸어야 해서 둘째 열(annual-report-
+ * label-secondary)에서는 꺼둔다(안 그러면 두 sticky 열이 같은 left:0에서 겹친다). */
+.annual-report-table .annual-report-label-secondary { position: static; padding-left: 12px; }
+.annual-report-static-cell { display: block; width: 100%; min-width: 64px; padding: 6px 4px; font-variant-numeric: tabular-nums; }
+.annual-report-row-subtotal, .annual-report-row-total { background: var(--tds-grey-50); font-weight: 700; }
+.annual-report-row-subtotal .is-label, .annual-report-row-total .is-label { background: var(--tds-grey-50); font-weight: 700; }
+.annual-report-row-ratio, .annual-report-row-checksum { color: var(--tds-grey-500); font-size: 11px; }
+.annual-report-row-ratio .is-label, .annual-report-row-checksum .is-label { background: var(--tds-white); color: var(--tds-grey-500); font-weight: 600; }
+.annual-report-row-total { border-top: 2px solid var(--tds-grey-300); }
+.annual-report-row-checksum { border-top: 1px solid var(--tds-grey-200); }
+
 /* §3 대시보드 8단계 순서의 마지막 항목(분석 이동 CTA)과 핵심 인사이트 행. */
 .dashboard-analysis-cta { display: flex; min-height: 56px; align-items: center; justify-content: center; border-radius: 16px; background: var(--tds-grey-900); color: var(--tds-white); font-size: 15px; font-weight: 750; text-decoration: none; }
 .dashboard-analysis-cta:hover { background: var(--tds-grey-800); }
