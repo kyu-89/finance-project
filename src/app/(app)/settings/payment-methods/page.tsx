@@ -6,6 +6,7 @@ import { Badge } from '@/components/Badge';
 import { StatusSelect } from '@/components/StatusSelect';
 import { setPaymentMethodActiveAction } from '@/actions/payment-method-actions';
 import { SettingsBackLink } from '../SettingsBackLink';
+import { PageHeader } from '@/components/PageHeader';
 
 export default async function PaymentMethodsSettingsPage() {
   const household = await ensureHouseholdForCurrentUser();
@@ -13,10 +14,7 @@ export default async function PaymentMethodsSettingsPage() {
 
   return (
     <div className="tds-page flex max-w-3xl flex-col gap-6">
-      <SettingsBackLink />
-      <div><h1 className="tds-title mb-2">결제수단을 관리해요</h1><p className="text-sm text-[var(--tds-grey-700)]">거래에 사용할 카드·계좌·현금을 관리해요.</p></div>
-
-      <div className="flex justify-end"><AddDrawer title="결제수단 추가" description="카드·계좌·현금 등 자주 쓰는 결제수단을 등록하세요." triggerLabel="결제수단 추가"><PaymentMethodForm /></AddDrawer></div>
+      <PageHeader eyebrow="설정" title="결제수단을 관리해요" description="거래에 사용할 카드·계좌·현금을 관리해요." action={<AddDrawer title="결제수단 추가" description="카드·계좌·현금 등 자주 쓰는 결제수단을 등록하세요." triggerLabel="결제수단 추가"><PaymentMethodForm /></AddDrawer>}><SettingsBackLink /></PageHeader>
 
       <ul className="settings-resource-list list-surface flex flex-col divide-y divide-[var(--tds-grey-200)]">
         {paymentMethods.map((method) => (
