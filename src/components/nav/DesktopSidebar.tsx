@@ -4,7 +4,7 @@ import { NAV_ITEMS } from '@/lib/nav-items';
 export function DesktopSidebar() {
   return (
     <nav className="hidden w-60 shrink-0 flex-col gap-2 border-r bg-white p-5 md:flex">
-      <div className="mb-5 px-3"><p className="text-xl font-extrabold tracking-[-0.04em]">우리집 재무</p><p className="mt-1 text-xs text-[var(--tds-grey-500)]">우리 집 돈의 흐름</p></div>
+      <div className="mb-5 px-3"><p className="text-xl font-extrabold tracking-[-0.04em]">우리집 가계부</p><p className="mt-1 text-xs text-[var(--tds-grey-500)]">우리 집 돈의 흐름을 기록해요</p></div>
       {NAV_ITEMS.map((item) => (
         <Link
           key={item.key}
