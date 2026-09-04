@@ -674,7 +674,6 @@ aside[role="dialog"][aria-modal="true"]:not(.app-drawer) { width: min(640px, 100
 .recurring-rule-card form { align-items: center; }
 .recurring-rule-card input:not([type='hidden']), .recurring-rule-card select { min-height: 40px; }
 .recurring-rule-card > div:last-child { min-width: 132px; }
-.form-field { display: flex; min-width: 0; flex-direction: column; gap: 6px; color: var(--tds-grey-700); font-size: 13px; font-weight: 650; }
 /* 반복 항목 추가/수정 드로워는 이제 RecurringRuleForm이 MonthlyDrawerForm과 같은
  * .monthly-drawer-form/-section/-grid 클래스를 쓴다(사용자 지시: 워딩·레이아웃 통일) — 예전의
  * .recurring-form/.recurring-rule-edit-body 전용 스타일은 더 이상 어디서도 쓰이지 않아 제거했다. */
