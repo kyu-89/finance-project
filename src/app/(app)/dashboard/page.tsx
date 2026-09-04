@@ -11,6 +11,7 @@ import { AnalysisCashflowChart } from '../analysis/AnalysisCashflowChart';
 import { Amount } from '@/components/Amount';
 import { EmptyState } from '@/components/EmptyState';
 import { ListItem } from '@/components/ListItem';
+import { PageHeader } from '@/components/PageHeader';
 import { SectionHeader } from '@/components/SectionHeader';
 import { StatCard } from '@/components/StatCard';
 
@@ -64,7 +65,7 @@ export default async function DashboardPage() {
   const recent: HomeRecent[] = [...currentMonthTransactions].filter((t) => t.status === 'posted').sort((a, b) => b.transactionDate.localeCompare(a.transactionDate)).slice(0, 5).map((t) => ({ id: t.id, transactionDate: t.transactionDate, transactionType: t.transactionType, flowClass: t.flowClass, amount: t.amount, description: t.description }));
 
   return <div data-page="home" className="tds-page home-page">
-    <header className="tds-page-header"><div><p className="tds-eyebrow">우리집 가계부</p><h1 className="tds-title">우리 집 재무 현황</h1><p className="tds-page-subtitle">우리 집의 자산과 이번 달 돈의 흐름을 한눈에 확인해요.</p></div></header>
+    <PageHeader eyebrow="우리집 가계부" title="우리 집 재무 현황" description="우리 집의 자산과 이번 달 돈의 흐름을 한눈에 확인해요." />
 
     {/* 1. 확인이 필요한 알림 */}
     {(summary.reviewCount > 0 || plannedRows.length > 0) && <aside className="dashboard-alert-strip" aria-label="확인할 알림"><span aria-hidden="true">●</span><div><strong>확인할 일이 있어요</strong><p>{summary.reviewCount > 0 ? `검토가 필요한 거래 ${summary.reviewCount}건` : ''}{summary.reviewCount > 0 && plannedRows.length > 0 ? ' · ' : ''}{plannedRows.length > 0 ? `예정 거래 ${plannedRows.length}건 · ${money(plannedAmount)}` : ''}</p></div><Link href="/monthly" prefetch className="tds-text-link">월간관리에서 확인</Link></aside>}

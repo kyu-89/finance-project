@@ -5,6 +5,7 @@ import { listCategoriesWithSubcategories } from '@/lib/categories';
 import { listPaymentMethods } from '@/lib/payment-methods';
 import { monthRangeFromSeoulDateString, todayInSeoul } from '@/lib/date';
 import { materializeRecurringRulesForRange } from '@/lib/recurring-rules';
+import { PageHeader } from '@/components/PageHeader';
 import { MonthlyPageTabs } from './MonthlyPageTabs';
 
 const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
@@ -60,17 +61,13 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
 
   return (
     <div className="tds-page">
-      <div className="monthly-page-header">
-        <div><p className="tds-eyebrow">월간 관리</p><h1 className="tds-title">월간 내역을 관리해요</h1>
-          <p className="tds-page-subtitle">이번 달 거래를 기록하고 예정 거래를 확인해 주세요.</p>
-          {(categoryFilterName || subcategoryFilterName || selectedRecurringRule) && <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-[var(--tds-blue-50)] px-3 py-1.5 text-xs font-semibold text-[var(--tds-blue-600)]">{selectedRecurringRule ? '연결된 예정거래만 보는 중' : `${subcategoryFilterName ?? categoryFilterName} 거래만 보는 중`} <Link href={`/monthly?month=${selectedMonth}`} className="underline underline-offset-2">필터 해제</Link></p>}
-        </div>
-        <nav aria-label="월 선택" className="monthly-month-navigator">
+      <PageHeader as="div" className="monthly-page-header" eyebrow="월간 관리" title="월간 내역을 관리해요" description="이번 달 거래를 기록하고 예정 거래를 확인해 주세요." action={<nav aria-label="월 선택" className="monthly-month-navigator">
           <Link href={`/monthly?month=${shiftMonth(selectedMonth, -1)}`} className="home-arrow" aria-label="이전 달">←</Link>
           <strong className="min-w-28 text-center text-base">{monthLabel(selectedMonth)}</strong>
           <Link href={`/monthly?month=${shiftMonth(selectedMonth, 1)}`} className="home-arrow" aria-label="다음 달">→</Link>
-        </nav>
-      </div>
+        </nav>}>
+        {(categoryFilterName || subcategoryFilterName || selectedRecurringRule) && <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-[var(--tds-blue-50)] px-3 py-1.5 text-xs font-semibold text-[var(--tds-blue-600)]">{selectedRecurringRule ? '연결된 예정거래만 보는 중' : `${subcategoryFilterName ?? categoryFilterName} 거래만 보는 중`} <Link href={`/monthly?month=${selectedMonth}`} className="underline underline-offset-2">필터 해제</Link></p>}
+      </PageHeader>
       <MonthlyPageTabs
         transactions={transactions}
         selectedMonth={selectedMonth}

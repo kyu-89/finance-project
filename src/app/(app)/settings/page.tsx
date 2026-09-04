@@ -1,4 +1,5 @@
 import { SignOutButton } from '@/components/SignOutButton';
+import { PageHeader } from '@/components/PageHeader';
 import { ensureHouseholdForCurrentUser } from '@/lib/household';
 import { countTransactionsNeedingReview } from '@/lib/transactions';
 import { SettingsNav } from './SettingsNav';
@@ -7,8 +8,7 @@ export default async function SettingsPage() {
   const household = await ensureHouseholdForCurrentUser();
   const reviewCount = await countTransactionsNeedingReview(household.id);
   return <div className="tds-page">
-    <h1 className="tds-title mb-2">가계부 설정</h1>
-    <p className="mb-6 text-sm text-[var(--tds-grey-700)]">가족, 분류, 예산, 반복 거래와 데이터를 관리해요.</p>
+    <PageHeader title="가계부 설정" description="가족, 분류, 예산, 반복 거래와 데이터를 관리해요." />
     <SettingsNav reviewCount={reviewCount} />
     <div className="mt-8"><SignOutButton /></div>
   </div>;

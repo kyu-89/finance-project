@@ -426,9 +426,6 @@ textarea {
 }
 
 .home-page { display: flex; flex-direction: column; gap: 28px; }
-.tds-page-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
-.tds-eyebrow { color: var(--tds-blue-600); font-size: var(--text-caption); font-weight: 650; }
-.tds-page-subtitle { margin-top: 8px; color: var(--tds-grey-700); font-size: var(--text-body-2); }
 .home-record-button { min-height: 48px; white-space: nowrap; }
 .home-month-control { display: flex; flex: 0 0 auto; align-items: center; gap: 12px; }
 .home-month-control strong { min-width: 92px; text-align: center; font-size: 15px; }

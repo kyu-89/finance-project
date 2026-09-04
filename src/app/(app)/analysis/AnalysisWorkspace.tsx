@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Amount } from '@/components/Amount';
+import { PageHeader } from '@/components/PageHeader';
 import { StatCard } from '@/components/StatCard';
 import type { CategoryWithSubcategories } from '@/lib/categories';
 import type { PaymentMethod } from '@/lib/payment-methods';
@@ -99,7 +100,7 @@ export function AnalysisWorkspace({ initialScope, year, initialMonth, initialOpe
   const dailyPoints = useMemo(() => scope === 'month' ? dailyCashflow(transactions, `${month}-01`, monthEnd(month), savingsCategoryId) : [], [scope, transactions, month, savingsCategoryId]);
 
   return <div className="analysis-page tds-page flex flex-col gap-5">
-    <header className="tds-page-header"><div><p className="tds-eyebrow">분석</p><h1 className="tds-title">수입·지출을 자세히 살펴봐요</h1><p className="tds-page-subtitle">연간·월간을 전환하며 대분류부터 개별 거래까지 확인할 수 있어요.</p></div></header>
+    <PageHeader eyebrow="분석" title="수입·지출을 자세히 살펴봐요" description="연간·월간을 전환하며 대분류부터 개별 거래까지 확인할 수 있어요." />
 
     <div className="analysis-controls">
       <div className="home-explorer-tabs" role="tablist" aria-label="기간 단위"><button type="button" role="tab" aria-selected={scope === 'month'} className={scope === 'month' ? 'is-selected' : ''} onClick={() => setScope('month')}>월간</button><button type="button" role="tab" aria-selected={scope === 'year'} className={scope === 'year' ? 'is-selected' : ''} onClick={() => setScope('year')}>연간</button></div>
