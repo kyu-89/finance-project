@@ -16,15 +16,20 @@ const money = (value: number) => `${won.format(Math.round(value))}원`;
 // 지출 > 카드사용 > 참고 거래 순으로 아코디언 적용해") — 연간 스코프의 엑셀-그대로 표(모든
 // 결제수단 포함)는 AnnualReportView 하나로 통합됐고, 이 뷰는 이제 월간 스코프 전용(지출
 // 아코디언 다음 칸)이라 연간 매트릭스 히트맵을 갖지 않는다.
-export function AnalysisCardView({ periodTransactions, paymentMethods }: {
+// 2026-09(사용자 지시: "컬럼이나 디자인 시스템이 일관되지 않아") — 개별 거래 표의 extraColumn을
+// "구분"(실제지출/참고거래 텍스트)에서 나머지 셋과 같은 종류인 "카테고리"(대분류)로 바꿨다.
+// 실제지출/참고거래 구분은 여전히 금액 색상(참고 거래=회색 neutral)으로 구분되니 텍스트
+// 컬럼으로 또 보여줄 필요가 없었다.
+export function AnalysisCardView({ periodTransactions, paymentMethods, categoryNames }: {
   periodTransactions: Transaction[];
   paymentMethods: PaymentMethod[];
+  categoryNames: Map<string, string>;
 }) {
   const usage = useMemo(() => summarizeCardUsage(periodTransactions, paymentMethods), [periodTransactions, paymentMethods]);
   const cardRows: AnalysisRow[] = usage.cards.map((c) => ({ id: c.id, label: c.label, value: c.totalAmount, count: c.count }));
   const transactionsFor = (id: string) => periodTransactions.filter((t) => t.status === 'posted' && t.paymentMethodId === id && (t.flowClass === 'consumption' || t.transactionType === 'reference'));
   const creditShare = usage.total > 0 ? usage.creditTotal / usage.total : 0;
-  const extraColumn: TransactionExtraColumn = { label: '구분', valueFor: (t) => (t.transactionType === 'reference' ? '참고 거래' : '실제 지출') };
+  const extraColumn: TransactionExtraColumn = { label: '카테고리', valueFor: (t) => (t.categoryId ? categoryNames.get(t.categoryId) ?? '기타' : '-') };
 
   return <div className="analysis-view flex flex-col gap-4">
     <section className="tds-card p-5">

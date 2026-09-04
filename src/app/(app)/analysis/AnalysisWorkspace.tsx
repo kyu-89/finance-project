@@ -71,6 +71,10 @@ export function AnalysisWorkspace({ initialScope, year, initialMonth, initialOpe
   const months = useMemo(() => Array.from({ length: 12 }, (_, i) => `${year}-${String(i + 1).padStart(2, '0')}`), [year]);
   const incomeSubcategoryNames = useMemo(() => new Map(categories.find((c) => c.transactionType === 'income')?.subcategories.map((s) => [s.id, s.name]) ?? []), [categories]);
   const expenseCategoryNames = useMemo(() => new Map(categories.filter((c) => c.transactionType === 'expense').map((c) => [c.id, c.name])), [categories]);
+  // 카드 사용의 개별 거래는 참고 거래도 섞여 있고, 참고 거래는 수입/지출 대분류 어느 쪽이든
+  // categoryId로 가질 수 있어서(§4) expenseCategoryNames만으로는 못 찾는 경우가 생긴다 — 두
+  // 유형을 합친 맵을 따로 둔다.
+  const allCategoryNames = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories]);
   const expenseSubcategoryNames = useMemo(() => { const map = new Map<string, string>(); for (const c of categories) for (const s of c.subcategories) map.set(s.id, s.name); return map; }, [categories]);
   const paymentMethodNames = useMemo(() => new Map(paymentMethods.map((m) => [m.id, m.name])), [paymentMethods]);
   const savingsCategoryId = categories.find((c) => c.name === '저축성지출')?.id ?? null;
@@ -108,7 +112,7 @@ export function AnalysisWorkspace({ initialScope, year, initialMonth, initialOpe
             <div className="tds-accordion-body">
               {key === 'income' && <AnalysisIncomeView periodTransactions={periodTransactions} subcategoryNames={incomeSubcategoryNames} />}
               {key === 'expense' && <AnalysisExpenseView month={month} periodTransactions={periodTransactions} categoryNames={expenseCategoryNames} subcategoryNames={expenseSubcategoryNames} budgets={budgets} categories={categories} totals={totals} />}
-              {key === 'card' && <AnalysisCardView periodTransactions={periodTransactions} paymentMethods={paymentMethods} />}
+              {key === 'card' && <AnalysisCardView periodTransactions={periodTransactions} paymentMethods={paymentMethods} categoryNames={allCategoryNames} />}
               {key === 'reference' && <AnalysisReferenceView periodTransactions={periodTransactions} paymentMethodNames={paymentMethodNames} subcategoryNames={expenseSubcategoryNames} />}
             </div>
           </details>)}

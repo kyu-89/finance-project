@@ -102,19 +102,21 @@ describe('summarizeIncomeBySubcategory', () => {
   });
 });
 
+// 2026-09(사용자 지시: "저축성 지출 클릭하면 소분류 컬럼 달아서 쭉 보여줘. 다른 것과 동일하게
+// 1단계 구조로 통일") — 대분류별 합계만 반환한다(예전엔 소분류까지 중첩해서 반환했었다). 소분류
+// 정보는 이제 이 함수가 아니라 호출부(AnalysisExpenseView)의 개별 거래 표 컬럼이 담당한다.
 describe('summarizeExpenseByCategory', () => {
-  it('nests subcategories under category, treating 저축성지출 as one ordinary category among others', () => {
+  it('groups by category, treating 저축성지출 as one ordinary category among others', () => {
     const categoryNames = new Map([[SAVINGS_CATEGORY_ID, '저축성지출'], [FOOD_CATEGORY_ID, '식비']]);
-    const subcategoryNames = new Map([['sub-deposit', '예/적금'], ['sub-mart', '시장/마트']]);
     const rows = summarizeExpenseByCategory([
       tx({ categoryId: SAVINGS_CATEGORY_ID, subcategoryId: 'sub-deposit', amount: 300_000 }),
       tx({ categoryId: FOOD_CATEGORY_ID, subcategoryId: 'sub-mart', amount: 50_000 }),
       tx({ transactionType: 'reference', flowClass: 'excluded', categoryId: SAVINGS_CATEGORY_ID, amount: 777 }), // must not leak in
-    ], categoryNames, subcategoryNames);
-    expect(rows).toHaveLength(2);
-    const savingsRow = rows.find((r) => r.id === SAVINGS_CATEGORY_ID)!;
-    expect(savingsRow.value).toBe(300_000);
-    expect(savingsRow.subcategories).toEqual([{ id: 'sub-deposit', label: '예/적금', value: 300_000, count: 1 }]);
+    ], categoryNames);
+    expect(rows).toEqual([
+      { id: SAVINGS_CATEGORY_ID, label: '저축성지출', value: 300_000, count: 1 },
+      { id: FOOD_CATEGORY_ID, label: '식비', value: 50_000, count: 1 },
+    ]);
   });
 });
 

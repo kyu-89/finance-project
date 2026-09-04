@@ -14,7 +14,6 @@ import type { PaymentMethod } from '@/lib/payment-methods';
 //   카드 사용액 = 카드 결제수단이 연결된 (지출 + 참고거래) — 수입은 절대 포함하지 않음
 
 export type AnalysisRow = { id: string; label: string; value: number; count: number };
-export type ExpenseCategoryRow = AnalysisRow & { subcategories: AnalysisRow[] };
 export type CardUsageRow = { id: string; label: string; methodType: string; expenseAmount: number; referenceAmount: number; totalAmount: number; count: number };
 export type MonthPoint = { month: string; income: number; expense: number; savings: number; net: number };
 export type DayPoint = { date: string; income: number; expense: number; savings: number };
@@ -54,20 +53,21 @@ export function summarizeIncomeBySubcategory(transactions: Transaction[], subcat
   return [...rows.values()].sort((a, b) => b.value - a.value);
 }
 
-// §8 — 지출 > 대분류 > 소분류. 저축성지출도 다른 대분류와 똑같이 이 목록의 항목 하나일 뿐이다.
-export function summarizeExpenseByCategory(transactions: Transaction[], categoryNames: Map<string, string>, subcategoryNames: Map<string, string>): ExpenseCategoryRow[] {
-  const rows = new Map<string, ExpenseCategoryRow>();
+// §8 — 지출 > 대분류 > 개별 거래. 저축성지출도 다른 대분류와 똑같이 이 목록의 항목 하나일 뿐이다.
+// 2026-09(사용자 지시: "d는... 저축성 지출 클릭하면 소분류 컬럼 달아서 쭉 보여줘. 다른 것과
+// 동일하게 1단계 구조로 통일") — 예전엔 대분류→소분류→개별거래 3단계였는데(소분류마다 또
+// 합계·클릭이 있었음), 이제 나머지 세 분석(수입/참고거래/카드사용)과 똑같이 대분류→개별거래
+// 1단계다. 소분류 정보는 사라지지 않고 개별 거래 표의 "소분류" 컬럼으로 옮겨갔다
+// (AnalysisExpenseView의 extraColumn 참고) — 그래서 subcategoryNames는 이제 이 함수가 아니라
+// 그 컬럼을 만드는 호출부에서 쓴다.
+export function summarizeExpenseByCategory(transactions: Transaction[], categoryNames: Map<string, string>): AnalysisRow[] {
+  const rows = new Map<string, AnalysisRow>();
   for (const t of transactions.filter(isExpense)) {
     const id = t.categoryId ?? 'unassigned';
-    const row = rows.get(id) ?? { id, label: categoryNames.get(id) ?? '미분류', value: 0, count: 0, subcategories: [] };
+    const row = rows.get(id) ?? { id, label: categoryNames.get(id) ?? '미분류', value: 0, count: 0 };
     row.value += t.amount; row.count += 1;
-    const subId = t.subcategoryId ?? 'unassigned';
-    let sub = row.subcategories.find((s) => s.id === subId);
-    if (!sub) { sub = { id: subId, label: subcategoryNames.get(subId) ?? '기타', value: 0, count: 0 }; row.subcategories.push(sub); }
-    sub.value += t.amount; sub.count += 1;
     rows.set(id, row);
   }
-  for (const row of rows.values()) row.subcategories.sort((a, b) => b.value - a.value);
   return [...rows.values()].sort((a, b) => b.value - a.value);
 }
 

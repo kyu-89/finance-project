@@ -18,7 +18,9 @@ export function AnalysisIncomeView({ periodTransactions, subcategoryNames }: {
   const rows = useMemo(() => summarizeIncomeBySubcategory(periodTransactions, subcategoryNames), [periodTransactions, subcategoryNames]);
   const total = rows.reduce((sum, r) => sum + r.value, 0);
   const transactionsFor = (id: string) => periodTransactions.filter((t) => t.status === 'posted' && t.transactionType === 'income' && (t.subcategoryId ?? 'unassigned') === id);
-  const extraColumn: TransactionExtraColumn = { label: '소분류', valueFor: (t) => (t.subcategoryId ? subcategoryNames.get(t.subcategoryId) ?? '기타 수입' : '-') };
+  // 2026-09(사용자 지시: "컬럼이나 디자인 시스템이 일관되지 않아") — 소분류를 못 찾았을 때의
+  // 대체 문구를 지출·참고거래와 똑같이 "기타"로 맞췄다(전에는 여기만 "기타 수입"이었다).
+  const extraColumn: TransactionExtraColumn = { label: '소분류', valueFor: (t) => (t.subcategoryId ? subcategoryNames.get(t.subcategoryId) ?? '기타' : '-') };
   return <div className="analysis-view flex flex-col gap-4">
     <section className="tds-card p-5"><h2 className="text-lg font-bold">수입 소분류</h2><p className="mt-1 text-sm text-[var(--tds-grey-700)]">항목을 누르면 개별 거래를 확인할 수 있어요.</p><div className="mt-4"><SimpleDrilldown rows={rows} total={total} emptyText="수입이 없어요" transactionsFor={transactionsFor} extraColumn={extraColumn} /></div></section>
   </div>;
