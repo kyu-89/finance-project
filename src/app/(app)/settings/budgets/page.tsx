@@ -15,7 +15,7 @@ export default async function BudgetSettingsPage({ searchParams }: { searchParam
   const [categories, budgets] = await Promise.all([listCategoriesWithSubcategories(household.id), listBudgets(household.id, year)]);
   return <div className="tds-page flex max-w-none flex-col gap-6">
     <SettingsBackLink />
-    <div><h1 className="tds-title mb-2">연간 예산을 관리해요</h1><p className="text-sm text-[var(--tds-grey-700)]">카테고리별 월 예산을 원 단위로 입력해요.</p></div>
+    <div><h1 className="tds-title mb-2">예산을 관리해요</h1><p className="text-sm text-[var(--tds-grey-700)]">카테고리별 월 예산을 입력하고 지출과 비교해요.</p></div>
     <div className="flex items-center gap-3"><Link href={`/settings/budgets?year=${year - 1}`} className="secondary-button flex items-center px-4">이전 연도</Link>
       <strong className="text-xl">{year}년</strong><Link href={`/settings/budgets?year=${year + 1}`} className="secondary-button flex items-center px-4">다음 연도</Link></div>
     <AnnualBudgetEditor year={year} categories={categories} budgets={budgets} />

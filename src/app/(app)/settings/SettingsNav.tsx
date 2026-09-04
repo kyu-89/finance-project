@@ -7,8 +7,19 @@ const items = [
   ['결제수단 관리', '카드·계좌·현금 결제수단', '/settings/payment-methods'],
   ['거래 내역 가져오기', '엑셀·CSV·백업 데이터', '/settings/data'],
   ['예산 관리', '연간 예산과 월별 목표', '/settings/budgets'],
-  ['반복 항목 관리', '예정 거래와 정기 지출', '/settings/recurring'],
+  ['반복 거래 관리', '예정 거래와 정기 지출', '/settings/recurring'],
 ] as const;
+
+const SETTINGS_COPY = [
+  ['재무 목표', '목표 금액과 달성 현황을 관리해요.'],
+  ['재무 일정', '기념일과 금융 일정을 관리해요.'],
+  ['카테고리 관리', '수입·지출의 대분류와 소분류를 관리해요.'],
+  ['결제수단 관리', '거래에 사용할 카드·계좌·현금을 관리해요.'],
+  ['거래 내역 가져오기', '거래 데이터를 가져오고 내보내거나 검토해요.'],
+  ['예산 관리', '카테고리별 예산과 실제 지출을 비교해요.'],
+  ['반복 거래 관리', '매달 반복되는 거래와 예정 거래를 관리해요.'],
+] as const;
+const settingsItems = items.map(([, , href], index) => [SETTINGS_COPY[index][0], SETTINGS_COPY[index][1], href] as const);
 
 // 2026-09 Excel migration follow-up: shown only while there is at least one needs_review=true
 // transaction left (see review/page.tsx) — once everything is reviewed, this entry disappears
@@ -20,7 +31,7 @@ export function SettingsNav({ reviewCount = 0 }: { reviewCount?: number }) {
       <span className="min-w-0"><span className="block truncate text-sm font-semibold">{reviewItem[0]}</span><span className="mt-1 block truncate text-xs text-[var(--tds-grey-700)]">{reviewItem[1]}</span></span>
       <span aria-hidden="true" className="shrink-0 text-lg text-[var(--tds-grey-500)] transition group-hover:translate-x-0.5">›</span>
     </Link>}
-    {items.map(([title, description, href]) => <Link key={title} href={href} className="tds-card group flex min-h-20 items-center justify-between gap-4 p-4 transition hover:border-[var(--tds-blue-300)] hover:bg-[var(--tds-blue-50)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--tds-blue-500)]">
+    {settingsItems.map(([title, description, href]) => <Link key={title} href={href} className="tds-card group flex min-h-20 items-center justify-between gap-4 p-4 transition hover:border-[var(--tds-blue-300)] hover:bg-[var(--tds-blue-50)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--tds-blue-500)]">
       <span className="min-w-0"><span className="block truncate text-sm font-semibold">{title}</span><span className="mt-1 block truncate text-xs text-[var(--tds-grey-600)]">{description}</span></span>
       <span aria-hidden="true" className="shrink-0 text-lg text-[var(--tds-grey-400)] transition group-hover:translate-x-0.5">›</span>
     </Link>)}

@@ -15,7 +15,7 @@ export function RecurringRuleStatusSelect({ id, status }: { id: string; status: 
   return <InlineActionSelect
     action={updateRecurringRuleStatusAction}
     id={id}
-    label="반복 항목 상태"
+    label="반복 거래 상태"
     name="status"
     value={status}
     options={OPTIONS}

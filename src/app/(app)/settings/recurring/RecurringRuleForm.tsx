@@ -90,6 +90,6 @@ export function RecurringRuleForm({ categories, paymentMethods, rule }: { catego
     <input type="hidden" name="subcategoryId" value={subcategoryId} />
     <input type="hidden" name="paymentMethodId" value={type === 'expense' ? paymentMethodId : ''} />
     <input type="hidden" name="categoryDefaultCostBehavior" value={selected?.defaultCostBehavior ?? ''} />
-    <Button type="submit" variant="primary" disabled={pending || missingRequiredPick} className="monthly-drawer-submit">{pending ? '저장 중…' : isEdit ? '변경사항 저장' : '반복 항목 저장'}</Button>
+    <Button type="submit" variant="primary" disabled={pending || missingRequiredPick} className="monthly-drawer-submit">{pending ? '저장 중…' : isEdit ? '변경사항 저장' : '반복 거래 저장'}</Button>
   </form>;
 }
