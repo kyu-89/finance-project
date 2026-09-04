@@ -1236,7 +1236,7 @@ input.quick-add-amount {
   .tds-page {
     width: 100%;
     max-width: none;
-    padding: var(--ui-space-6) var(--ui-mobile-gutter) calc(var(--ui-mobile-bottom-nav-height) + var(--ui-space-5) + env(safe-area-inset-bottom));
+    padding: calc(var(--ui-space-6) + env(safe-area-inset-top)) var(--ui-mobile-gutter) calc(var(--ui-mobile-bottom-nav-height) + var(--ui-space-5) + env(safe-area-inset-bottom));
   }
 
   .quick-add-shell {

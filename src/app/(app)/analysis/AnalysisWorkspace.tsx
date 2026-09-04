@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Amount } from '@/components/Amount';
@@ -60,7 +60,13 @@ export function AnalysisWorkspace({ initialScope, year, initialMonth, initialOpe
 }) {
   const [scope, setScope] = useState(initialScope);
   const [month, setMonth] = useState(initialMonth);
+  const selectedMonthRef = useRef<HTMLButtonElement>(null);
   const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (scope !== 'month') return;
+    selectedMonthRef.current?.scrollIntoView({ block: 'nearest', inline: 'center' });
+  }, [scope, month, year]);
 
   // 연도 선택기는 서버에서 새 1년치 데이터를 받아야 하므로 Link다 — 다른 연도로 바뀌면 그 해
   // 기본 달로 재동기화한다(dashboard/DashboardMonthlyDetail의 syncedYear와 같은 패턴).
@@ -98,7 +104,7 @@ export function AnalysisWorkspace({ initialScope, year, initialMonth, initialOpe
     <div className="analysis-controls">
       <div className="home-explorer-tabs" role="tablist" aria-label="기간 단위"><button type="button" role="tab" aria-selected={scope === 'month'} className={scope === 'month' ? 'is-selected' : ''} onClick={() => setScope('month')}>월간</button><button type="button" role="tab" aria-selected={scope === 'year'} className={scope === 'year' ? 'is-selected' : ''} onClick={() => setScope('year')}>연간</button></div>
       <div className="home-month-selector" aria-label="연도 선택">{availableYears.map((y) => <Link key={y} href={yearHref(y)} scroll={false} className={String(y) === year ? 'is-selected' : ''}>{y}년</Link>)}</div>
-      {scope === 'month' && <div className="home-month-selector" aria-label="월 선택">{months.map((m) => <button type="button" key={m} className={m === month ? 'is-selected' : ''} onClick={() => setMonth(m)}>{Number(m.slice(5, 7))}월</button>)}</div>}
+      {scope === 'month' && <div className="home-month-selector" aria-label="월 선택">{months.map((m) => <button type="button" key={m} ref={m === month ? selectedMonthRef : undefined} aria-pressed={m === month} className={m === month ? 'is-selected' : ''} onClick={() => setMonth(m)}>{Number(m.slice(5, 7))}월</button>)}</div>}
     </div>
 
     <AnalysisSummary scope={scope} label={label} totals={totals} previousTotals={scope === 'month' ? previousTotals : null} monthCount={monthCount} />

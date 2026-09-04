@@ -537,9 +537,9 @@ textarea {
 .home-monthly-detail, .home-monthly-detail .home-html-title, .home-monthly-detail .home-flow-kpi-grid, .home-monthly-detail .home-unified-detail { min-width: 0; }
 .home-monthly-detail .home-html-title h2 { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .home-monthly-detail-controls .home-explorer-tabs { flex: 0 0 auto; }
-.home-month-selector { display: flex; width: 100%; min-width: 0; max-width: 100%; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.home-month-selector { display: flex; width: 100%; min-width: 0; max-width: 100%; gap: 6px; overflow-x: auto; scroll-padding-inline: var(--ui-space-2); scroll-snap-type: x proximity; scrollbar-width: none; }
 .home-month-selector::-webkit-scrollbar { display: none; }
-.home-month-selector button, .home-month-selector a { flex: 0 0 auto; min-width: 40px; min-height: 36px; padding-inline: 9px; border: 1px solid var(--tds-grey-200); border-radius: 9px; background: var(--tds-white); color: var(--tds-grey-700); font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+.home-month-selector button, .home-month-selector a { flex: 0 0 auto; min-width: 40px; min-height: 36px; padding-inline: 9px; border: 1px solid var(--tds-grey-200); border-radius: 9px; background: var(--tds-white); color: var(--tds-grey-700); font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; scroll-snap-align: center; text-decoration: none; }
 .home-month-selector button.is-selected, .home-month-selector a.is-selected { border-color: var(--state-selected-border); background: var(--state-selected-bg); color: var(--state-selected-fg); }
 .home-html-kpi strong.is-accent, .home-html-equation .is-accent { color: var(--tds-blue-600); }
 .home-html-card { min-width: 0; padding: 22px; }
