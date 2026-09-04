@@ -190,6 +190,9 @@ textarea {
 .monthly-summary-heading > div { min-width: 0; }
 .monthly-summary-heading h2 { margin-top: 4px; color: var(--tds-grey-900); font-size: var(--text-title-2); letter-spacing: -.03em; white-space: nowrap; }
 .monthly-summary-meta { color: var(--tds-grey-600); font-size: 12px; white-space: nowrap; }
+.monthly-command-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; color: var(--tds-grey-600); font-size: 12px; }
+.monthly-command-meta span { white-space: nowrap; }
+.monthly-command-meta .monthly-analysis-cta { margin-left: auto; }
 .monthly-command-center { display: grid; gap: 18px; padding: 20px; border: 1px solid var(--tds-grey-200); border-radius: 20px; background: linear-gradient(135deg, var(--tds-white), var(--tds-blue-50)); }
 .monthly-command-copy { max-width: 620px; }
 .monthly-kicker { color: var(--tds-blue-600); font-size: 12px; font-weight: 800; }
@@ -728,6 +731,8 @@ button:disabled { cursor: wait; transform: none !important; }
   .monthly-summary-heading { align-items: flex-start; }
   .monthly-summary-heading h2 { font-size: 18px; }
   .monthly-summary-meta { overflow: hidden; text-overflow: ellipsis; }
+  .monthly-command-meta { align-items: flex-start; flex-direction: column; gap: 6px; }
+  .monthly-command-meta .monthly-analysis-cta { width: 100%; justify-content: center; margin-left: 0; }
   .monthly-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .monthly-add-chooser-options { grid-template-columns: 1fr; }
   .monthly-add-option { min-height: 56px; }

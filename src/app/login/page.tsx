@@ -44,7 +44,7 @@ function LoginForm() {
   return (
     <main className="auth-shell">
       <section className="auth-card">
-      <div><p className="mb-2 text-sm font-semibold text-[var(--tds-blue-500)]">우리집 가계부</p><h1 className="tds-title">다시 만나요</h1><p className="mt-2 text-sm text-[var(--tds-grey-700)]">우리 집 돈의 흐름과 자산을 이어서 살펴보세요.</p></div>
+      <div><p className="mb-2 text-sm font-semibold text-[var(--tds-blue-500)]">우리집 가계부</p><h1 className="tds-title">환영해요</h1><p className="mt-2 text-sm text-[var(--tds-grey-700)]">우리집 가계부를 관리해 보세요.</p></div>
       {justSignedUp && (
         <p className="rounded bg-blue-50 p-2 text-sm text-blue-700">
           가입 확인 이메일을 보냈어요. 이메일을 확인한 뒤 로그인해요.

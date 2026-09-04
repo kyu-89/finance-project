@@ -19,16 +19,15 @@ export function MonthlyPageTabs({ transactions, selectedMonth, categories, payme
   const plannedAmount = plannedRows.reduce((sum, t) => sum + t.amount, 0);
   const referenceCount = posted.filter((t) => t.transactionType === 'reference').length;
   return <div className="monthly-page-flow flex flex-col gap-4">
-    <section className="monthly-command-center" aria-label="이번 달 요약"><div className="monthly-command-copy"><p className="monthly-kicker">이번 달 흐름 보기</p><h2>이번 달의 자금 흐름을 정리해요</h2><p>선택한 연월의 확정 거래와 예정 거래를 구분해 보여드려요. 예정 거래를 먼저 처리하고 수입·지출을 추가해 보세요.</p></div>
+    <section className="monthly-command-center" aria-label="이번 달 요약">
+      <div className="monthly-command-copy"><p className="monthly-kicker">월간 관리</p><h2>{selectedMonth.replace('-', '년 ')}월의 돈 흐름</h2><p>이번 달 거래를 기록하고 예정 거래를 확정하거나 제외하세요.</p></div>
       <div className="monthly-summary-grid">
-        <Summary label="이번 달 수입" value={income} tone="income" />
-        <Summary label="이번 달 총지출" value={expense} tone="expense" />
+        <Summary label="수입" value={income} tone="income" />
+        <Summary label="지출" value={expense} tone="expense" />
         <Summary label="저축성 지출" value={savings} tone="expense" />
         <Summary label="순현금흐름" value={income - expense} tone={income - expense >= 0 ? 'income' : 'expense'} />
-        <Summary label="처리할 예정" value={plannedRows.length} suffix="건" tone="planned" detail={plannedAmount > 0 ? `${plannedAmount.toLocaleString('ko-KR')}원` : undefined} />
-        <Summary label="참고 거래" value={referenceCount} suffix="건" tone="planned" />
       </div>
-      <Link href={`/analysis?scope=month&month=${selectedMonth}&type=expense`} prefetch className="monthly-analysis-cta">이번 달 분석 보기 →</Link>
+      <div className="monthly-command-meta"><span>예정 거래 {plannedRows.length}건{plannedAmount > 0 ? ` · ${plannedAmount.toLocaleString('ko-KR')}원` : ''}</span><span>참고 거래 {referenceCount}건</span><Link href={`/analysis?scope=month&month=${selectedMonth}&type=expense`} prefetch className="monthly-analysis-cta">수입·지출 분석 보기 →</Link></div>
     </section>
     <section className="monthly-workspace" aria-label="월간 관리 작업"><div className="monthly-workspace-content" role="tabpanel"><MonthlyInputTab initialTransactions={transactions} selectedMonth={selectedMonth} categories={categories} paymentMethods={paymentMethods} /></div></section>
   </div>;
