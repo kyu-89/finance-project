@@ -229,14 +229,18 @@ textarea {
 .monthly-report-details > summary::after { content: '＋'; float: right; color: var(--tds-blue-600); font-size: 18px; }
 .monthly-report-details[open] > summary { border-bottom: 1px solid var(--tds-grey-200); }
 .monthly-report-details[open] > summary::after { content: '−'; }
-.monthly-section { overflow: hidden; border: 1px solid var(--tds-grey-200); border-radius: 18px; background: var(--tds-white); }
-.monthly-section > summary { display: flex; align-items: center; gap: 12px; padding: 17px 20px; cursor: pointer; list-style: none; font-size: 16px; font-weight: 750; }
-.monthly-section > summary::-webkit-details-marker { display: none; }
-.monthly-section > summary::after { content: '＋'; margin-left: auto; color: var(--tds-blue-600); font-size: 20px; }
-.monthly-section[open] > summary { border-bottom: 1px solid var(--tds-grey-200); }
-.monthly-section[open] > summary::after { content: '−'; }
-.monthly-section > summary span { color: var(--tds-grey-500); font-size: 12px; font-weight: 500; }
-.monthly-section-body { padding: 16px; }
+/* 공통 아코디언(<details>+<summary>) — 원래 "monthly-section"이라는 이름으로 만들어졌지만
+ * 실제로는 어떤 화면에서도 쓰인 적 없는 죽은 CSS였다. 2026-09(사용자 지시: "분석쪽 화면 다시
+ * 재정리... 아코디언 적용해")로 분석 화면의 월간 스코프(수입/지출/카드사용/참고거래)에서
+ * 처음 실사용되면서, 특정 화면 전용이 아닌 진짜 공통 규칙이 되도록 이름을 일반화했다. */
+.tds-accordion { overflow: hidden; border: 1px solid var(--tds-grey-200); border-radius: 18px; background: var(--tds-white); }
+.tds-accordion > summary { display: flex; align-items: center; gap: 12px; padding: 17px 20px; cursor: pointer; list-style: none; font-size: 16px; font-weight: 750; }
+.tds-accordion > summary::-webkit-details-marker { display: none; }
+.tds-accordion > summary::after { content: '＋'; margin-left: auto; color: var(--tds-blue-600); font-size: 20px; }
+.tds-accordion[open] > summary { border-bottom: 1px solid var(--tds-grey-200); }
+.tds-accordion[open] > summary::after { content: '−'; }
+.tds-accordion > summary span { color: var(--tds-grey-500); font-size: 12px; font-weight: 500; }
+.tds-accordion-body { padding: 16px; }
 
 .mobile-lnb-item {
   display: flex;
@@ -724,9 +728,9 @@ button:disabled { cursor: wait; transform: none !important; }
 
   .tds-title { font-size: 25px; line-height: 1.28; }
   .tds-card { border-radius: 18px; }
-  .monthly-section > summary { align-items: flex-start; padding: 15px 16px; font-size: 15px; }
-  .monthly-section > summary span { display: block; max-width: 70%; line-height: 1.4; }
-  .monthly-section-body { padding: 12px; }
+  .tds-accordion > summary { align-items: flex-start; padding: 15px 16px; font-size: 15px; }
+  .tds-accordion > summary span { display: block; max-width: 70%; line-height: 1.4; }
+  .tds-accordion-body { padding: 12px; }
   .tds-button-secondary { min-height: 44px; padding-inline: 14px; }
   .mobile-lnb { min-height: 76px; padding-top: 6px; }
   .mobile-lnb-item { min-height: 58px; border-radius: 12px; font-size: 11px; }
@@ -843,15 +847,15 @@ button:disabled { cursor: wait; transform: none !important; }
 .monthly-work-links { overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
 .monthly-work-links::-webkit-scrollbar { display: none; }
 .monthly-work-links > span, .monthly-work-links > a { flex: 0 0 auto; white-space: nowrap; }
-.monthly-section > summary strong { flex: 0 0 auto; white-space: nowrap; }
-.monthly-section > summary span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tds-accordion > summary strong { flex: 0 0 auto; white-space: nowrap; }
+.tds-accordion > summary span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .finance-snapshot { min-width: 0; }
 .monthly-input-panel { min-width: 0; }
 .monthly-cta { display: flex; justify-content: flex-end; }
 .monthly-input-panel .table-surface { min-width: 0; }
 .monthly-workspace { display: flex; flex-direction: column; gap: 10px; border: 1px solid var(--tds-grey-200); border-radius: 20px; background: var(--tds-white); padding: 10px; }
-.monthly-workspace .monthly-section { border: 0; border-radius: 14px; }
-.monthly-workspace .monthly-section-body { padding: 14px 10px 10px; }
+.monthly-workspace .tds-accordion { border: 0; border-radius: 14px; }
+.monthly-workspace .tds-accordion-body { padding: 14px 10px 10px; }
 .monthly-workspace-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 14px; background: var(--tds-grey-100); }
 .monthly-workspace-tabs button { min-height: 44px; border-radius: 10px; color: var(--tds-grey-700); font-size: 14px; font-weight: 750; white-space: nowrap; }
 .monthly-workspace-tabs button[data-selected='true'] { background: var(--state-selected-bg); color: var(--state-selected-fg); box-shadow: inset 0 0 0 1px var(--state-selected-border); }
@@ -871,10 +875,10 @@ button:disabled { cursor: wait; transform: none !important; }
   .home-month-row .home-month-control { min-width: 0; flex: 1 1 auto; gap: 4px; }
   .home-month-row .home-month-control strong { min-width: 0; font-size: 14px; }
   .home-month-row .home-arrow { flex: 0 0 40px; width: 40px; height: 40px; }
-  .monthly-section > summary { gap: 8px; }
-  .monthly-section > summary span { display: none; }
+  .tds-accordion > summary { gap: 8px; }
+  .tds-accordion > summary span { display: none; }
   .monthly-workspace { margin-inline: -4px; padding: 6px; border-radius: 18px; gap: 6px; }
-  .monthly-workspace .monthly-section-body { padding: 10px 4px 4px; }
+  .monthly-workspace .tds-accordion-body { padding: 10px 4px 4px; }
   .monthly-work-links { margin-inline: -4px; padding-inline: 4px; }
   .monthly-work-links > span { font-size: 13px; }
   .monthly-work-links > a { padding-inline: 10px; }
@@ -910,13 +914,11 @@ button:disabled { cursor: wait; transform: none !important; }
 .dashboard-alert-strip.is-neutral { border-color: var(--tds-grey-200); background: var(--tds-grey-50); }
 .dashboard-alert-strip.is-neutral > span { color: var(--tds-grey-500); }
 
-/* 분석 메뉴(2026-09 신설). 기간 컨트롤/유형 탭은 .home-explorer-tabs/.home-month-selector를
- * 그대로 재사용하고(대시보드의 연도·월 선택기와 같은 컴포넌트), 여기서는 유형 탭 줄바꿈과
- * 드릴다운 목록·개별 거래 행만 새로 정의한다. */
+/* 분석 메뉴(2026-09 신설). 기간 컨트롤은 .home-explorer-tabs/.home-month-selector를 그대로
+ * 재사용하고(대시보드의 연도·월 선택기와 같은 컴포넌트), 여기서는 드릴다운 목록·개별 거래
+ * 행만 새로 정의한다. 2026-09 재정리로 유형 탭(.analysis-type-tabs)은 없어졌다 — 월간
+ * 스코프는 .tds-accordion 4개, 연간 스코프는 연간 리포트 하나뿐이다. */
 .analysis-controls { display: flex; flex-direction: column; gap: 10px; }
-.analysis-type-tabs { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 12px; background: var(--tds-grey-100); width: fit-content; max-width: 100%; }
-.analysis-type-tabs button { min-height: 36px; padding: 0 14px; border-radius: 9px; color: var(--tds-grey-700); font-size: 13px; font-weight: 700; white-space: nowrap; }
-.analysis-type-tabs button.is-selected { background: var(--state-selected-bg); color: var(--state-selected-fg); box-shadow: inset 0 0 0 1px var(--state-selected-border); }
 .analysis-view { min-width: 0; }
 .analysis-drilldown { display: flex; min-width: 0; flex-direction: column; }
 .analysis-drilldown-group { min-width: 0; border-bottom: 1px solid var(--tds-grey-100); }

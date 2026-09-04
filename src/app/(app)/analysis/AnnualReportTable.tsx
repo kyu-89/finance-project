@@ -1,14 +1,15 @@
 'use client';
 
 import { useState } from 'react';
+import { Amount } from '@/components/Amount';
 import { EmptyState } from '@/components/EmptyState';
 import type { AnnualReportRow } from '@/lib/annual-report';
 import type { Transaction } from '@/lib/transactions';
-import { HeatmapTransactionRows } from './AnalysisHeatmapTable';
 
 const won = new Intl.NumberFormat('ko-KR');
 const money = (value: number) => `${won.format(Math.round(value))}원`;
 const percent = (value: number) => `${(value * 100).toFixed(1)}%`;
+const TRANSACTION_CAP = 100;
 
 // §12 — "연간 리포트" 섹션(사용자 지시: "연간 리포트라는 별도 섹션이 좋을 것 같아"). 원본 엑셀의
 // 4개 [연간_…] 시트를 annual-report.ts가 만든 AnnualReportRow[]로 그대로 렌더링한다.
@@ -72,4 +73,24 @@ export function AnnualReportTable({ title, description, months, rows, tone, show
       </div>}
     </>}
   </section>;
+}
+
+// AnalysisHeatmapTable(§12 이전 구현)이 쓰던 것과 같은 개별 거래 표 — "분석" 화면 재정리
+// (사용자 지시: "가장 하단의 수입/지출/참고거래/카드사용/연간 리포트 영역은 제거되는거지")로
+// 그 컴포넌트가 없어지면서 유일한 소비처가 됐다.
+function HeatmapTransactionRows({ transactions }: { transactions: Transaction[] }) {
+  const sorted = [...transactions].sort((a, b) => b.transactionDate.localeCompare(a.transactionDate));
+  const shown = sorted.slice(0, TRANSACTION_CAP);
+  if (!sorted.length) return <p className="analysis-transaction-note">거래가 없어요.</p>;
+  return <div className="analysis-transaction-table-wrap" style={{ paddingLeft: 0 }}>
+    <table className="analysis-transaction-table">
+      <thead><tr><th>날짜</th><th>내용</th><th className="is-amount">금액</th></tr></thead>
+      <tbody>{shown.map((t) => <tr key={t.id}>
+        <td>{t.transactionDate}</td>
+        <td className="is-desc">{t.description || '내용 없음'}</td>
+        <td className="is-amount"><Amount value={t.amount} type={t.transactionType === 'income' ? 'income' : t.transactionType === 'reference' ? 'neutral' : 'expense'} size="small" /></td>
+      </tr>)}</tbody>
+    </table>
+    {sorted.length > TRANSACTION_CAP && <p className="analysis-transaction-note">최근 {TRANSACTION_CAP}건만 표시했어요 · 전체 {sorted.length}건</p>}
+  </div>;
 }

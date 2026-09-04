@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo } from 'react';
-import { EmptyState } from '@/components/EmptyState';
 import type { CategoryWithSubcategories } from '@/lib/categories';
 import type { PaymentMethod } from '@/lib/payment-methods';
 import type { Transaction } from '@/lib/transactions';
@@ -17,9 +16,12 @@ import { AnnualReportTable } from './AnnualReportTable';
 
 // §12 — "연간 리포트"(사용자 지시: "연간 리포트라는 별도 섹션이 좋을 것 같아"). 원본 엑셀의
 // [연간_항목별수입]/[연간_카드별지출]/[연간_항목별지출]/[연간_세부항목별지출] 4개 시트를 그
-// 엑셀 탭 순서 그대로 배치한다. 연 단위 데이터라 scope==='month'에서는 의미가 없어 안내만 보여준다.
-export function AnnualReportView({ scope, year, months, periodTransactions, categories, paymentMethods }: {
-  scope: 'year' | 'month';
+// 엑셀 탭 순서 그대로 배치한다.
+// 2026-09(사용자 지시: "분석쪽 화면 다시 재정리... 연간 탭 누르면 이번에 개편한 연간 리포트
+// 화면이 바로 표시되고... 수입/지출/참고거래/카드사용 등 영역과 기능 모두 삭제") — 연간
+// 스코프의 유일한 콘텐츠가 됐으므로 scope==='month' 안내 분기를 갖지 않는다(AnalysisWorkspace가
+// scope==='year'일 때만 이 컴포넌트를 마운트한다).
+export function AnnualReportView({ year, months, periodTransactions, categories, paymentMethods }: {
   year: string;
   months: string[];
   periodTransactions: Transaction[];
@@ -33,10 +35,6 @@ export function AnnualReportView({ scope, year, months, periodTransactions, cate
   const cardRows = useMemo(() => buildAnnualCardReport(periodTransactions, months, paymentMethods), [periodTransactions, months, paymentMethods]);
   const expenseCategoryRows = useMemo(() => buildAnnualExpenseCategoryReport(periodTransactions, months, expenseCategories), [periodTransactions, months, expenseCategories]);
   const expenseDetailRows = useMemo(() => buildAnnualExpenseDetailReport(periodTransactions, months, expenseCategories), [periodTransactions, months, expenseCategories]);
-
-  if (scope !== 'year') {
-    return <section className="tds-card p-5"><EmptyState title="연간 보기에서 확인할 수 있어요" description="상단에서 [연간]을 선택하면 원본 엑셀과 같은 구조의 연간 리포트 4종을 볼 수 있어요." /></section>;
-  }
 
   const incomeTransactionsFor = (row: AnnualReportRow, month: string) =>
     periodTransactions.filter((t) => isIncome(t) && (t.subcategoryId ?? 'unassigned') === row.id && reportMonthOf(t) === month);

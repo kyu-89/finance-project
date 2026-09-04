@@ -5,9 +5,8 @@ import type { Transaction } from '@/lib/transactions';
 import type { Budget } from '@/lib/budgets';
 import type { CategoryWithSubcategories } from '@/lib/categories';
 import { budgetStatus } from '@/lib/budget-calculations';
-import { reportMonthOf, summarizeExpenseByCategory, summarizeExpenseMatrix, summarizeExpenseSubcategoryMatrix } from '@/lib/analysis';
+import { summarizeExpenseByCategory } from '@/lib/analysis';
 import { ExpenseDrilldown, type TransactionExtraColumn } from './AnalysisDrilldown';
-import { AnalysisHeatmapTable } from './AnalysisHeatmapTable';
 
 const won = (value: number) => `${value.toLocaleString('ko-KR')}원`;
 const percent = (value: number | null) => value === null ? '-' : `${(value * 100).toFixed(1)}%`;
@@ -18,25 +17,21 @@ const STATUS_LABEL = { safe: '안정', caution: '주의 · 70% 이상', near: '�
 const STATUS_COLOR = { safe: 'text-[var(--color-status-safe)]', caution: 'text-[var(--color-status-caution)]', near: 'text-[var(--color-status-near)]', over: 'text-[var(--color-status-over)]' } as const;
 
 // §8 — 지출 > 대분류 > 소분류 > 개별 거래. 저축성지출은 다른 대분류와 같은 층위의 항목 하나일
-// 뿐이다(별도 계층·탭·차트 시리즈로 만들지 않음). 월간 화면에서는 예산 대비 실제 지출도 여기서
-// 보여준다(BudgetClosingTab에서 이관된 로직 — §14).
-export function AnalysisExpenseView({ scope, month, months, monthCount, periodTransactions, categoryNames, subcategoryNames, budgets, categories, totals }: {
-  scope: 'year' | 'month'; year: string; month: string; months: string[]; monthCount: number;
-  periodTransactions: Transaction[]; allTransactions: Transaction[];
+// 뿐이다(별도 계층·탭·차트 시리즈로 만들지 않음). 예산 대비 실제 지출도 여기서 보여준다
+// (BudgetClosingTab에서 이관된 로직 — §14).
+// 2026-09(사용자 지시: "분석쪽 화면 다시 재정리... 월간 누르면... 수입/지출/카드사용/참고거래를
+// 하나로 묶은 화면") — 연간 스코프의 엑셀-그대로 표는 AnnualReportView 하나로 통합됐고, 이
+// 뷰는 이제 월간 스코프 전용(아코디언 한 칸)이라 연간 매트릭스 히트맵과 scope 분기를 갖지 않는다.
+export function AnalysisExpenseView({ month, periodTransactions, categoryNames, subcategoryNames, budgets, categories, totals }: {
+  month: string;
+  periodTransactions: Transaction[];
   categoryNames: Map<string, string>; subcategoryNames: Map<string, string>;
-  savingsCategoryId: string | null; budgets: Budget[]; categories: CategoryWithSubcategories[];
+  budgets: Budget[]; categories: CategoryWithSubcategories[];
   totals: { expense: number };
 }) {
   const rows = useMemo(() => summarizeExpenseByCategory(periodTransactions, categoryNames, subcategoryNames), [periodTransactions, categoryNames, subcategoryNames]);
   const transactionsFor = (categoryId: string, subcategoryId: string) => periodTransactions.filter((t) => t.status === 'posted' && t.flowClass === 'consumption' && (t.categoryId ?? 'unassigned') === categoryId && (t.subcategoryId ?? 'unassigned') === subcategoryId);
   const extraColumn: TransactionExtraColumn = { label: '소분류', valueFor: (t) => (t.subcategoryId ? subcategoryNames.get(t.subcategoryId) ?? '기타' : '-') };
-  // §12 — 원본 엑셀 연간_항목별지출(대분류)과 연간_세부항목별지출(소분류)은 데이터 항목·구조가
-  // 서로 다른 별개 시트라(사용자 지시) 매트릭스 표도 따로 둔다 — 대분류 14~16행짜리 표 하나로
-  // 두 시트를 겸하지 않는다. 연간 스코프에서만 보여준다.
-  const matrixRows = useMemo(() => scope === 'year' ? summarizeExpenseMatrix(periodTransactions, months, categoryNames) : [], [scope, periodTransactions, months, categoryNames]);
-  const matrixTransactionsFor = (id: string, monthKey: string) => periodTransactions.filter((t) => t.status === 'posted' && t.flowClass === 'consumption' && (t.categoryId ?? 'unassigned') === id && reportMonthOf(t) === monthKey);
-  const subcategoryMatrixRows = useMemo(() => scope === 'year' ? summarizeExpenseSubcategoryMatrix(periodTransactions, months, subcategoryNames) : [], [scope, periodTransactions, months, subcategoryNames]);
-  const subcategoryMatrixTransactionsFor = (id: string, monthKey: string) => periodTransactions.filter((t) => t.status === 'posted' && t.flowClass === 'consumption' && (t.subcategoryId ?? 'unassigned') === id && reportMonthOf(t) === monthKey);
 
   const budgetMonth = Number(month.slice(5, 7));
   const budgetByCategory = new Map(budgets.filter((b) => b.month === budgetMonth && b.transactionType === 'expense' && b.categoryId).map((b) => [b.categoryId!, b.amount]));
@@ -46,16 +41,14 @@ export function AnalysisExpenseView({ scope, month, months, monthCount, periodTr
   const budgetedSpent = [...spentByCategory.values()].reduce((sum, v) => sum + v, 0);
 
   return <div className="analysis-view flex flex-col gap-4">
-    {scope === 'year' && <AnalysisHeatmapTable title="지출 대분류 × 월별 표" description="원본 엑셀의 연간 항목별 지출 시트와 같은 구성이에요. 저축성지출도 다른 대분류와 같은 행 하나예요." months={months} rows={matrixRows} monthCount={monthCount} tone="expense" transactionsFor={matrixTransactionsFor} />}
-    {scope === 'year' && <AnalysisHeatmapTable title="지출 소분류 × 월별 표" description="원본 엑셀의 연간 세부항목별 지출 시트와 같은 구성이에요. 대분류 표와는 별개로, 모든 카테고리의 소분류를 한 층위로 보여줘요." months={months} rows={subcategoryMatrixRows} monthCount={monthCount} tone="expense" transactionsFor={subcategoryMatrixTransactionsFor} />}
     <section className="tds-card p-5"><h2 className="text-lg font-bold">지출 대분류</h2><p className="mt-1 text-sm text-[var(--tds-grey-700)]">대분류를 누르면 소분류가, 소분류를 누르면 개별 거래가 펼쳐져요.</p><div className="mt-4"><ExpenseDrilldown rows={rows} total={totals.expense} transactionsFor={transactionsFor} extraColumn={extraColumn} /></div></section>
-    {scope === 'month' && <section className="tds-card p-5">
+    <section className="tds-card p-5">
       <div className="flex flex-wrap items-end justify-between gap-2"><div><h2 className="text-lg font-bold">예산 대비 실제 지출</h2><p className="mt-1 text-sm text-[var(--tds-grey-700)]">예산 {won(budgetTotal)} · 실제 {won(budgetedSpent)}</p></div><strong className="text-lg tabular-nums">소진율 {percent(budgetTotal > 0 ? budgetedSpent / budgetTotal : null)}</strong></div>
       <ul className="mt-4 flex flex-col divide-y divide-[var(--tds-grey-200)]">{categories.filter((c) => c.transactionType === 'expense').map((category) => {
         const budget = budgetByCategory.get(category.id) ?? 0; const spent = spentByCategory.get(category.id) ?? 0; if (budget === 0 && spent === 0) return null;
         const state = budgetStatus(spent, budget);
         return <li key={category.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div><p className="font-semibold">{category.name}</p><p className={`mt-1 text-xs font-semibold ${STATUS_COLOR[state]}`}>{STATUS_LABEL[state]}</p></div><div className="text-right text-sm tabular-nums"><p>{won(spent)} / {won(budget)}</p><p className="mt-1 text-[var(--tds-grey-500)]">남음 {won(budget - spent)}</p></div></li>;
       })}</ul>
-    </section>}
+    </section>
   </div>;
 }

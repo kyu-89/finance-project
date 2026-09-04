@@ -5,12 +5,8 @@ import {
   periodTotals,
   reportMonthOf,
   summarizeCardUsage,
-  summarizeCardUsageMatrix,
   summarizeExpenseByCategory,
-  summarizeExpenseMatrix,
-  summarizeExpenseSubcategoryMatrix,
   summarizeIncomeBySubcategory,
-  summarizeIncomeMatrix,
   summarizeReferenceByPaymentMethod,
 } from '@/lib/analysis';
 import type { Transaction } from '@/lib/transactions';
@@ -199,64 +195,5 @@ describe('dailyCashflow', () => {
       { date: '2026-03-02', income: 500_000, expense: 0, savings: 0 },
       { date: '2026-03-03', income: 0, expense: 0, savings: 0 },
     ]);
-  });
-});
-
-const MATRIX_MONTHS = ['2026-01', '2026-02', '2026-03'];
-
-describe('summarizeIncomeMatrix', () => {
-  it('buckets each subcategory into a fixed-length monthly array aligned to the given months', () => {
-    const names = new Map([['sub-salary', '급여']]);
-    const rows = summarizeIncomeMatrix([
-      tx({ transactionType: 'income', flowClass: 'cash_in', amount: 3_000_000, subcategoryId: 'sub-salary', transactionDate: '2026-01-05' }),
-      tx({ transactionType: 'income', flowClass: 'cash_in', amount: 3_100_000, subcategoryId: 'sub-salary', transactionDate: '2026-03-05' }),
-      tx({ transactionType: 'expense', flowClass: 'consumption', amount: 999_999, transactionDate: '2026-01-05' }), // must not leak in
-    ], MATRIX_MONTHS, names);
-    expect(rows).toEqual([{ id: 'sub-salary', label: '급여', monthly: [3_000_000, 0, 3_100_000], total: 6_100_000 }]);
-  });
-
-  it('ignores months outside the requested range (e.g. from source_month) instead of throwing', () => {
-    const rows = summarizeIncomeMatrix([
-      tx({ transactionType: 'income', flowClass: 'cash_in', amount: 100_000, subcategoryId: 'sub-x', transactionDate: '2025-12-31' }),
-    ], MATRIX_MONTHS, new Map());
-    expect(rows).toEqual([]);
-  });
-});
-
-describe('summarizeExpenseMatrix', () => {
-  it('buckets each category (저축성지출 included as an ordinary row) into a monthly array', () => {
-    const names = new Map([[SAVINGS_CATEGORY_ID, '저축성지출'], [FOOD_CATEGORY_ID, '식비']]);
-    const rows = summarizeExpenseMatrix([
-      tx({ categoryId: SAVINGS_CATEGORY_ID, amount: 300_000, transactionDate: '2026-02-10' }),
-      tx({ categoryId: FOOD_CATEGORY_ID, amount: 50_000, transactionDate: '2026-02-10' }),
-    ], MATRIX_MONTHS, names);
-    expect(rows).toHaveLength(2);
-    expect(rows.find((r) => r.id === SAVINGS_CATEGORY_ID)).toEqual({ id: SAVINGS_CATEGORY_ID, label: '저축성지출', monthly: [0, 300_000, 0], total: 300_000 });
-  });
-});
-
-// 연간_항목별지출(대분류)과 연간_세부항목별지출(소분류)은 서로 다른 시트라(사용자 지시) 별도
-// 매트릭스 함수로 분리했다 — summarizeExpenseMatrix와 달리 subcategoryId로 묶는다.
-describe('summarizeExpenseSubcategoryMatrix', () => {
-  it('buckets by subcategory across every category, independent of the category-level matrix', () => {
-    const names = new Map([['sub-deposit', '예/적금'], ['sub-mart', '시장/마트']]);
-    const rows = summarizeExpenseSubcategoryMatrix([
-      tx({ categoryId: SAVINGS_CATEGORY_ID, subcategoryId: 'sub-deposit', amount: 300_000, transactionDate: '2026-02-10' }),
-      tx({ categoryId: FOOD_CATEGORY_ID, subcategoryId: 'sub-mart', amount: 50_000, transactionDate: '2026-01-05' }),
-    ], MATRIX_MONTHS, names);
-    expect(rows).toHaveLength(2);
-    expect(rows.find((r) => r.id === 'sub-deposit')).toEqual({ id: 'sub-deposit', label: '예/적금', monthly: [0, 300_000, 0], total: 300_000 });
-    expect(rows.find((r) => r.id === 'sub-mart')).toEqual({ id: 'sub-mart', label: '시장/마트', monthly: [50_000, 0, 0], total: 50_000 });
-  });
-});
-
-describe('summarizeCardUsageMatrix', () => {
-  it('sums card-linked expense and reference amounts per month, excluding cash/no-payment-method', () => {
-    const rows = summarizeCardUsageMatrix([
-      tx({ transactionType: 'expense', flowClass: 'consumption', paymentMethodId: 'pm-credit', amount: 100_000, transactionDate: '2026-01-10' }),
-      tx({ transactionType: 'reference', flowClass: 'excluded', paymentMethodId: 'pm-credit', amount: 20_000, transactionDate: '2026-01-15' }),
-      tx({ transactionType: 'reference', flowClass: 'excluded', paymentMethodId: 'pm-cash', amount: 999_999, transactionDate: '2026-01-15' }),
-    ], MATRIX_MONTHS, paymentMethods);
-    expect(rows).toEqual([{ id: 'pm-credit', label: '신한신용', monthly: [120_000, 0, 0], total: 120_000 }]);
   });
 });

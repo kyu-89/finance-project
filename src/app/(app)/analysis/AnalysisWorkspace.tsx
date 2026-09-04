@@ -24,26 +24,34 @@ function monthEnd(month: string) {
 
 const won = new Intl.NumberFormat('ko-KR');
 const money = (value: number) => `${won.format(Math.round(value))}원`;
-// 2026-09(사용자 지시: "연간 리포트라는 별도 섹션이 좋을 것 같아") — 원본 엑셀 [연간_…] 4개
-// 시트를 그대로 재현하는 탭. 수입/지출/참고 거래/카드 사용과는 목적이 달라(월별 추이 확인이
-// 아니라 "엑셀 그대로") 별도 탭으로 둔다.
-const TYPE_LABEL = { income: '수입', expense: '지출', reference: '참고 거래', card: '카드 사용', annualReport: '연간 리포트' } as const;
-export type AnalysisType = keyof typeof TYPE_LABEL;
+
+// 2026-09(사용자 지시: "분석쪽 화면 다시 재정리가 필요하겠네... 연간 탭 누르면 이번에 개편한
+// 연간 리포트 화면이 바로 표시되고... 수입/지출/참고거래/카드사용 등 영역과 기능 모두 삭제.
+// 월간 누르면... 수입/지출/카드사용/참고거래를 하나로 묶은 화면을... 수입 > 지출 > 카드사용 >
+// 참고 거래 순으로 아코디언 적용해") — 예전에는 수입/지출/참고거래/카드사용/연간리포트 5개를
+// 탭으로 골라 보던 걸, 스코프 하나로 완전히 대체한다: 연간=엑셀 그대로 보는 화면 하나만,
+// 월간=드릴다운 4종을 순서대로 펼쳐보는 아코디언 하나만.
+type MonthSectionKey = 'income' | 'expense' | 'card' | 'reference';
+const MONTH_SECTIONS: { key: MonthSectionKey; label: string }[] = [
+  { key: 'income', label: '수입' },
+  { key: 'expense', label: '지출' },
+  { key: 'card', label: '카드 사용' },
+  { key: 'reference', label: '참고 거래' },
+];
 
 function shiftMonth(month: string, offset: number) {
   const d = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)) - 1 + offset, 1));
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
 }
 
-// §4 — 분석 화면 뼈대. [연간]/[월간] 스코프와 [수입]/[지출]/[참고 거래]/[카드 사용] 타입 탭을 한
-// 페이지에서 전환한다. 연도가 바뀌면 서버에서 그 해 데이터를 새로 받아야 해서 Link(전체 새
-// 렌더)로 처리하고(dashboard의 연도 선택기와 같은 패턴), scope/월/타입 전환은 이미 받은 1년치
-// 데이터 안에서 클라이언트 상태로만 처리한다.
-export function AnalysisWorkspace({ initialScope, year, initialMonth, initialType, availableYears, categories, paymentMethods, budgets, transactions }: {
+// §4 — 분석 화면 뼈대. [연간]/[월간] 스코프를 한 페이지에서 전환한다. 연도가 바뀌면 서버에서 그
+// 해 데이터를 새로 받아야 해서 Link(전체 새 렌더)로 처리하고(dashboard의 연도 선택기와 같은
+// 패턴), scope/월 전환은 이미 받은 1년치 데이터 안에서 클라이언트 상태로만 처리한다.
+export function AnalysisWorkspace({ initialScope, year, initialMonth, initialOpenSection, availableYears, categories, paymentMethods, budgets, transactions }: {
   initialScope: 'year' | 'month';
   year: string;
   initialMonth: string;
-  initialType: AnalysisType;
+  initialOpenSection: MonthSectionKey;
   availableYears: number[];
   categories: CategoryWithSubcategories[];
   paymentMethods: PaymentMethod[];
@@ -52,7 +60,6 @@ export function AnalysisWorkspace({ initialScope, year, initialMonth, initialTyp
 }) {
   const [scope, setScope] = useState(initialScope);
   const [month, setMonth] = useState(initialMonth);
-  const [type, setType] = useState<AnalysisType>(initialType);
   const searchParams = useSearchParams();
 
   // 연도 선택기는 서버에서 새 1년치 데이터를 받아야 하므로 Link다 — 다른 연도로 바뀌면 그 해
@@ -90,18 +97,22 @@ export function AnalysisWorkspace({ initialScope, year, initialMonth, initialTyp
       {scope === 'month' && <div className="home-month-selector" aria-label="월 선택">{months.map((m) => <button type="button" key={m} className={m === month ? 'is-selected' : ''} onClick={() => setMonth(m)}>{Number(m.slice(5, 7))}월</button>)}</div>}
     </div>
 
-    <div className="analysis-type-tabs" role="tablist" aria-label="거래 유형">
-      {(Object.keys(TYPE_LABEL) as AnalysisType[]).map((key) => <button key={key} type="button" role="tab" aria-selected={type === key} className={type === key ? 'is-selected' : ''} onClick={() => setType(key)}>{TYPE_LABEL[key]}</button>)}
-    </div>
-
     <AnalysisSummary scope={scope} label={label} totals={totals} previousTotals={scope === 'month' ? previousTotals : null} monthCount={monthCount} />
     <AnalysisCashflowChart scope={scope} monthly={monthlyPoints} daily={dailyPoints} />
 
-    {type === 'income' && <AnalysisIncomeView scope={scope} year={year} months={months} monthCount={monthCount} periodTransactions={periodTransactions} allTransactions={transactions} subcategoryNames={incomeSubcategoryNames} />}
-    {type === 'expense' && <AnalysisExpenseView scope={scope} year={year} month={month} months={months} monthCount={monthCount} periodTransactions={periodTransactions} allTransactions={transactions} categoryNames={expenseCategoryNames} subcategoryNames={expenseSubcategoryNames} savingsCategoryId={savingsCategoryId} budgets={budgets} categories={categories} totals={totals} />}
-    {type === 'reference' && <AnalysisReferenceView scope={scope} year={year} months={months} periodTransactions={periodTransactions} allTransactions={transactions} paymentMethodNames={paymentMethodNames} subcategoryNames={expenseSubcategoryNames} />}
-    {type === 'card' && <AnalysisCardView scope={scope} year={year} months={months} monthCount={monthCount} periodTransactions={periodTransactions} allTransactions={transactions} paymentMethods={paymentMethods} />}
-    {type === 'annualReport' && <AnnualReportView scope={scope} year={year} months={months} periodTransactions={periodTransactions} categories={categories} paymentMethods={paymentMethods} />}
+    {scope === 'year'
+      ? <AnnualReportView year={year} months={months} periodTransactions={periodTransactions} categories={categories} paymentMethods={paymentMethods} />
+      : <div className="flex flex-col gap-4">
+          {MONTH_SECTIONS.map(({ key, label: sectionLabel }) => <details key={key} className="tds-accordion" open={key === initialOpenSection}>
+            <summary><strong>{sectionLabel}</strong></summary>
+            <div className="tds-accordion-body">
+              {key === 'income' && <AnalysisIncomeView periodTransactions={periodTransactions} subcategoryNames={incomeSubcategoryNames} />}
+              {key === 'expense' && <AnalysisExpenseView month={month} periodTransactions={periodTransactions} categoryNames={expenseCategoryNames} subcategoryNames={expenseSubcategoryNames} budgets={budgets} categories={categories} totals={totals} />}
+              {key === 'card' && <AnalysisCardView periodTransactions={periodTransactions} paymentMethods={paymentMethods} />}
+              {key === 'reference' && <AnalysisReferenceView periodTransactions={periodTransactions} paymentMethodNames={paymentMethodNames} subcategoryNames={expenseSubcategoryNames} />}
+            </div>
+          </details>)}
+        </div>}
   </div>;
 }
 
