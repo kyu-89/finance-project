@@ -18,8 +18,9 @@ const MOBILE_ITEMS = [
 export function MobileBottomNav() {
   const pathname = usePathname();
   const isMonthly = pathname === '/monthly';
+  const isAnalysis = pathname === '/analysis';
   return <>
-    {!isMonthly && <Link href="/quick-add" aria-label="거래 추가" className="mobile-fab md:hidden"><Plus size="var(--icon-lg)" strokeWidth={2} /></Link>}
+    {!isMonthly && !isAnalysis && <Link href="/quick-add" aria-label="거래 추가" className="mobile-fab md:hidden"><Plus size="var(--icon-lg)" strokeWidth={2} /></Link>}
     <nav aria-label="주요 메뉴" className="mobile-lnb fixed inset-x-0 bottom-0 z-20 mx-auto flex max-w-[480px] items-stretch border-t border-[var(--tds-grey-200)] bg-white/95 px-1 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_oklch(0.155_0.06_261/0.08)] backdrop-blur md:hidden">
       {MOBILE_ITEMS.map((item) => { const selected = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(`${item.href}/`)); const Icon: LucideIcon = item.icon; return <Link key={item.href} href={item.href} aria-current={selected ? 'page' : undefined} className={`mobile-lnb-item ${selected ? 'is-selected' : ''}`}><span className="mobile-lnb-icon" aria-hidden="true"><Icon size="var(--icon-lg)" strokeWidth={1.8} /></span><span>{item.label}</span></Link>; })}
     </nav>
