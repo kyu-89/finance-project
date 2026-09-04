@@ -29,8 +29,13 @@
 - **디자인 변경은 공통 규칙(design-system.css/globals.css의 토큰·클래스)을 먼저 찾아 따르고,
   없으면 공통 규칙을 추가**해서 반영한다(사용자가 여러 번 강조한 규칙). 화면마다 임의로 다른
   스타일을 만들지 않는다.
-- **Vercel 자동 배포**: `main` 푸시 후 1~2분 내 `personal-myhome.vercel.app`(Basic Auth로
-  보호됨, 로그인 시스템 없음)에 반영된다.
+- **Vercel 자동 배포**: `main` 푸시 후 1~2분 내 **`https://personal-finance-one-virid.vercel.app`**
+  (Vercel 프로젝트명 `personal-finance`, `.vercel/project.json`에 링크됨, region `icn1`)에
+  반영된다. 인증은 Supabase Auth 기반 정식 로그인/회원가입/MFA(`/login`, `/signup`,
+  `/mfa/enroll`, `/mfa/verify`)다 — Basic Auth 아님. **주의**: 이 계정에는 `personal-myhome`
+  이라는 이름이 비슷한 완전히 다른 프로젝트(다른 저장소, `personal-myhome.vercel.app`, Basic
+  Auth로 보호됨)가 따로 있다 — 절대 혼동하지 말 것. 확실하지 않으면 `npx vercel ls`로 최신
+  배포와 `npx vercel inspect <deployment-url>`의 Aliases 블록을 직접 확인한다.
 
 ## 1. 이번 세션에서 완료한 작업 (커밋 순서대로)
 
