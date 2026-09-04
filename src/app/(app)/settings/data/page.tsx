@@ -16,6 +16,7 @@ import { AnnualAudit } from './AnnualAudit';
 import { WorkbookMonthlyImport } from './WorkbookMonthlyImport';
 import { FinancialAudit } from './FinancialAudit';
 import { SettingsBackLink } from '../SettingsBackLink';
+import { PageHeader } from '@/components/PageHeader';
 import { listImportSyncRuns } from '@/lib/import-history';
 import { SyncHistory } from './SyncHistory';
 import { DuplicateTransactionReview } from './DuplicateTransactionReview';
@@ -30,7 +31,7 @@ export default async function DataSettingsPage() {
   ]);
   return <div className="tds-page flex flex-col gap-6">
     <SettingsBackLink />
-    <div><h1 className="tds-title">데이터를 관리해요</h1><p className="mt-2 text-sm text-[var(--tds-grey-700)]">거래 데이터를 가져오고 내보내거나 검토해요.</p></div>
+    <PageHeader title="데이터를 관리해요" description="거래 데이터를 가져오고 내보내거나 검토해요." />
     <TransactionImport categories={categories.filter((category) => category.transactionType === 'expense' && category.isActive)} paymentMethods={paymentMethods.filter((method) => method.isActive)} />
     <details className="tds-card settings-advanced-imports"><summary>자산·금융 데이터 가져오기 <span>필요한 경우에만 열기</span></summary><div className="settings-advanced-imports-body"><InvestmentImport /><AccountImport /><SavingsProductsImport /><InsuranceImport /><LoanImport /><SupportEventImport /><PlanningImport /><AssetImport /><AnnualAudit /><FinancialAudit /></div></details>
     <section className="tds-card flex flex-wrap items-center justify-between gap-4 p-5"><div><h2 className="text-lg font-bold">데이터 내보내기</h2><p className="mt-1 text-sm text-[var(--tds-grey-700)]">2단계 인증이 완료된 세션에서만 금융 데이터를 내려받습니다.</p></div><div className="flex flex-wrap gap-2"><a href="/api/export/transactions" className="tds-button-secondary">거래 CSV</a><a href="/api/export/all" className="tds-button-secondary">전체 JSON</a></div></section>

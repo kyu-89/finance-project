@@ -6,6 +6,7 @@ import { AddDrawer } from '@/components/Drawer';
 import { AmountInput } from '@/components/AmountInput';
 import { FormField } from '@/components/FormField';
 import { FormMessage } from '@/components/FormMessage';
+import { SectionHeader } from '@/components/SectionHeader';
 import { INITIAL_ACTION_STATE } from '@/lib/action-result';
 import type { FinancialGoal, FinancialTask } from '@/lib/excel-extended-data';
 
@@ -19,7 +20,6 @@ export function HouseholdPlanning({ goals, tasks, section }: { goals: FinancialG
   </div>;
 }
 
-function SectionHeader({ title, description, action }: { title: string; description: string; action: React.ReactNode }) { return <div className="flex flex-wrap items-start justify-between gap-4"><div><h1 className="tds-title mb-2">{title}</h1><p className="text-sm text-[var(--tds-grey-700)]">{description}</p></div>{action}</div>; }
 function Empty({ children }: { children: React.ReactNode }) { return <p className="py-5 text-sm text-[var(--tds-grey-500)]">{children}</p>; }
 
 function GoalSection({ goals }: { goals: FinancialGoal[] }) { return <section className="tds-card p-5"><SectionHeader title="재무 목표" description="목표 금액과 현재 진행 상황을 관리해요." action={<GoalDrawer />} /><div className="mt-5 divide-y divide-[var(--tds-grey-200)]">{goals.length === 0 ? <Empty>등록된 목표가 없습니다.</Empty> : goals.map((goal) => <div key={goal.id} className="py-3"><p className="font-semibold">{goal.name}</p><p className="mt-1 text-sm text-[var(--tds-grey-700)]">현재 {won(goal.currentValue)} · 목표 {won(goal.targetAmount)}{goal.targetDate ? ` · ${goal.targetDate}` : ''}</p></div>)}</div></section>; }

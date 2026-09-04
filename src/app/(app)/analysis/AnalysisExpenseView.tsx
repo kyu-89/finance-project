@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { SectionHeader } from '@/components/SectionHeader';
 import type { Transaction } from '@/lib/transactions';
 import type { Budget } from '@/lib/budgets';
 import type { CategoryWithSubcategories } from '@/lib/categories';
@@ -45,7 +46,7 @@ export function AnalysisExpenseView({ month, periodTransactions, categoryNames, 
   const budgetedSpent = [...spentByCategory.values()].reduce((sum, v) => sum + v, 0);
 
   return <div className="analysis-view flex flex-col gap-4">
-    <section className="tds-card p-5"><h2 className="text-lg font-bold">지출 대분류</h2><p className="mt-1 text-sm text-[var(--tds-grey-700)]">대분류를 누르면 개별 거래가 소분류와 함께 펼쳐져요.</p><div className="mt-4"><SimpleDrilldown rows={rows} total={totals.expense} emptyText="지출이 없어요" transactionsFor={transactionsFor} extraColumn={extraColumn} /></div></section>
+    <section className="tds-card tds-section-card"><SectionHeader title="지출 대분류" description="대분류를 누르면 개별 거래가 소분류와 함께 펼쳐져요." /><div><SimpleDrilldown rows={rows} total={totals.expense} emptyText="지출이 없어요" transactionsFor={transactionsFor} extraColumn={extraColumn} /></div></section>
     <section className="tds-card p-5">
       <div className="flex flex-wrap items-end justify-between gap-2"><div><h2 className="text-lg font-bold">예산 대비 실제 지출</h2><p className="mt-1 text-sm text-[var(--tds-grey-700)]">예산 {won(budgetTotal)} · 실제 {won(budgetedSpent)}</p></div><strong className="text-lg tabular-nums">소진율 {percent(budgetTotal > 0 ? budgetedSpent / budgetTotal : null)}</strong></div>
       <ul className="mt-4 flex flex-col divide-y divide-[var(--tds-grey-200)]">{categories.filter((c) => c.transactionType === 'expense').map((category) => {

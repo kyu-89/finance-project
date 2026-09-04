@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { SectionHeader } from '@/components/SectionHeader';
 import type { Transaction } from '@/lib/transactions';
 import { summarizeIncomeBySubcategory } from '@/lib/analysis';
 import { SimpleDrilldown, type TransactionExtraColumn } from './AnalysisDrilldown';
@@ -22,6 +23,6 @@ export function AnalysisIncomeView({ periodTransactions, subcategoryNames }: {
   // 대체 문구를 지출·참고거래와 똑같이 "기타"로 맞췄다(전에는 여기만 "기타 수입"이었다).
   const extraColumn: TransactionExtraColumn = { label: '소분류', valueFor: (t) => (t.subcategoryId ? subcategoryNames.get(t.subcategoryId) ?? '기타' : '-') };
   return <div className="analysis-view flex flex-col gap-4">
-    <section className="tds-card p-5"><h2 className="text-lg font-bold">수입 소분류</h2><p className="mt-1 text-sm text-[var(--tds-grey-700)]">항목을 누르면 개별 거래를 확인할 수 있어요.</p><div className="mt-4"><SimpleDrilldown rows={rows} total={total} emptyText="수입이 없어요" transactionsFor={transactionsFor} extraColumn={extraColumn} /></div></section>
+    <section className="tds-card tds-section-card"><SectionHeader title="수입 소분류" description="항목을 누르면 개별 거래를 확인할 수 있어요." /><div><SimpleDrilldown rows={rows} total={total} emptyText="수입이 없어요" transactionsFor={transactionsFor} extraColumn={extraColumn} /></div></section>
   </div>;
 }

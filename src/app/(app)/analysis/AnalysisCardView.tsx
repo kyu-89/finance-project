@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { SectionHeader } from '@/components/SectionHeader';
 import type { Transaction } from '@/lib/transactions';
 import type { PaymentMethod } from '@/lib/payment-methods';
 import { summarizeCardUsage, type AnalysisRow } from '@/lib/analysis';
@@ -41,6 +42,6 @@ export function AnalysisCardView({ periodTransactions, paymentMethods, categoryN
       </div>
       <p className="mt-3 text-xs text-[var(--tds-grey-500)]">카드 사용액은 가계 총지출과 다른 개념이에요 — 참고 거래 카드 사용액은 총지출에 포함되지 않아요. 신용카드 {(creditShare * 100).toFixed(0)}% · 체크카드 {((1 - creditShare) * 100).toFixed(0)}%</p>
     </section>
-    <section className="tds-card p-5"><h2 className="text-lg font-bold">카드별 상세</h2><p className="mt-1 text-sm text-[var(--tds-grey-700)]">카드를 누르면 실제 지출·참고 거래를 포함한 개별 거래를 확인할 수 있어요.</p><div className="mt-4"><SimpleDrilldown rows={cardRows} total={usage.total} emptyText="카드로 결제된 거래가 없어요" transactionsFor={transactionsFor} extraColumn={extraColumn} /></div></section>
+    <section className="tds-card tds-section-card"><SectionHeader title="카드별 상세" description="카드를 누르면 실제 지출·참고 거래를 포함한 개별 거래를 확인할 수 있어요." /><div><SimpleDrilldown rows={cardRows} total={usage.total} emptyText="카드로 결제된 거래가 없어요" transactionsFor={transactionsFor} extraColumn={extraColumn} /></div></section>
   </div>;
 }
