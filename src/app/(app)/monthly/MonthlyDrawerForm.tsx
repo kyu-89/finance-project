@@ -20,6 +20,10 @@ export function MonthlyDrawerForm({ categories, paymentMethods, initialTransacti
   const [subcategoryId, setSubcategoryId] = useState('');
   const [paymentMethodId, setPaymentMethodId] = useState('');
   const [transactionType, setTransactionType] = useState<TransactionType>(initialTransactionType);
+  // 2026-09(사용자 지시): income_group("고정수입"/"추가수입")을 등록 드로워에도 노출한다 — 전에는
+  // /quick-add에만 있었다. expense_group(저축성지출/소비성지출)은 여기 없다 — 카테고리 하나로
+  // 이미 100% 결정되는 값이라 별도 입력을 받지 않고 DB 트리거가 항상 자동으로 맞춘다.
+  const [incomeGroup, setIncomeGroup] = useState<'fixed' | 'additional'>('fixed');
   const [state, formAction, pending] = useActionState(createMonthlyRowAction, INITIAL_ACTION_STATE);
   const { notifySuccess } = useDrawerControls();
   // 2026-09(사용자 지시): 저장 성공하면 토스트를 띄우고 드로워를 닫는다 — 토스트는 드로워
@@ -53,6 +57,7 @@ export function MonthlyDrawerForm({ categories, paymentMethods, initialTransacti
         <h3>기본 정보</h3>
         <div className="monthly-drawer-grid">
           <label className="form-field"><span>거래 유형</span><select value={transactionType} onChange={(event) => { setTransactionType(event.target.value as TransactionType); resetClassification(); }}><option value="expense">지출</option><option value="income">수입</option><option value="reference">참고 거래</option></select></label>
+          {transactionType === 'income' && <label className="form-field"><span>거래 구분</span><select name="incomeGroup" value={incomeGroup} onChange={(event) => setIncomeGroup(event.target.value as typeof incomeGroup)}><option value="fixed">고정수입</option><option value="additional">추가수입</option></select></label>}
           <label className="form-field"><span>거래일</span><input type="date" name="transactionDate" required /></label>
           {/* 칩은 줄바꿈되며 세로로 자라기 때문에, 2열 그리드에서 짧은 필드와 나란히 두면
               어색하다. 두 열을 다 쓰게 한다(`1 / -1`이라 모바일 1열에서도 안전하다). */}

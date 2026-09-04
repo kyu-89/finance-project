@@ -22,6 +22,8 @@ export async function updateTransactionAction(_p: ActionResult, f: FormData): Pr
   const paymentMethodId = text(f, 'paymentMethodId');
   const rawCostBehavior = f.get('costBehaviorOverride');
   const costBehaviorOverride = rawCostBehavior === 'fixed' || rawCostBehavior === 'variable' ? rawCostBehavior : null;
+  const rawIncomeGroup = f.get('incomeGroup');
+  const incomeGroup = rawIncomeGroup === 'fixed' || rawIncomeGroup === 'additional' ? rawIncomeGroup : null;
   if (!id) return fail('거래 id가 없습니다.');
   if (transactionType !== 'income' && transactionType !== 'expense' && transactionType !== 'reference') return fail('거래 유형을 확인해 주세요.');
   if (!transactionDate) return fail('날짜를 확인해 주세요.');
@@ -36,6 +38,7 @@ export async function updateTransactionAction(_p: ActionResult, f: FormData): Pr
       id, transactionDate, amount, description, memo: text(f, 'memo'), transactionType,
       categoryId, categoryDefaultCostBehavior: text(f, 'categoryDefaultCostBehavior') as 'fixed' | 'variable' | null,
       costBehaviorOverride, subcategoryId: text(f, 'subcategoryId'), paymentMethodId,
+      incomeGroup: transactionType === 'income' ? incomeGroup : null,
     });
   } catch (e) { return fail(e instanceof Error ? e.message : '거래 수정에 실패했어요.'); }
   refresh();

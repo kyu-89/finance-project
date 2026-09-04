@@ -236,6 +236,11 @@
  * carry the income/expense color. */
 .tds-ledger-table tbody [data-table-field='transactionType'] { color: var(--chart-expense); }
 .tds-ledger-table tbody [data-table-field='transactionType'][data-flow='income'] { color: var(--chart-income); }
+/* 2026-09(사용자 지시): 거래 구분(income_group/expense_group)을 유형 칸 안에 같이 보여준다 —
+ * 데스크톱은 좁은 칼럼(92px)이라 두 줄로 쌓고, 모바일 카드는 "지출/수입" 옆에 여유가 있어서
+ * 가로로 나란히 붙인다("정돈되고 예쁘게" — 사용자 지시). */
+.monthly-type-cell { display: inline-flex; flex-direction: column; align-items: center; gap: 1px; }
+.monthly-type-group { color: var(--tds-grey-500); font-size: 10px; font-weight: 600; white-space: nowrap; }
 .tds-ledger-table tbody [data-table-field='transactionType'][data-flow='reference'] { color: var(--tds-grey-600); }
 .tds-ledger-table [data-table-field='description'] .monthly-description-button { color: inherit; }
 
@@ -1497,6 +1502,10 @@ input.quick-add-amount {
   }
   .tds-ledger-table [data-table-field='transactionType'] { grid-row: 2; grid-column: 1; font-size: var(--text-micro); font-weight: 700; }
   .tds-ledger-table [data-table-field='transactionType']::before { content: none; }
+  /* "지출"/"수입" 옆에 남는 공간을 거래 구분 표시에 쓴다(사용자 지시) — 데스크톱의 세로 배치
+   * 대신 가로로 나란히, 작은 배지 모양으로 붙인다. */
+  .tds-ledger-table [data-table-field='transactionType'] .monthly-type-cell { flex-direction: row; gap: 6px; }
+  .tds-ledger-table [data-table-field='transactionType'] .monthly-type-group { padding: 1px 6px; border-radius: 99px; background: var(--tds-grey-100); font-size: 9px; }
   /* A 7+ digit amount can still be wider than column 1's 100px floor.
    * text-overflow:ellipsis never actually took effect here (it doesn't
    * apply to a flex container's anonymous text item), so a too-narrow box

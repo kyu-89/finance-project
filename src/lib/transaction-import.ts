@@ -164,9 +164,17 @@ export function mapMonthlySheetRows(rows: unknown[][], sourceMonth: string | nul
   }
   const result: ParsedImportRow[] = [];
   for (const block of blocks) {
-    // Income and expense tables can begin on the same row. The boundary is
-    // the next physical header row, not the next block in the list.
-    const nextHeader = blocks.find((candidate) => candidate.headerRow > block.headerRow)?.headerRow ?? rows.length;
+    // 2026-09: 예전엔 "종류 상관없이 다음 헤더 행"을 경계로 썼는데, 이 워크북은 "부가수입"
+    // 구역의 헤더 행 바로 다음(또는 같은) 행에 "소비성지출" 구역의 헤더가 오는 달이 실제로
+    // 여러 번 있었다 — 그 경우 부가수입의 데이터 범위가 [헤더+1, 헤더+1) = 0행으로 붕괴해서
+    // 그 달의 부가수입 전체가 에러 없이 통째로 누락됐다(2026년 1·2·6·7·8·9·10·11·12월 등 재현
+    // 확인, 2023~2025년 일부 월도 동일). income 블록과 expense 블록은 시트에서 서로 다른 열
+    // 범위(수입은 B~F, 지출은 H 이후)를 쓰고 절대 겹치지 않으므로, 경계는 "같은 종류의 다음
+    // 헤더 행"이어야 한다 — 다른 종류 헤더는 이 블록의 실제 데이터 범위와 무관하다. 같은
+    // 종류의 다음 헤더가 없으면(그 시트의 마지막 income/expense 블록) 시트 끝까지 본다 — 그
+    // 뒤에 남는 빈 줄/무관한 내용은 바로 아래 실제 행 검증(날짜·내용·금액 모두 있어야 함)이
+    // 이미 걸러낸다.
+    const nextHeader = blocks.find((candidate) => candidate.headerRow > block.headerRow && candidate.kind === block.kind)?.headerRow ?? rows.length;
     for (let index = block.headerRow + 1; index < nextHeader; index += 1) {
       const row = rows[index] ?? [];
       const data = block.kind === 'income'

@@ -20,6 +20,9 @@ export type Transaction = {
   paymentMethodId: string | null;
   accountId?: string | null;
   incomeGroup?: 'fixed' | 'additional' | null;
+  // expense_group은 DB 트리거가 category_id로부터 항상 자동으로 채운다(사용자 지시) — 이
+  // 필드는 애플리케이션 코드에서 절대 직접 쓰지 않는다, 읽기 전용으로만 쓴다.
+  expenseGroup?: 'savings' | 'consumption' | null;
   parentTransactionId?: string | null;
   categoryId: string | null;
   subcategoryId: string | null;
@@ -48,7 +51,7 @@ export const FLOW_CLASS_BY_TRANSACTION_TYPE: Record<TransactionType, string> = {
 function mapRow(row: {
   id: string; household_id: string; transaction_date: string; source_month: string | null; transaction_type: string;
   flow_class: string; cost_behavior: string | null; payment_method_id: string | null;
-  category_id: string | null; subcategory_id: string | null; account_id: string | null; income_group: string | null; parent_transaction_id: string | null;
+  category_id: string | null; subcategory_id: string | null; account_id: string | null; income_group: string | null; expense_group: string | null; parent_transaction_id: string | null;
   amount: number; description: string; memo: string | null; tags: string[] | null;
   include_in_budget: boolean; needs_review: boolean; recurring_rule_id: string | null;
   recurring_occurrence_id: string | null; status: string;
@@ -64,6 +67,7 @@ function mapRow(row: {
     paymentMethodId: row.payment_method_id,
     accountId: row.account_id,
     incomeGroup: row.income_group as 'fixed' | 'additional' | null,
+    expenseGroup: row.expense_group as 'savings' | 'consumption' | null,
     parentTransactionId: row.parent_transaction_id,
     categoryId: row.category_id,
     subcategoryId: row.subcategory_id,
@@ -83,7 +87,7 @@ function mapRow(row: {
 // this as a literal string type, not a widened `string` — Supabase's `.select()` overloads
 // parse the select-string type at compile time to produce the typed row shape, and a widened
 // `string` makes that parse fail with a generic, untyped `GenericStringError` result.
-const TRANSACTION_COLUMNS = `id, household_id, transaction_date, source_month, transaction_type, flow_class, cost_behavior, payment_method_id, account_id, income_group, parent_transaction_id, category_id, subcategory_id, amount, description, memo, tags, include_in_budget, needs_review, recurring_rule_id, recurring_occurrence_id, status`;
+const TRANSACTION_COLUMNS = `id, household_id, transaction_date, source_month, transaction_type, flow_class, cost_behavior, payment_method_id, account_id, income_group, expense_group, parent_transaction_id, category_id, subcategory_id, amount, description, memo, tags, include_in_budget, needs_review, recurring_rule_id, recurring_occurrence_id, status`;
 
 export async function createTransaction(input: {
   householdId: string;
@@ -463,6 +467,7 @@ export async function updateTransaction(input: {
   costBehaviorOverride?: 'fixed' | 'variable' | null;
   subcategoryId: string | null;
   paymentMethodId: string | null;
+  incomeGroup?: 'fixed' | 'additional' | null;
 }): Promise<void> {
   if (input.amount <= 0) {
     throw new Error('금액은 0보다 커야 합니다.');
@@ -486,6 +491,9 @@ export async function updateTransaction(input: {
     category_id: input.categoryId,
     subcategory_id: input.subcategoryId,
     payment_method_id: input.paymentMethodId,
+    // 수입이 아니게 바뀌면 income_group도 함께 지운다(예: 참고 거래로 전환) — expense_group은
+    // DB 트리거가 항상 알아서 맞추므로 여기서 손대지 않는다.
+    income_group: input.transactionType === 'income' ? (input.incomeGroup ?? null) : null,
     // 참고 거래로 전환하면 예산 집계 대상에서 빠지고, 수입/지출로 되돌리면 다시 포함된다.
     include_in_budget: includeInBudget(input.transactionType),
   }).eq('id', input.id).is('deleted_at', null).select('id');

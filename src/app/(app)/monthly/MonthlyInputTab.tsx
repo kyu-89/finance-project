@@ -20,6 +20,16 @@ import { findRecurringDuplicateCandidates, type DuplicateCandidate } from '@/lib
 const features = tableFeatures({});
 const columnHelper = createColumnHelper<typeof features, Transaction>();
 const TRANSACTION_TYPE_LABEL: Record<Transaction['transactionType'], string> = { income: '수입', expense: '지출', reference: '참고 거래' };
+// 2026-09(사용자 지시): income_group/expense_group을 "거래 구분"으로 유형 칸 바로 옆에 보여준다
+// (새 컬럼을 추가하지 않고 유형 칸 안에 같이 넣는다 — 모바일에서 "지출/수입 표시 영역"에 이미
+// 여유 공간이 있어서, 새 그리드 열을 만드는 대신 그 자리를 재사용하는 게 더 깔끔하다).
+const INCOME_GROUP_LABEL: Record<'fixed' | 'additional', string> = { fixed: '고정수입', additional: '추가수입' };
+const EXPENSE_GROUP_LABEL: Record<'savings' | 'consumption', string> = { savings: '저축성지출', consumption: '소비성지출' };
+function groupLabelFor(transaction: Transaction): string | null {
+  if (transaction.transactionType === 'income' && transaction.incomeGroup) return INCOME_GROUP_LABEL[transaction.incomeGroup];
+  if (transaction.transactionType === 'expense' && transaction.expenseGroup) return EXPENSE_GROUP_LABEL[transaction.expenseGroup];
+  return null;
+}
 const COST_BEHAVIOR_LABEL: Record<NonNullable<Transaction['costBehavior']>, string> = { fixed: '고정비', variable: '변동비' };
 const COST_BEHAVIOR_OPTIONS = [
   { value: '', label: '미지정' },
@@ -50,7 +60,7 @@ function CostBehaviorEditor({ transaction }: { transaction: Transaction }) {
 function makeColumns() {
   return columnHelper.columns([
     columnHelper.accessor('transactionDate', { header: '날짜' }),
-    columnHelper.accessor('transactionType', { header: '유형', cell: (info) => TRANSACTION_TYPE_LABEL[info.getValue()] }),
+    columnHelper.accessor('transactionType', { header: '유형', cell: (info) => { const group = groupLabelFor(info.row.original); return <span className="monthly-type-cell">{TRANSACTION_TYPE_LABEL[info.getValue()]}{group && <span className="monthly-type-group">{group}</span>}</span>; } }),
     columnHelper.accessor('categoryId', { header: '대분류', cell: () => null }),
     columnHelper.accessor('subcategoryId', { header: '소분류', cell: () => null }),
     columnHelper.accessor('description', { header: '내용' }),

@@ -122,6 +122,8 @@ export async function createMonthlyRowAction(
   const rawCostBehavior = formData.get('costBehaviorOverride');
   const costBehaviorOverride =
     rawCostBehavior === 'fixed' || rawCostBehavior === 'variable' ? rawCostBehavior : null;
+  const rawIncomeGroup = formData.get('incomeGroup');
+  const incomeGroup = rawIncomeGroup === 'fixed' || rawIncomeGroup === 'additional' ? rawIncomeGroup : null;
 
   if (!transactionDate) {
     return fail('날짜를 입력해주세요.');
@@ -150,6 +152,7 @@ export async function createMonthlyRowAction(
       amount,
       description,
       memo,
+      incomeGroup: transactionType === 'income' ? incomeGroup : null,
     });
   } catch (error) {
     return fail(error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.');

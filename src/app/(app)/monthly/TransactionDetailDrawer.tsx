@@ -34,6 +34,9 @@ export function TransactionDetailDrawer({ transaction, support, event, categorie
   // 통째로 새로 마운트됨) 여기서는 최초 값만 seed하면 되고, 거래가 바뀔 때 값을 다시 맞추는 별도
   // resync 로직이 필요 없다.
   const [transactionType, setTransactionType] = useState<Transaction['transactionType']>(transaction.transactionType);
+  // 2026-09(사용자 지시): 등록 드로워와 대칭으로 수정 드로워에도 거래 구분(income_group)을
+  // 노출한다. expense_group은 카테고리로 자동 결정돼 여기서 따로 입력받지 않는다.
+  const [incomeGroup, setIncomeGroup] = useState<'fixed' | 'additional'>(transaction.incomeGroup ?? 'fixed');
   const [categoryId, setCategoryId] = useState(transaction.categoryId ?? '');
   const [subcategoryId, setSubcategoryId] = useState(transaction.subcategoryId ?? '');
   const [paymentMethodId, setPaymentMethodId] = useState(transaction.paymentMethodId ?? '');
@@ -60,6 +63,7 @@ export function TransactionDetailDrawer({ transaction, support, event, categorie
         <h3>기본 정보</h3>
         <div className="monthly-drawer-grid">
           <label className="form-field"><span>거래 유형</span><select value={transactionType} onChange={(event) => { setTransactionType(event.target.value as Transaction['transactionType']); resetClassification(); }}><option value="expense">지출</option><option value="income">수입</option><option value="reference">참고 거래</option></select></label>
+          {transactionType === 'income' && <label className="form-field"><span>거래 구분</span><select name="incomeGroup" value={incomeGroup} onChange={(event) => setIncomeGroup(event.target.value as typeof incomeGroup)}><option value="fixed">고정수입</option><option value="additional">추가수입</option></select></label>}
           <label className="form-field"><span>거래일</span><input type="date" name="transactionDate" defaultValue={transaction.transactionDate} required /></label>
           <FormField as="div" label="대분류 / 소분류" required={isCategoryRequired} className="[grid-column:1/-1]">
             <CategoryPicker

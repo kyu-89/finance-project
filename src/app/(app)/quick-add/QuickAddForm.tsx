@@ -207,7 +207,7 @@ export function QuickAddForm({
         </FormField>
       )}
 
-      {transactionType === 'income' && <><FormField label="수입 구분"><select value={incomeGroup} onChange={(e) => setIncomeGroup(e.target.value as typeof incomeGroup)} className="px-4"><option value="fixed">고정수입</option><option value="additional">추가수입</option></select></FormField><FormField label="입금계좌"><select name="accountId" className="px-4"><option value="">선택 안 함</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.bankName} {account.accountName}</option>)}</select></FormField></>}
+      {transactionType === 'income' && <><FormField label="거래 구분"><select value={incomeGroup} onChange={(e) => setIncomeGroup(e.target.value as typeof incomeGroup)} className="px-4"><option value="fixed">고정수입</option><option value="additional">추가수입</option></select></FormField><FormField label="입금계좌"><select name="accountId" className="px-4"><option value="">선택 안 함</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.bankName} {account.accountName}</option>)}</select></FormField></>}
 
       <button
         type="submit"
