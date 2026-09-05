@@ -42,6 +42,14 @@ describe('transaction import normalization', () => {
     expect(rows[0]).toMatchObject({ transactionType: 'income', amount: 3000000, errors: [] });
   });
 
+  it('maps a subcategory column without losing the source label', () => {
+    const rows = mapImportRows([
+      ['date', 'description', 'amount', 'type', 'subcategory'],
+      ['2026-08-29', 'Salary', '3000000', 'income', '급여'],
+    ], ['date', 'description', 'amount', 'type', 'subcategory'], { date: 'date', description: 'description', amount: 'amount', status: 'type', subcategory: 'subcategory' });
+    expect(rows[0]).toMatchObject({ transactionType: 'income', subcategoryName: '급여', errors: [] });
+  });
+
   // 2026-09: 참고 거래(사용자 지시 §5) — 상태/구분 컬럼과 카테고리 둘 다 완전히 비어 있는 행만
   // 참고 거래로 본다. 카드 대납·현금 환급처럼 원본에 수입/지출 신호가 전혀 없는 행을 위한 규칙.
   it('marks a row with no status and no category as a reference transaction', () => {

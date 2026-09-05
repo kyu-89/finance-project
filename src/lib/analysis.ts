@@ -29,16 +29,26 @@ export const isExpense = (t: AnalysisTransaction) => posted(t) && t.flowClass ==
 export const isReference = (t: AnalysisTransaction) => posted(t) && t.transactionType === 'reference';
 
 export function periodTotals(transactions: AnalysisTransaction[], savingsCategoryId: string | null) {
-  const income = transactions.filter(isIncome).reduce((sum, t) => sum + t.amount, 0);
-  const expense = transactions.filter(isExpense).reduce((sum, t) => sum + t.amount, 0);
-  const savings = savingsCategoryId
-    ? transactions.filter((t) => isExpense(t) && t.categoryId === savingsCategoryId).reduce((sum, t) => sum + t.amount, 0)
-    : 0;
-  const referenceRows = transactions.filter(isReference);
+  let income = 0;
+  let expense = 0;
+  let savings = 0;
+  let referenceCount = 0;
+  let referenceTotal = 0;
+  for (const transaction of transactions) {
+    if (isIncome(transaction)) income += transaction.amount;
+    if (isExpense(transaction)) {
+      expense += transaction.amount;
+      if (savingsCategoryId && transaction.categoryId === savingsCategoryId) savings += transaction.amount;
+    }
+    if (isReference(transaction)) {
+      referenceCount += 1;
+      referenceTotal += transaction.amount;
+    }
+  }
   return {
     income, expense, savings, net: income - expense,
-    referenceCount: referenceRows.length,
-    referenceTotal: referenceRows.reduce((sum, t) => sum + t.amount, 0),
+    referenceCount,
+    referenceTotal,
   };
 }
 
@@ -110,11 +120,18 @@ export function summarizeCardUsage(transactions: AnalysisTransaction[], paymentM
 
 // 연간 — 12개월 현금흐름(수입/지출/저축성지출/순현금흐름).
 export function monthlyCashflow(transactions: AnalysisTransaction[], months: string[], savingsCategoryId: string | null): MonthPoint[] {
-  return months.map((month) => {
-    const rows = transactions.filter((t) => reportMonthOf(t) === month);
-    const totals = periodTotals(rows, savingsCategoryId);
-    return { month, income: totals.income, expense: totals.expense, savings: totals.savings, net: totals.net };
-  });
+  const totalsByMonth = new Map<string, { income: number; expense: number; savings: number }>();
+  for (const month of months) totalsByMonth.set(month, { income: 0, expense: 0, savings: 0 });
+  for (const transaction of transactions) {
+    const totals = totalsByMonth.get(reportMonthOf(transaction));
+    if (!totals || !posted(transaction)) continue;
+    if (isIncome(transaction)) totals.income += transaction.amount;
+    if (isExpense(transaction)) {
+      totals.expense += transaction.amount;
+      if (savingsCategoryId && transaction.categoryId === savingsCategoryId) totals.savings += transaction.amount;
+    }
+  }
+  return months.map((month) => { const totals = totalsByMonth.get(month)!; return { month, ...totals, net: totals.income - totals.expense }; });
 }
 
 // §3 — 대시보드 "핵심 인사이트". 실제 데이터로 뒷받침되는 문장만 만든다(사용자 지시: "근거 없는
@@ -162,11 +179,21 @@ export function generateInsights(input: {
 // 월간 — 선택한 달의 일별 현금흐름.
 export function dailyCashflow(transactions: AnalysisTransaction[], monthStart: string, monthEnd: string, savingsCategoryId: string | null): DayPoint[] {
   const days: DayPoint[] = [];
+  const totalsByDate = new Map<string, { income: number; expense: number; savings: number }>();
+  for (const transaction of transactions) {
+    if (!posted(transaction)) continue;
+    const totals = totalsByDate.get(transaction.transactionDate) ?? { income: 0, expense: 0, savings: 0 };
+    if (isIncome(transaction)) totals.income += transaction.amount;
+    if (isExpense(transaction)) {
+      totals.expense += transaction.amount;
+      if (savingsCategoryId && transaction.categoryId === savingsCategoryId) totals.savings += transaction.amount;
+    }
+    totalsByDate.set(transaction.transactionDate, totals);
+  }
   const start = new Date(`${monthStart}T00:00:00Z`); const end = new Date(`${monthEnd}T00:00:00Z`);
   for (let d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
     const date = d.toISOString().slice(0, 10);
-    const rows = transactions.filter((t) => t.transactionDate === date);
-    const totals = periodTotals(rows, savingsCategoryId);
+    const totals = totalsByDate.get(date) ?? { income: 0, expense: 0, savings: 0 };
     days.push({ date, income: totals.income, expense: totals.expense, savings: totals.savings });
   }
   return days;

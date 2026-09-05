@@ -19,7 +19,7 @@ export async function importTransactionsAction(_previous: ActionResult, formData
   try {
     const householdId = await getCurrentHouseholdId();
     const result = await importTransactions({ householdId, rows });
-    await createImportSyncRun({ householdId, sourceType: 'workbook_monthly', sourceFileName: String(formData.get('sourceFileName') ?? '엑셀 파일'), totalRows: Number(formData.get('totalRows') ?? rows.length), importedRows: result.insertedCount, duplicateRows: result.duplicateCount + Number(formData.get('duplicateRows') ?? 0), invalidRows: Number(formData.get('invalidRows') ?? 0) });
+    await createImportSyncRun({ householdId, sourceType: 'transactions', sourceFileName: String(formData.get('sourceFileName') ?? '거래 파일'), totalRows: Number(formData.get('totalRows') ?? rows.length), importedRows: result.insertedCount, duplicateRows: result.duplicateCount + Number(formData.get('duplicateRows') ?? 0), invalidRows: Number(formData.get('invalidRows') ?? 0) });
     revalidatePath('/monthly');
     revalidatePath('/dashboard');
     return ok(`${result.insertedCount}건을 가져왔어요${result.duplicateCount ? ` · 중복 ${result.duplicateCount}건은 건너뛰었어요` : ''}.`);

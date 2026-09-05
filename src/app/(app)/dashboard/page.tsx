@@ -3,10 +3,9 @@ import { ensureHouseholdForCurrentUser } from '@/lib/household';
 import { todayInSeoul } from '@/lib/date';
 import { getDashboardHomeSummary, type HomeRecent } from '@/lib/dashboard-home';
 import { computeCurrentNetWorth } from '@/lib/snapshots';
-import { materializeRecurringRulesForRange } from '@/lib/recurring-rules';
 import { listTransactionSummaries } from '@/lib/transactions';
 import { listCategoriesWithSubcategories } from '@/lib/categories';
-import { generateInsights, periodTotals, reportMonthOf } from '@/lib/analysis';
+import { generateInsights, monthlyCashflow, periodTotals, reportMonthOf } from '@/lib/analysis';
 import { AnalysisCashflowChart } from '../analysis/AnalysisCashflowChart';
 import { Amount } from '@/components/Amount';
 import { EmptyState } from '@/components/EmptyState';
@@ -14,6 +13,7 @@ import { ListItem } from '@/components/ListItem';
 import { PageHeader } from '@/components/PageHeader';
 import { SectionHeader } from '@/components/SectionHeader';
 import { StatCard } from '@/components/StatCard';
+import { RecurringSyncTrigger } from '@/components/RecurringSyncTrigger';
 
 const won = new Intl.NumberFormat('ko-KR');
 const money = (value: number | null | undefined) => value == null ? '-' : `${won.format(Math.round(value))}원`;
@@ -37,8 +37,6 @@ export default async function DashboardPage() {
   const monthStart = `${month}-01`;
   const monthEndDate = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0)).toISOString().slice(0, 10);
 
-  await materializeRecurringRulesForRange(household.id, monthStart, monthEndDate);
-
   const [summary, categories, netWorth, transactions] = await Promise.all([
     getDashboardHomeSummary({ householdId: household.id, from: monthStart, to: monthEndDate, monthStart, monthEnd: monthEndDate }),
     listCategoriesWithSubcategories(household.id),
@@ -60,11 +58,12 @@ export default async function DashboardPage() {
   const insights = generateInsights({ currentMonth: currentMonthTransactions, previousMonth: previousMonthTransactions, trailing3Months: trailing3MonthsTransactions, categoryNames, incomeSubcategoryNames });
 
   const sixMonths = Array.from({ length: 6 }, (_, i) => shiftMonth(month, i - 5));
-  const trendMonthly = sixMonths.map((m) => { const t = periodTotals(transactions.filter((row) => reportMonthOf(row) === m), savingsCategoryId); return { month: m, income: t.income, expense: t.expense, savings: t.savings, net: t.net }; });
+  const trendMonthly = monthlyCashflow(transactions, sixMonths, savingsCategoryId);
 
   const recent: HomeRecent[] = [...currentMonthTransactions].filter((t) => t.status === 'posted').sort((a, b) => b.transactionDate.localeCompare(a.transactionDate)).slice(0, 5).map((t) => ({ id: t.id, transactionDate: t.transactionDate, transactionType: t.transactionType, flowClass: t.flowClass, amount: t.amount, description: t.description }));
 
   return <div data-page="home" className="tds-page home-page">
+    <RecurringSyncTrigger fromDate={monthStart} toDate={monthEndDate} currentMonthStart={`${currentMonth}-01`} />
     <PageHeader eyebrow="우리집 가계부" title="우리 집 재무 현황" description="우리 집의 자산과 돈의 흐름을 한눈에 확인해요." />
 
     {/* 1. 확인이 필요한 알림 */}

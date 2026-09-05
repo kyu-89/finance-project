@@ -21,7 +21,7 @@ export default async function DataSettingsPage() {
   ]);
   return <div className="tds-page flex flex-col gap-6">
     <PageHeader eyebrow="설정" title="데이터를 관리해요" description="거래 데이터를 가져오고 내보내거나 검토해요."><SettingsBackLink /></PageHeader>
-    <TransactionImport categories={categories.filter((category) => category.transactionType === 'expense' && category.isActive)} paymentMethods={paymentMethods.filter((method) => method.isActive)} />
+    <TransactionImport categories={categories.filter((category) => category.isActive)} paymentMethods={paymentMethods.filter((method) => method.isActive)} />
     <DataActionCard title="데이터 내보내기" description="2단계 인증이 완료된 세션에서 필요한 데이터를 파일로 내려받아 보관해요."><a href="/api/export/transactions" className="tds-button-secondary flex w-full items-center justify-center">거래 CSV</a><a href="/api/export/all" className="tds-button-secondary flex w-full items-center justify-center">전체 JSON</a></DataActionCard>
     <SyncHistory runs={syncRuns} />
     <DuplicateTransactionReview groups={duplicateGroups} />

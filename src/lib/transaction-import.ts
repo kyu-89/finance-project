@@ -1,4 +1,4 @@
-export type ImportField = 'date' | 'amount' | 'description' | 'status' | 'category' | 'memo' | 'card';
+export type ImportField = 'date' | 'amount' | 'description' | 'status' | 'category' | 'subcategory' | 'memo' | 'card';
 
 export type ImportMapping = Partial<Record<ImportField, string>>;
 
@@ -22,6 +22,7 @@ const aliases: Record<ImportField, string[]> = {
   description: ['가맹점명', '이용가맹점', '이용처', '사용처', '가맹점', '거래처', '거래명', '적요', '내용', '상호명', '상호', 'merchant', 'merchantname', 'description', 'details'],
   status: ['승인상태', '거래구분', '취소여부', '취소구분', '처리상태', '구분', '상태', 'status', 'type'],
   category: ['대분류', '카테고리', '분류', 'category'],
+  subcategory: ['소분류', '세부항목', 'subcategory', 'sub category'],
   memo: ['비고', '메모', '할부', '할부개월', '승인번호', 'memo', 'note'],
   card: ['카드명', '카드번호', '카드', '결제수단', 'card', 'card name'],
 };
@@ -122,6 +123,7 @@ export function mapImportRows(rows: unknown[][], headers: string[], mapping: Imp
     const description = String(valueAt(row, headers, mapping.description) ?? '').trim();
     const status = valueAt(row, headers, mapping.status);
     const categoryName = String(valueAt(row, headers, mapping.category) ?? '').trim() || null;
+    const subcategoryName = String(valueAt(row, headers, mapping.subcategory) ?? '').trim() || null;
     const errors: string[] = [];
     if (!date) errors.push('날짜를 읽지 못했어요.');
     if (parsedAmount.amount === null || parsedAmount.amount <= 0) errors.push('금액을 읽지 못했어요.');
@@ -136,11 +138,11 @@ export function mapImportRows(rows: unknown[][], headers: string[], mapping: Imp
       amount: parsedAmount.amount,
       transactionType: parsedAmount.negative || isRefund(status) ? 'refund'
         : isIncome(status) ? 'income'
-        : noTypeSignal && !categoryName ? 'reference'
+        : noTypeSignal && !categoryName && !subcategoryName ? 'reference'
         : 'expense',
       description,
       categoryName,
-      subcategoryName: null,
+      subcategoryName,
       memo: String(valueAt(row, headers, mapping.memo) ?? '').trim() || null,
       cardLabel: String(valueAt(row, headers, mapping.card) ?? '').trim() || null,
       sourceMonth,

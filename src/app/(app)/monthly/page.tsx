@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import { ensureHouseholdForCurrentUser } from '@/lib/household';
-import { listTransactions, promotePastPlannedTransactions } from '@/lib/transactions';
+import { listTransactions } from '@/lib/transactions';
 import { listCategoriesWithSubcategories } from '@/lib/categories';
 import { listPaymentMethods } from '@/lib/payment-methods';
 import { monthRangeFromSeoulDateString, todayInSeoul } from '@/lib/date';
-import { materializeRecurringRulesForRange } from '@/lib/recurring-rules';
+import { RecurringSyncTrigger } from '@/components/RecurringSyncTrigger';
 import { PageHeader } from '@/components/PageHeader';
 import { MonthlyPageTabs } from './MonthlyPageTabs';
 
@@ -33,18 +33,6 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
     listPaymentMethods(household.id),
   ]);
 
-  if (selectedMonth < currentMonth) {
-    // Historical occurrences must exist before their planned status is promoted.
-    await materializeRecurringRulesForRange(household.id, fromDate, toDate);
-    await promotePastPlannedTransactions(household.id, `${currentMonth}-01`);
-  } else {
-    // Current/future materialization cannot overlap the historical promotion range.
-    await Promise.all([
-      promotePastPlannedTransactions(household.id, `${currentMonth}-01`),
-      materializeRecurringRulesForRange(household.id, fromDate, toDate),
-    ]);
-  }
-
   // 2026-09(사용자 지시: "날짜 기준으로 월별로 데이터 분리 바람") — reportMonthFrom/To(source_month
   // 기준)를 쓰면 실제 transaction_date가 다른 달인데도 원본 엑셀 시트의 소속 월(source_month)
   // 기준으로 이 달에 끼어 보이는 거래가 생겼다("9월인데 8월 거래가 보임"). 월간관리는 화면에
@@ -61,6 +49,7 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
 
   return (
     <div className="tds-page">
+      <RecurringSyncTrigger fromDate={fromDate} toDate={toDate} currentMonthStart={`${currentMonth}-01`} />
       <PageHeader as="div" className="monthly-page-header" eyebrow="월간 관리" title="월간 내역을 관리해요" description="이번 달 거래를 기록하고 예정 거래를 확인해 주세요." action={<nav aria-label="월 선택" className="monthly-month-navigator">
           <Link href={`/monthly?month=${shiftMonth(selectedMonth, -1)}`} className="home-arrow" aria-label="이전 달">←</Link>
           <strong className="min-w-28 text-center text-base">{monthLabel(selectedMonth)}</strong>
