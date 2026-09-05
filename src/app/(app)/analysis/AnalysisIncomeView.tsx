@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { SectionHeader } from '@/components/SectionHeader';
-import type { Transaction } from '@/lib/transactions';
+import type { TransactionSummary } from '@/lib/transactions';
 import { summarizeIncomeBySubcategory } from '@/lib/analysis';
 import { SimpleDrilldown, type TransactionExtraColumn } from './AnalysisDrilldown';
 
@@ -13,7 +13,7 @@ import { SimpleDrilldown, type TransactionExtraColumn } from './AnalysisDrilldow
 // 하나로 묶은 화면") — 연간 스코프의 엑셀-그대로 표는 AnnualReportView 하나로 통합됐고, 이
 // 뷰는 이제 월간 스코프 전용(아코디언 한 칸)이라 연간 매트릭스 히트맵을 가지고 있지 않는다.
 export function AnalysisIncomeView({ periodTransactions, subcategoryNames }: {
-  periodTransactions: Transaction[];
+  periodTransactions: TransactionSummary[];
   subcategoryNames: Map<string, string>;
 }) {
   const rows = useMemo(() => summarizeIncomeBySubcategory(periodTransactions, subcategoryNames), [periodTransactions, subcategoryNames]);

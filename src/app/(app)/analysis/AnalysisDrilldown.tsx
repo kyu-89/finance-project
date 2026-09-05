@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Amount } from '@/components/Amount';
 import { EmptyState } from '@/components/EmptyState';
-import type { Transaction } from '@/lib/transactions';
+import type { TransactionSummary } from '@/lib/transactions';
 import type { AnalysisRow } from '@/lib/analysis';
 
 const won = new Intl.NumberFormat('ko-KR');
@@ -16,9 +16,9 @@ const TRANSACTION_CAP = 100;
 // 시스템이 일관되지 않아")로 extraColumn도 라벨·대체문구까지 통일했다 — 수입/지출/참고거래는
 // 전부 "소분류"(subcategoryId 조회, 못 찾으면 "기타"), 카드 사용만 결제수단이 소분류 개념이
 // 없어서 "카테고리"(대분류)를 대신 보여준다. 항상 화면 가장 아래, 드릴다운을 펼쳤을 때만 나타난다.
-export type TransactionExtraColumn = { label: string; valueFor: (t: Transaction) => string };
+export type TransactionExtraColumn = { label: string; valueFor: (t: TransactionSummary) => string };
 
-function TransactionRows({ transactions, extraColumn }: { transactions: Transaction[]; extraColumn?: TransactionExtraColumn }) {
+function TransactionRows({ transactions, extraColumn }: { transactions: TransactionSummary[]; extraColumn?: TransactionExtraColumn }) {
   const sorted = [...transactions].sort((a, b) => b.transactionDate.localeCompare(a.transactionDate));
   const shown = sorted.slice(0, TRANSACTION_CAP);
   if (!sorted.length) return <p className="analysis-transaction-note">거래가 없어요.</p>;
@@ -41,7 +41,7 @@ function TransactionRows({ transactions, extraColumn }: { transactions: Transact
 // 거래가 펼쳐진다"는 같은 상호작용이다(사용자 지시: "다른 것과 동일하게 1단계 구조로 통일").
 // 예전엔 지출만 대분류→소분류→개별거래 3단계였는데, 소분류 정보는 사라지지 않고 개별 거래
 // 표의 extraColumn(소분류 컬럼)으로 옮겨갔다.
-export function SimpleDrilldown({ rows, total, emptyText, transactionsFor, extraColumn }: { rows: AnalysisRow[]; total: number; emptyText: string; transactionsFor: (id: string) => Transaction[]; extraColumn?: TransactionExtraColumn }) {
+export function SimpleDrilldown({ rows, total, emptyText, transactionsFor, extraColumn }: { rows: AnalysisRow[]; total: number; emptyText: string; transactionsFor: (id: string) => TransactionSummary[]; extraColumn?: TransactionExtraColumn }) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const max = Math.max(1, ...rows.map((r) => r.value));
   if (!rows.length) return <EmptyState title={emptyText} description="거래가 기록되면 항목별로 보여드려요." />;

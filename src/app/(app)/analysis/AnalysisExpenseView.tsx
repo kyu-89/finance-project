@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { SectionHeader } from '@/components/SectionHeader';
-import type { Transaction } from '@/lib/transactions';
+import type { TransactionSummary } from '@/lib/transactions';
 import type { Budget } from '@/lib/budgets';
 import type { CategoryWithSubcategories } from '@/lib/categories';
 import { budgetStatus } from '@/lib/budget-calculations';
@@ -29,7 +29,7 @@ const STATUS_COLOR = { safe: 'text-[var(--color-status-safe)]', caution: 'text-[
 // 컬럼(extraColumn)으로 옮겼다.
 export function AnalysisExpenseView({ month, periodTransactions, categoryNames, subcategoryNames, budgets, categories, totals }: {
   month: string;
-  periodTransactions: Transaction[];
+  periodTransactions: TransactionSummary[];
   categoryNames: Map<string, string>; subcategoryNames: Map<string, string>;
   budgets: Budget[]; categories: CategoryWithSubcategories[];
   totals: { expense: number };

@@ -1,4 +1,4 @@
-import type { Transaction } from '@/lib/transactions';
+import type { TransactionSummary } from '@/lib/transactions';
 import type { CategoryWithSubcategories } from '@/lib/categories';
 import type { PaymentMethod } from '@/lib/payment-methods';
 import { isExpense, isIncome, isReference, reportMonthOf } from '@/lib/analysis';
@@ -65,7 +65,7 @@ function subtractSeries(a: number[], b: number[]): number[] {
 // 전체의 합"으로 계산하는 데 쓴다 — 그래야 표에 나열되지 않는 카테고리(예: 시스템 폴백
 // "미분류")나 표시에서만 뺀 소분류(예: 보험비의 중복 변액연금)에 걸린 실거래 금액이 총계에서
 // 조용히 사라지지 않는다.
-function sumAllMonthly(transactions: Transaction[], months: string[]): number[] {
+function sumAllMonthly(transactions: TransactionSummary[], months: string[]): number[] {
   const out = zeros(months.length);
   for (const t of transactions) {
     const monthIndex = months.indexOf(reportMonthOf(t));
@@ -78,7 +78,7 @@ function sumAllMonthly(transactions: Transaction[], months: string[]): number[] 
 // keyFor가 돌려주는 키(카테고리/소분류/결제수단 id)별로 월별 합계 배열을 만든다. buildMatrix
 // (analysis.ts §12)와 같은 집계 방식이지만, 여기서는 "이미 정해진 행 목록"에 값만 채워 넣는
 // 용도라 정렬하지 않고 Map만 돌려준다.
-function sumByKey(transactions: Transaction[], months: string[], keyFor: (t: Transaction) => string | null): Map<string, number[]> {
+function sumByKey(transactions: TransactionSummary[], months: string[], keyFor: (t: TransactionSummary) => string | null): Map<string, number[]> {
   const byKey = new Map<string, number[]>();
   for (const t of transactions) {
     const key = keyFor(t);
@@ -99,7 +99,7 @@ function sumByKey(transactions: Transaction[], months: string[], keyFor: (t: Tra
 // (사용자 지시: "이건 엑셀대로 매핑해").
 const PRIMARY_INCOME_SUBCATEGORY_NAMES = new Set(['급여', '수당', '상여']);
 
-export function buildAnnualIncomeReport(transactions: Transaction[], months: string[], incomeCategory: CategoryWithSubcategories | undefined): AnnualReportRow[] {
+export function buildAnnualIncomeReport(transactions: TransactionSummary[], months: string[], incomeCategory: CategoryWithSubcategories | undefined): AnnualReportRow[] {
   const n = months.length;
   if (!incomeCategory) return [];
   const carryoverId = incomeCategory.subcategories.find((s) => s.name === '이월')?.id;
@@ -142,7 +142,7 @@ export function buildAnnualIncomeReport(transactions: Transaction[], months: str
 // 제외한 현금+신용카드+체크카드/상품권의 합이다(4개 연도 모두 이 공식으로 검산 완료).
 const CARD_REPORT_TYPE_ORDER: PaymentMethod['methodType'][] = ['account_transfer', 'cash', 'credit_card', 'check_card', 'other'];
 
-export function buildAnnualCardReport(transactions: Transaction[], months: string[], paymentMethods: PaymentMethod[]): AnnualReportRow[] {
+export function buildAnnualCardReport(transactions: TransactionSummary[], months: string[], paymentMethods: PaymentMethod[]): AnnualReportRow[] {
   const n = months.length;
   const relevant = transactions.filter((t) => t.paymentMethodId && (isExpense(t) || isReference(t)));
   const sums = sumByKey(relevant, months, (t) => t.paymentMethodId);
@@ -195,7 +195,7 @@ function orderedExpenseCategories(categories: CategoryWithSubcategories[]): { sa
 // §3 — 연간_항목별지출. "소비성지출"은 엑셀에만 있는 계산 행이다(저축성지출을 뺀 나머지 지출
 // 전체의 합 — 실제 카테고리가 아니다, PRD §8/§35). 비율은 각 소비 카테고리 ÷ 소비성지출이다
 // (총계 대비가 아니다 — 4개 연도 모두 이 공식으로 검산 완료). 저축성지출은 비율 행이 없다.
-export function buildAnnualExpenseCategoryReport(transactions: Transaction[], months: string[], categories: CategoryWithSubcategories[]): AnnualReportRow[] {
+export function buildAnnualExpenseCategoryReport(transactions: TransactionSummary[], months: string[], categories: CategoryWithSubcategories[]): AnnualReportRow[] {
   const n = months.length;
   const { savings, others } = orderedExpenseCategories(categories);
   const expenseTransactions = transactions.filter(isExpense);
@@ -239,7 +239,7 @@ export function buildAnnualExpenseCategoryReport(transactions: Transaction[], mo
 // 있다는 걸 알아두자(의도된 표시상의 예외다).
 const DETAIL_REPORT_EXCLUDED_SUBCATEGORIES = new Set(['보험비:변액연금']);
 
-export function buildAnnualExpenseDetailReport(transactions: Transaction[], months: string[], categories: CategoryWithSubcategories[]): AnnualReportRow[] {
+export function buildAnnualExpenseDetailReport(transactions: TransactionSummary[], months: string[], categories: CategoryWithSubcategories[]): AnnualReportRow[] {
   const n = months.length;
   const { savings, others } = orderedExpenseCategories(categories);
   const expenseTransactions = transactions.filter(isExpense);

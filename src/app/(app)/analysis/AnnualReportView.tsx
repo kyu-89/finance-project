@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import type { CategoryWithSubcategories } from '@/lib/categories';
 import type { PaymentMethod } from '@/lib/payment-methods';
-import type { Transaction } from '@/lib/transactions';
+import type { TransactionSummary } from '@/lib/transactions';
 import { isExpense, isIncome, isReference, reportMonthOf } from '@/lib/analysis';
 import {
   buildAnnualCardReport,
@@ -24,7 +24,7 @@ import { AnnualReportTable } from './AnnualReportTable';
 export function AnnualReportView({ year, months, periodTransactions, categories, paymentMethods }: {
   year: string;
   months: string[];
-  periodTransactions: Transaction[];
+  periodTransactions: TransactionSummary[];
   categories: CategoryWithSubcategories[];
   paymentMethods: PaymentMethod[];
 }) {

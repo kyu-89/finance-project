@@ -9,7 +9,7 @@ import { StatCard } from '@/components/StatCard';
 import type { CategoryWithSubcategories } from '@/lib/categories';
 import type { PaymentMethod } from '@/lib/payment-methods';
 import type { Budget } from '@/lib/budgets';
-import type { Transaction } from '@/lib/transactions';
+import type { TransactionSummary } from '@/lib/transactions';
 import { dailyCashflow, monthlyCashflow, periodTotals, reportMonthOf } from '@/lib/analysis';
 import { AnalysisCashflowChart } from './AnalysisCashflowChart';
 import { AnalysisIncomeView } from './AnalysisIncomeView';
@@ -57,7 +57,7 @@ export function AnalysisWorkspace({ initialScope, year, initialMonth, initialOpe
   categories: CategoryWithSubcategories[];
   paymentMethods: PaymentMethod[];
   budgets: Budget[];
-  transactions: Transaction[];
+  transactions: TransactionSummary[];
 }) {
   const [scope, setScope] = useState(initialScope);
   const [month, setMonth] = useState(initialMonth);

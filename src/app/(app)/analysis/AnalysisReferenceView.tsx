@@ -4,12 +4,12 @@ import { useMemo } from 'react';
 import { Amount } from '@/components/Amount';
 import { SectionHeader } from '@/components/SectionHeader';
 import { StatCard } from '@/components/StatCard';
-import type { Transaction } from '@/lib/transactions';
+import type { TransactionSummary } from '@/lib/transactions';
 import { summarizeReferenceByPaymentMethod } from '@/lib/analysis';
 import { SimpleDrilldown, type TransactionExtraColumn } from './AnalysisDrilldown';
 
 export function AnalysisReferenceView({ periodTransactions, paymentMethodNames, subcategoryNames }: {
-  periodTransactions: Transaction[];
+  periodTransactions: TransactionSummary[];
   paymentMethodNames: Map<string, string>;
   subcategoryNames: Map<string, string>;
 }) {

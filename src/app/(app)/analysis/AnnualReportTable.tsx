@@ -5,7 +5,7 @@ import { Amount } from '@/components/Amount';
 import { EmptyState } from '@/components/EmptyState';
 import { SectionHeader } from '@/components/SectionHeader';
 import type { AnnualReportRow } from '@/lib/annual-report';
-import type { Transaction } from '@/lib/transactions';
+import type { TransactionSummary } from '@/lib/transactions';
 
 const won = new Intl.NumberFormat('ko-KR');
 const money = (value: number) => `${won.format(Math.round(value))}원`;
@@ -19,7 +19,7 @@ const TRANSACTION_CAP = 100;
 export function AnnualReportTable({ title, description, months, rows, tone, showGroupColumn = false, transactionsFor }: {
   title: string; description: string; months: string[]; rows: AnnualReportRow[]; tone: 'income' | 'expense';
   showGroupColumn?: boolean;
-  transactionsFor: (row: AnnualReportRow, month: string) => Transaction[];
+  transactionsFor: (row: AnnualReportRow, month: string) => TransactionSummary[];
 }) {
   const [openCell, setOpenCell] = useState<{ rowId: string; rowLabel: string; month: string } | null>(null);
   const colorVar = tone === 'income' ? '--chart-income' : '--chart-expense';
@@ -78,7 +78,7 @@ export function AnnualReportTable({ title, description, months, rows, tone, show
 // AnalysisHeatmapTable(§12 이전 구현)이 쓰던 것과 같은 개별 거래 표 — "분석" 화면 재정리
 // (사용자 지시: "가장 하단의 수입/지출/참고거래/카드사용/연간 리포트 영역은 제거되는거지")로
 // 그 컴포넌트가 없어지면서 유일한 소비처가 됐다.
-function HeatmapTransactionRows({ transactions }: { transactions: Transaction[] }) {
+function HeatmapTransactionRows({ transactions }: { transactions: TransactionSummary[] }) {
   const sorted = [...transactions].sort((a, b) => b.transactionDate.localeCompare(a.transactionDate));
   const shown = sorted.slice(0, TRANSACTION_CAP);
   if (!sorted.length) return <p className="analysis-transaction-note">거래가 없어요.</p>;

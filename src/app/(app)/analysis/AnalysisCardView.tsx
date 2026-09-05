@@ -5,12 +5,12 @@ import { Amount } from '@/components/Amount';
 import { SectionHeader } from '@/components/SectionHeader';
 import { StatCard } from '@/components/StatCard';
 import type { PaymentMethod } from '@/lib/payment-methods';
-import type { Transaction } from '@/lib/transactions';
+import type { TransactionSummary } from '@/lib/transactions';
 import { summarizeCardUsage, type AnalysisRow } from '@/lib/analysis';
 import { SimpleDrilldown, type TransactionExtraColumn } from './AnalysisDrilldown';
 
 export function AnalysisCardView({ periodTransactions, paymentMethods, categoryNames }: {
-  periodTransactions: Transaction[];
+  periodTransactions: TransactionSummary[];
   paymentMethods: PaymentMethod[];
   categoryNames: Map<string, string>;
 }) {

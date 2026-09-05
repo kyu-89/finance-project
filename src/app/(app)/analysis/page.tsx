@@ -3,7 +3,7 @@ import { todayInSeoul } from '@/lib/date';
 import { listCategoriesWithSubcategories } from '@/lib/categories';
 import { listPaymentMethods } from '@/lib/payment-methods';
 import { listBudgets } from '@/lib/budgets';
-import { listTransactions, getTransactionYearRange } from '@/lib/transactions';
+import { listTransactionSummaries, getTransactionYearRange } from '@/lib/transactions';
 import { AnalysisWorkspace } from './AnalysisWorkspace';
 
 const monthPattern = /^\d{4}-(0[1-9]|1[0-2])$/;
@@ -47,7 +47,7 @@ export default async function AnalysisPage({ searchParams }: { searchParams: Pro
     listPaymentMethods(household.id),
     listBudgets(household.id, Number(year)),
     getTransactionYearRange(household.id),
-    listTransactions({ householdId: household.id, fromDate: from, toDate: to, reportMonthFrom: `${Number(year) - 1}-12`, reportMonthTo: `${year}-12` }),
+    listTransactionSummaries({ householdId: household.id, fromDate: from, toDate: to, reportMonthFrom: `${Number(year) - 1}-12`, reportMonthTo: `${year}-12` }),
   ]);
 
   const availableYears = transactionYearRange

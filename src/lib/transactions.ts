@@ -43,7 +43,7 @@ export type Transaction = {
 /** 대시보드·분석 집계에 필요한 최소 거래 표현입니다. */
 export type TransactionSummary = Pick<Transaction,
   'id' | 'transactionDate' | 'sourceMonth' | 'transactionType' | 'flowClass' |
-  'paymentMethodId' | 'categoryId' | 'subcategoryId' | 'amount' | 'description' | 'status'
+  'paymentMethodId' | 'categoryId' | 'subcategoryId' | 'amount' | 'description' | 'status' | 'includeInBudget'
 >;
 
 // PRD §1.4 — maps transaction_type to the flow_class analysis axis. Kept as a single
@@ -94,7 +94,7 @@ function mapRow(row: {
 // parse the select-string type at compile time to produce the typed row shape, and a widened
 // `string` makes that parse fail with a generic, untyped `GenericStringError` result.
 const TRANSACTION_COLUMNS = `id, household_id, transaction_date, source_month, transaction_type, flow_class, cost_behavior, payment_method_id, account_id, income_group, expense_group, parent_transaction_id, category_id, subcategory_id, amount, description, memo, tags, include_in_budget, needs_review, recurring_rule_id, recurring_occurrence_id, status`;
-const TRANSACTION_SUMMARY_COLUMNS = 'id, transaction_date, source_month, transaction_type, flow_class, payment_method_id, category_id, subcategory_id, amount, description, status';
+const TRANSACTION_SUMMARY_COLUMNS = 'id, transaction_date, source_month, transaction_type, flow_class, payment_method_id, category_id, subcategory_id, amount, description, status, include_in_budget';
 
 export async function createTransaction(input: {
   householdId: string;
@@ -298,7 +298,7 @@ export async function listTransactionSummaries(filter: {
   const rows: Array<{
     id: string; transaction_date: string; source_month: string | null; transaction_type: string;
     flow_class: string; payment_method_id: string | null; category_id: string | null;
-    subcategory_id: string | null; amount: number; description: string; status: string;
+    subcategory_id: string | null; amount: number; description: string; status: string; include_in_budget: boolean;
   }> = [];
   for (let from = 0; ; from += pageSize) {
     let query = supabase.from('transactions').select(TRANSACTION_SUMMARY_COLUMNS)
@@ -329,6 +329,7 @@ export async function listTransactionSummaries(filter: {
     amount: row.amount,
     description: row.description,
     status: row.status as Transaction['status'],
+    includeInBudget: row.include_in_budget,
   }));
 }
 
